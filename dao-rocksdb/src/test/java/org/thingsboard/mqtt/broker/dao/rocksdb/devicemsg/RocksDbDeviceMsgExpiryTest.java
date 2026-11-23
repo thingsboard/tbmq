@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.LoggerFactory;
+import org.thingsboard.mqtt.broker.dao.clock.CleanupClockGuard;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 import org.thingsboard.mqtt.broker.dao.messages.NewDeviceMsg;
 import org.thingsboard.mqtt.broker.dao.messages.QueueAppend;
@@ -31,6 +32,7 @@ import org.thingsboard.mqtt.broker.dao.messages.StoredDeviceMsg;
 import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.nio.charset.StandardCharsets;
@@ -47,8 +49,10 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class RocksDbDeviceMsgExpiryTest {
 
@@ -66,7 +70,7 @@ class RocksDbDeviceMsgExpiryTest {
     void open() {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
-        rocksDb = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0));
+        rocksDb = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties));
         rocksDb.open();
         store = new RocksDbDeviceMsgQueueStore(rocksDb, LIMIT, TTL_SECONDS, clock);
     }
@@ -364,7 +368,7 @@ class RocksDbDeviceMsgExpiryTest {
             swept.countDown();
             return 0;
         }).when(mockStore).sweepExpired();
-        DeviceMsgExpirySweeper sweeper = new DeviceMsgExpirySweeper(mockStore, 50);
+        DeviceMsgExpirySweeper sweeper = new DeviceMsgExpirySweeper(mockStore, () -> true, 50);
         try {
             sweeper.start();
 
@@ -381,8 +385,24 @@ class RocksDbDeviceMsgExpiryTest {
     }
 
     @Test
+    void theSweeperSkipsEverySweepWhileTheClockGuardPostpones() {
+        DeviceMsgQueueStore mockStore = mock(DeviceMsgQueueStore.class);
+        CleanupClockGuard guard = mock(CleanupClockGuard.class);
+        when(guard.cleanupAllowed()).thenReturn(false);
+        DeviceMsgExpirySweeper sweeper = new DeviceMsgExpirySweeper(mockStore, guard, 20);
+        try {
+            sweeper.start();
+
+            verify(guard, timeout(1000).atLeast(3)).cleanupAllowed();
+            verify(mockStore, never()).sweepExpired();
+        } finally {
+            sweeper.stop();
+        }
+    }
+
+    @Test
     void aNonPositiveSweepIntervalFailsStartup() {
-        DeviceMsgExpirySweeper sweeper = new DeviceMsgExpirySweeper(mock(DeviceMsgQueueStore.class), 0);
+        DeviceMsgExpirySweeper sweeper = new DeviceMsgExpirySweeper(mock(DeviceMsgQueueStore.class), () -> true, 0);
 
         assertThatThrownBy(sweeper::start).hasMessageContaining("sweep-interval-ms");
     }

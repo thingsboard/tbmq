@@ -15,15 +15,22 @@
  */
 package org.thingsboard.mqtt.broker.standalone.state;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.dao.store.BrokerStateStores;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -59,8 +66,22 @@ class StandaloneClientSessionStateTest {
     private StandaloneClientSessionPersistenceService persistence;
     private StandaloneClientSessionConsumer consumer;
 
+    private Logger persistenceLogger;
+    private ListAppender<ILoggingEvent> logged;
+
+    @AfterEach
+    void detachAppender() {
+        persistenceLogger.detachAppender(logged);
+        persistenceLogger.setAdditive(true);
+    }
+
     @BeforeEach
     void setUp() {
+        persistenceLogger = (Logger) LoggerFactory.getLogger(StandaloneClientSessionPersistenceService.class);
+        logged = new ListAppender<>();
+        logged.start();
+        persistenceLogger.addAppender(logged);
+        persistenceLogger.setAdditive(false);
         store = new InMemoryKeyValueStore();
         storeSpy = spy(store);
         BrokerStateStores stores = mock(BrokerStateStores.class);
@@ -102,6 +123,16 @@ class StandaloneClientSessionStateTest {
 
         assertThat(store.get("c1")).isNull();
         verify(callback).onSuccess();
+    }
+
+    @Test
+    void aFullStoreFailsTheCallbackWithoutAnErrorOrAWarning() {
+        doThrow(new StoreFullException("Not enough free disk space")).when(storeSpy).put(eq("c1"), any());
+
+        persistence.persistClientSessionInfoAsync("c1", proto(persistentSession("c1")), callback);
+
+        verify(callback).onFailure(any(StoreFullException.class));
+        assertThat(logged.list).noneMatch(event -> event.getLevel().isGreaterOrEqual(Level.WARN));
     }
 
     @Test

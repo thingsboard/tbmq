@@ -26,6 +26,7 @@ import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.DBOptions;
+import org.rocksdb.Env;
 import org.rocksdb.LRUCache;
 import org.rocksdb.Options;
 import org.rocksdb.ReadOptions;
@@ -33,11 +34,13 @@ import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.Slice;
+import org.rocksdb.SstFileManager;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteBufferManager;
 import org.rocksdb.WriteOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.DiskSpaceMonitor;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.io.IOException;
@@ -78,6 +81,8 @@ public class RocksDbStore {
     static final byte[] META_SCHEMA_VERSION_KEY = "schema_version".getBytes(StandardCharsets.UTF_8);
     static final byte[] META_PRODUCT_KEY = "product".getBytes(StandardCharsets.UTF_8);
     static final byte[] META_INSTALL_ID_KEY = "install_id".getBytes(StandardCharsets.UTF_8);
+    // reserved: written and deleted in one batch, so it is never stored
+    static final byte[] META_RESUME_PROBE_KEY = "resume_probe".getBytes(StandardCharsets.UTF_8);
 
     private static final long SLOW_CLOSE_MS = 1000;
     private static final int MAX_OPEN_FILES = 256;
@@ -94,6 +99,7 @@ public class RocksDbStore {
 
     private final StoreProperties properties;
     private final StoreMemoryBudget memoryBudget;
+    private final DiskSpaceMonitor diskSpaceMonitor;
     private final LongSupplier nanoClock;
 
     private final Map<StoreColumnFamily, ColumnFamilyHandle> handles = new EnumMap<>(StoreColumnFamily.class);
@@ -110,14 +116,16 @@ public class RocksDbStore {
     private boolean open;
 
     @Autowired
-    public RocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget) {
-        this(properties, memoryBudget, System::nanoTime);
+    public RocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget, DiskSpaceMonitor diskSpaceMonitor) {
+        this(properties, memoryBudget, diskSpaceMonitor, System::nanoTime);
     }
 
     // the clock is a seam for the test of the slow-close warning
-    RocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget, LongSupplier nanoClock) {
+    RocksDbStore(StoreProperties properties, StoreMemoryBudget memoryBudget, DiskSpaceMonitor diskSpaceMonitor,
+                 LongSupplier nanoClock) {
         this.properties = properties;
         this.memoryBudget = memoryBudget;
+        this.diskSpaceMonitor = diskSpaceMonitor;
         this.nanoClock = nanoClock;
     }
 
@@ -129,6 +137,7 @@ public class RocksDbStore {
         } finally {
             lock.writeLock().unlock();
         }
+        diskSpaceMonitor.onRecovery(this::resumeAfterBackgroundError);
     }
 
     private void doOpenLocked() {
@@ -164,11 +173,17 @@ public class RocksDbStore {
     private void doOpen(String path, WalSyncMode walSyncMode) throws RocksDBException {
         Cache blockCache = register(new LRUCache(memoryBudget.blockCacheBytes()));
         WriteBufferManager writeBufferManager = register(new WriteBufferManager(memoryBudget.writeBufferBytes(), blockCache));
+        // with an SST file manager RocksDB recovers from an out-of-space background error by itself once space is back
+        SstFileManager sstFileManager = register(new SstFileManager(Env.getDefault()));
+        StoreBackgroundErrorListener backgroundErrorListener =
+                register(new StoreBackgroundErrorListener(diskSpaceMonitor::reportBackgroundError));
         DBOptions dbOptions = register(new DBOptions()
                 .setCreateIfMissing(true)
                 .setCreateMissingColumnFamilies(true)
                 .setMaxOpenFiles(MAX_OPEN_FILES)
-                .setWriteBufferManager(writeBufferManager));
+                .setWriteBufferManager(writeBufferManager)
+                .setSstFileManager(sstFileManager)
+                .setListeners(List.of(backgroundErrorListener)));
         BloomFilter deviceMsgFilter = register(new BloomFilter(BLOOM_BITS_PER_KEY));
         writeOptions = register(new WriteOptions().setSync(walSyncMode == WalSyncMode.ALWAYS));
 
@@ -326,8 +341,11 @@ public class RocksDbStore {
      * {@code always}. The body must not call {@link #close()}.
      * <p>
      * {@code writeClass} says what the batch does to the amount of data, classed as {@link StoreWriteClass} states.
+     * Below the free-space watermark a {@link StoreWriteClass#NEW_DATA} batch fails with
+     * {@link org.thingsboard.mqtt.broker.dao.store.StoreFullException} before the body runs.
      */
     public void write(StoreWriteClass writeClass, Consumer<StoreBatch> body) {
+        refuseNewDataBelowWatermark(writeClass);
         RocksDB database = acquire(OP_WRITE, null);
         try (WriteBatch writeBatch = new WriteBatch()) {
             StoreBatch batch = new StoreBatch(writeBatch, handles);
@@ -358,6 +376,7 @@ public class RocksDbStore {
     }
 
     public void put(StoreWriteClass writeClass, StoreColumnFamily cf, byte[] key, byte[] value) {
+        refuseNewDataBelowWatermark(writeClass);
         RocksDB database = acquire(OP_PUT, cf);
         try {
             database.put(handles.get(cf), writeOptions, key, value);
@@ -462,6 +481,33 @@ public class RocksDbStore {
             return writeOptions.sync();
         } finally {
             release();
+        }
+    }
+
+    private void refuseNewDataBelowWatermark(StoreWriteClass writeClass) {
+        if (writeClass == StoreWriteClass.NEW_DATA && diskSpaceMonitor.belowWatermark()) {
+            throw diskSpaceMonitor.storeFullException();
+        }
+    }
+
+    /**
+     * Whether the store takes writes again after a background error; the recovery callback of the
+     * {@link DiskSpaceMonitor}. Applies one batch to {@code meta} that puts and deletes a reserved key, so nothing is
+     * stored. A probe write, because RocksJava 9.10.0 has no {@code DB::Resume()} and its
+     * {@code onErrorRecoveryCompleted} fires for failed recoveries too: while RocksDB holds a background error it refuses
+     * every write. RocksDB recovers by itself (out of space through the SST file manager, retryable I/O errors through
+     * its auto-resume); an error it never recovers from keeps failing the probe and stays degraded until a restart.
+     */
+    boolean resumeAfterBackgroundError() {
+        try {
+            write(StoreWriteClass.UPDATE, batch -> {
+                batch.put(StoreColumnFamily.META, META_RESUME_PROBE_KEY, new byte[0]);
+                batch.delete(StoreColumnFamily.META, META_RESUME_PROBE_KEY);
+            });
+            return true;
+        } catch (StoreException e) {
+            log.debug("The store at {} does not take writes yet after a background error", properties.getPath(), e);
+            return false;
         }
     }
 

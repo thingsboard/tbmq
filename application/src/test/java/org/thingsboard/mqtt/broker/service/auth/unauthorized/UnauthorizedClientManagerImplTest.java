@@ -15,24 +15,32 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.unauthorized;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.google.common.util.concurrent.Futures;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.config.UnauthorizedClientsProperties;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
+import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.times;
@@ -68,11 +76,24 @@ class UnauthorizedClientManagerImplTest {
     private final String username = "user";
     private final String reason = "auth failed";
 
+    private final Logger logger = (Logger) LoggerFactory.getLogger(UnauthorizedClientManagerImpl.class);
+    private final ListAppender<ILoggingEvent> log = new ListAppender<>();
+
     @BeforeEach
     void setup() {
         String clientId = "test-client";
         when(state.getClientId()).thenReturn(clientId);
         when(properties.isEnabled()).thenReturn(true);
+        log.start();
+        logger.addAppender(log);
+        logger.setLevel(Level.DEBUG);
+    }
+
+    @AfterEach
+    void detachLog() {
+        logger.detachAppender(log);
+        logger.setLevel(null);
+        log.stop();
     }
 
     @Test
@@ -126,6 +147,33 @@ class UnauthorizedClientManagerImplTest {
                 .doesNotThrowAnyException();
 
         verify(unauthorizedClientService, times(1)).save(any(UnauthorizedClient.class));
+    }
+
+    @Test
+    void aFullDiskIsLoggedAtDebugWithoutTheTrace() {
+        // every refused CONNECT would log one; the disk monitor warns once when the store goes below the watermark
+        when(unauthorizedClientService.save(any())).thenReturn(Futures.immediateFailedFuture(new StoreFullException("no room")));
+
+        unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, username, true, reason);
+
+        assertThat(log.list).singleElement().satisfies(event -> {
+            assertThat(event.getLevel()).isEqualTo(Level.DEBUG);
+            assertThat(event.getThrowableProxy()).isNull();
+            assertThat(event.getFormattedMessage()).contains("test-client").contains("no room");
+        });
+    }
+
+    @Test
+    void anyOtherSaveFailureIsStillAWarningWithTheTrace() {
+        when(unauthorizedClientService.save(any())).thenReturn(Futures.immediateFailedFuture(new StoreException("write failed")));
+
+        unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, username, true, reason);
+
+        assertThat(log.list).singleElement().satisfies(event -> {
+            assertThat(event.getLevel()).isEqualTo(Level.WARN);
+            assertThat(event.getFormattedMessage()).startsWith("[test-client] Failed to persist unauthorized client! UnauthorizedClient(");
+            assertThat(event.getThrowableProxy().getMessage()).isEqualTo("write failed");
+        });
     }
 
     @Test

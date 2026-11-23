@@ -15,9 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.standalone.state;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -26,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubs
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dao.store.BrokerStateStores;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionChangesCallback;
@@ -60,8 +67,24 @@ class StandaloneSubscriptionStateTest {
     private StandaloneSubscriptionPersistenceService persistence;
     private StandaloneClientSubscriptionConsumer consumer;
 
+    private Logger serviceLogger;
+    private ListAppender<ILoggingEvent> logged;
+
+    @AfterEach
+    void detachAppender() {
+        serviceLogger.detachAppender(logged);
+        serviceLogger.setAdditive(true);
+        serviceLogger.setLevel(null);
+    }
+
     @BeforeEach
     void setUp() {
+        serviceLogger = (Logger) LoggerFactory.getLogger(StandaloneSubscriptionPersistenceService.class);
+        logged = new ListAppender<>();
+        logged.start();
+        serviceLogger.addAppender(logged);
+        serviceLogger.setAdditive(false);
+        serviceLogger.setLevel(Level.DEBUG);
         store = new InMemoryKeyValueStore();
         storeSpy = spy(store);
         BrokerStateStores stores = mock(BrokerStateStores.class);
@@ -162,6 +185,28 @@ class StandaloneSubscriptionStateTest {
 
         assertThat(store.get("c1")).isNull();
         verify(callback).onSuccess();
+    }
+
+    @Test
+    void aFullStoreFailsTheCallbackWithoutAnErrorOrAWarning() {
+        doThrow(new StoreFullException("Not enough free disk space")).when(storeSpy).put(eq("c1"), any());
+
+        persistence.persistClientSubscriptionsAsync("c1", Set.of(sub("a/b", 1)), callback);
+
+        verify(callback).onFailure(any(StoreFullException.class));
+        assertThat(logged.list).noneMatch(event -> event.getLevel().isGreaterOrEqual(Level.WARN));
+    }
+
+    @Test
+    void anyOtherStoreErrorIsStillLoggedAtErrorWithTheTrace() {
+        doThrow(new StoreException("put failed")).when(storeSpy).put(eq("c1"), any());
+
+        persistence.persistClientSubscriptionsAsync("c1", Set.of(sub("a/b", 1)), callback);
+
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.ERROR).singleElement().satisfies(event -> {
+            assertThat(event.getFormattedMessage()).isEqualTo("[c1] Failed to store client subscriptions");
+            assertThat(event.getThrowableProxy().getMessage()).isEqualTo("put failed");
+        });
     }
 
     @Test

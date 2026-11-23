@@ -22,6 +22,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.dao.clock.CleanupClockGuard;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -46,6 +47,7 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
     private final RetainedMsgPersistenceService retainedMsgPersistenceService;
     private final ServiceInfoProvider serviceInfoProvider;
     private final StatsManager statsManager;
+    private final CleanupClockGuard cleanupClockGuard;
 
     private ConcurrentMap<String, RetainedMsg> retainedMessagesMap;
     private volatile boolean initialized = false;
@@ -182,6 +184,10 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
 
     @Scheduled(fixedRateString = "${mqtt.retain-msg.expiry-processing-period-ms}")
     public void clearRetainedMessagesByMessageExpiryIntervals() {
+        if (!cleanupClockGuard.cleanupAllowed()) {
+            log.debug("Clearing expired retained messages is postponed: the clock is behind its last record");
+            return;
+        }
         if (retainedMessagesMap == null) {
             log.debug("Retained messages map is not yet initialized!");
             return;

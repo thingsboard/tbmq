@@ -48,6 +48,7 @@ import org.springframework.web.util.WebUtils;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.service.security.exception.AuthMethodNotSupportedException;
 import org.thingsboard.mqtt.broker.service.security.exception.JwtExpiredTokenException;
 import org.thingsboard.mqtt.broker.service.security.exception.UserPasswordExpiredException;
@@ -134,7 +135,9 @@ public class ThingsboardErrorResponseHandler extends ResponseEntityExceptionHand
             try {
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-                if (exception instanceof ThingsboardException) {
+                if (exception instanceof StoreFullException storeFullException) {
+                    handleStoreFullException(storeFullException, response);
+                } else if (exception instanceof ThingsboardException) {
                     ThingsboardException thingsboardException = (ThingsboardException) exception;
                     if (thingsboardException.getErrorCode() == ThingsboardErrorCode.SUBSCRIPTION_VIOLATION) {
                         handleSubscriptionException((ThingsboardException) exception, response);
@@ -181,6 +184,14 @@ public class ThingsboardErrorResponseHandler extends ResponseEntityExceptionHand
         HttpStatus status = errorCodeToStatus(errorCode);
         response.setStatus(status.value());
         JacksonUtil.writeValue(response.getWriter(), ThingsboardErrorResponse.of(thingsboardException.getMessage(), errorCode, status));
+    }
+
+    /**
+     * The standalone store refused the write because its volume is below the free-space watermark; the cluster edition
+     * never throws it.
+     */
+    private void handleStoreFullException(StoreFullException exception, HttpServletResponse response) throws IOException {
+        writeResponse(ThingsboardErrorResponse.of(exception.getMessage(), ThingsboardErrorCode.GENERAL, HttpStatus.INSUFFICIENT_STORAGE), response);
     }
 
     /**

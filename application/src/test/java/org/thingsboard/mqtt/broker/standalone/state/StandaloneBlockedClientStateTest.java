@@ -15,13 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.standalone.state;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.dao.store.BrokerStateStores;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
@@ -55,8 +62,22 @@ class StandaloneBlockedClientStateTest {
     private StandaloneBlockedClientProducerService producer;
     private StandaloneBlockedClientConsumerService consumer;
 
+    private Logger producerLogger;
+    private ListAppender<ILoggingEvent> logged;
+
+    @AfterEach
+    void detachAppender() {
+        producerLogger.detachAppender(logged);
+        producerLogger.setAdditive(true);
+    }
+
     @BeforeEach
     void setUp() {
+        producerLogger = (Logger) LoggerFactory.getLogger(StandaloneBlockedClientProducerService.class);
+        logged = new ListAppender<>();
+        logged.start();
+        producerLogger.addAppender(logged);
+        producerLogger.setAdditive(false);
         store = new InMemoryKeyValueStore();
         storeSpy = spy(store);
         BrokerStateStores stores = mock(BrokerStateStores.class);
@@ -105,6 +126,16 @@ class StandaloneBlockedClientStateTest {
 
         assertThat(store.get(blocked.getKey())).isNull();
         verify(callback).onSuccess();
+    }
+
+    @Test
+    void aFullStoreFailsTheCallbackWithoutAnErrorOrAWarning() {
+        doThrow(new StoreFullException("Not enough free disk space")).when(storeSpy).put(any(), any());
+
+        producer.persistBlockedClient("k", proto(new ClientIdBlockedClient("c1")), callback);
+
+        verify(callback).onFailure(any(StoreFullException.class));
+        assertThat(logged.list).noneMatch(event -> event.getLevel().isGreaterOrEqual(Level.WARN));
     }
 
     @Test

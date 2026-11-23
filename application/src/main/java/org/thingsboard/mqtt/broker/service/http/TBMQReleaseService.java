@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
@@ -36,6 +37,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.function.LongSupplier;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.LATEST_VERSION_AVAILABLE_TOPIC_NAME;
@@ -46,22 +48,56 @@ public class TBMQReleaseService extends AbstractServiceProvider {
 
     private static final String TBMQ_GITHUB_API_URL = "https://api.github.com/repos/thingsboard/tbmq/releases/latest";
     private static final int VERSION_CHECK_INTERVAL = 3 * 60 * 60;
+    private static final long BASE_WAIT_NANOS = TimeUnit.SECONDS.toNanos(VERSION_CHECK_INTERVAL);
+    private static final long MAX_WAIT_NANOS = TimeUnit.HOURS.toNanos(24);
+    // An attempt due within this much is made now. The ticks come BASE_WAIT apart at a fixed rate and nothing fires in
+    // between, so half a period absorbs an attempt or a tick that starts up to half a period late, and a backoff, a
+    // whole number of periods, is never cut short by a period.
+    private static final long SCHEDULE_SLACK_NANOS = BASE_WAIT_NANOS / 2;
 
     private final RetainedMsgListenerService retainedMsgListenerService;
+    private final boolean enabled;
+    // monotonic: a step of the wall clock neither stops nor hurries the check
+    private final LongSupplier nanoClock;
 
     private HttpClient client;
     private HttpRequest request;
 
+    // Touched only by the single scheduler thread (the method is never invoked concurrently with itself).
+    private long waitNanos = BASE_WAIT_NANOS;
+    private long nextAttemptAtNanos;
+    // false until the first attempt is done: nextAttemptAtNanos means nothing before it
+    private boolean attempted;
+
     @Autowired
     public TBMQReleaseService(SystemInfoService systemInfoService,
                               ServiceInfoProvider serviceInfoProvider,
-                              RetainedMsgListenerService retainedMsgListenerService) {
+                              RetainedMsgListenerService retainedMsgListenerService,
+                              @Value("${app.version-check.enabled:true}") boolean enabled) {
+        this(systemInfoService, serviceInfoProvider, retainedMsgListenerService, enabled, System::nanoTime);
+    }
+
+    TBMQReleaseService(SystemInfoService systemInfoService,
+                       ServiceInfoProvider serviceInfoProvider,
+                       RetainedMsgListenerService retainedMsgListenerService,
+                       boolean enabled,
+                       LongSupplier nanoClock) {
         super(systemInfoService, serviceInfoProvider);
         this.retainedMsgListenerService = retainedMsgListenerService;
+        this.enabled = enabled;
+        this.nanoClock = nanoClock;
+    }
+
+    void setHttpClient(HttpClient client) {
+        this.client = client;
     }
 
     @PostConstruct
     public void init() {
+        if (!enabled) {
+            log.info("The check for the latest TBMQ release is disabled (app.version-check.enabled=false).");
+            return;
+        }
         client = HttpClient.newHttpClient();
         request = HttpRequest.newBuilder()
                 .uri(URI.create(TBMQ_GITHUB_API_URL))
@@ -72,6 +108,11 @@ public class TBMQReleaseService extends AbstractServiceProvider {
 
     @Scheduled(initialDelay = 5, fixedRate = VERSION_CHECK_INTERVAL, timeUnit = TimeUnit.SECONDS)
     public void scheduleVersionCheck() {
+        if (!enabled) {
+            return;
+        }
+        // read once, before the request: a failure backs off from the attempt, however long the request took
+        long now = nanoClock.getAsLong();
         try {
             if (!isCurrentNodeShouldCheckAvailableVersion()) {
                 return;
@@ -79,24 +120,65 @@ public class TBMQReleaseService extends AbstractServiceProvider {
             if (!retainedMsgListenerService.isInitialized()) {
                 return;
             }
+            // overflow-safe: nano times are compared only by their difference
+            if (attempted && nextAttemptAtNanos - now > SCHEDULE_SLACK_NANOS) {
+                return;
+            }
             log.info("Executing get latest version of TBMQ release from GitHub.");
             HttpResponse<String> response = sendRequest();
             if (response.statusCode() == 200) {
                 String version = getVersion(response);
+                if (version == null) {
+                    backOff(now);
+                    return;
+                }
                 retainedMsgListenerService.cacheRetainedMsgAndPersist(LATEST_VERSION_AVAILABLE_TOPIC_NAME, newRetainedMsg(version));
 
                 log.info("Got latest version of TBMQ release from GitHub: {}", version);
+                waitNanos = BASE_WAIT_NANOS;
+                scheduleNextAttempt(now);
             } else {
-                log.error("Failed to get the latest release version, reason: {} {}", response.statusCode(), response.body());
+                log.debug("Failed to get the latest release version, reason: {} {}", response.statusCode(), response.body());
+                backOff(now);
             }
-        } catch (IOException | InterruptedException e) {
-            log.error("Failed to get the latest release version", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.debug("Interrupted while getting the latest release version", e);
+        } catch (IOException e) {
+            log.debug("Failed to get the latest release version", e);
+            backOff(now);
         }
     }
 
+    private void backOff(long now) {
+        waitNanos = Math.min(waitNanos * 2, MAX_WAIT_NANOS);
+        scheduleNextAttempt(now);
+    }
+
+    private void scheduleNextAttempt(long now) {
+        nextAttemptAtNanos = now + waitNanos;
+        attempted = true;
+    }
+
+    /**
+     * The version in a release body, or null when the body is not one (for example the HTML page of a proxy or a
+     * captive portal answering 200): a failed check, logged at debug here.
+     */
     private String getVersion(HttpResponse<String> response) {
-        JsonNode jsonNode = JacksonUtil.toJsonNode(response.body());
-        return jsonNode.get("tag_name").asText().replaceAll("v", "");
+        JsonNode jsonNode;
+        try {
+            jsonNode = JacksonUtil.toJsonNode(response.body());
+        } catch (IllegalArgumentException e) {
+            log.debug("Failed to get the latest release version, reason: {} with a body that is not JSON", response.statusCode());
+            return null;
+        }
+        JsonNode tagName = jsonNode == null ? null : jsonNode.get("tag_name");
+        if (tagName == null || !tagName.isTextual() || tagName.asText().isBlank()) {
+            log.debug("Failed to get the latest release version, reason: {} with a body without a textual tag_name",
+                    response.statusCode());
+            return null;
+        }
+        return tagName.asText().replaceAll("v", "");
     }
 
     private HttpResponse<String> sendRequest() throws IOException, InterruptedException {

@@ -40,6 +40,7 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreColumnFamily;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 import org.thingsboard.mqtt.broker.dao.rocksdb.timeseries.ClientLatestStatsBuffer;
 import org.thingsboard.mqtt.broker.dao.rocksdb.timeseries.RocksDbAggregationTimeseriesDao;
 import org.thingsboard.mqtt.broker.dao.rocksdb.timeseries.RocksDbKeyDictionaryDao;
@@ -238,7 +239,7 @@ public class RocksDbTimeseriesContractTest extends AbstractTimeseriesContractTes
     private static RocksDbStore openStore(String path) {
         StoreProperties properties = new StoreProperties();
         properties.setPath(path);
-        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0));
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties));
         store.open();
         return store;
     }

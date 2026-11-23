@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.exception;
 
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
+
 /**
  * Classifies the failure a publish callback gets, so that every caller of the publish queue handles the same failure
  * the same way.
@@ -25,11 +27,12 @@ public final class PublishFailures {
     }
 
     /**
-     * @return {@code true} if the broker refused the publish because it is at its limit; an expected outcome under
-     * load, logged without a stack trace
+     * @return {@code true} if the broker refused the publish because it is at its limit: its publish pipeline is full,
+     * or the standalone store refused the new data because its volume is below the free-space watermark (the cluster
+     * edition never refuses it); an expected outcome under load, logged without a stack trace
      */
     public static boolean isLimitExceeded(Throwable t) {
-        return t instanceof PublishLimitExceededException;
+        return t instanceof PublishLimitExceededException || t instanceof StoreFullException;
     }
 
     /**

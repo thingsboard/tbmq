@@ -36,13 +36,15 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.StoreColumnFamily;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreWriteClass;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.DiskSpaceMonitor;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.FreeSpaceProbe;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
-import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,11 +63,18 @@ class StatsWriteSkipperTest {
     @TempDir
     Path dir;
 
+    private static final FreeSpaceProbe.Space ROOMY = new FreeSpaceProbe.Space(Long.MAX_VALUE, Long.MAX_VALUE);
+    private static final FreeSpaceProbe.Space FULL = new FreeSpaceProbe.Space(0, Long.MAX_VALUE);
+
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
     private final AtomicLong nanos = new AtomicLong();
+    private final AtomicBoolean diskFull = new AtomicBoolean();
     private final Logger logger = (Logger) LoggerFactory.getLogger(StatsWriteSkipper.class);
     private final ListAppender<ILoggingEvent> logged = new ListAppender<>();
+    private final Logger monitorLogger = (Logger) LoggerFactory.getLogger(DiskSpaceMonitor.class);
+    private final ListAppender<ILoggingEvent> monitorLogged = new ListAppender<>();
 
+    private DiskSpaceMonitor monitor;
     private RocksDbStore store;
     private RocksDbKeyDictionaryDao dictionary;
     private StatsWriteSkipper skipper;
@@ -77,7 +86,9 @@ class StatsWriteSkipperTest {
     void open() {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
-        store = spy(new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0)));
+        monitor = new DiskSpaceMonitor(properties, path -> diskFull.get() ? FULL : ROOMY);
+        // a spy only for the failure that is not a full store; the others meet the store's own refusal
+        store = spy(new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), monitor));
         store.open();
         dictionary = new RocksDbKeyDictionaryDao(store);
         skipper = new StatsWriteSkipper(new DefaultStatsFactory(registry), nanos::get);
@@ -90,8 +101,11 @@ class StatsWriteSkipperTest {
         dictionary.getOrSaveKeyId(CPU_KEY);
         logged.start();
         logger.addAppender(logged);
-        // the expected warnings go to the list only, not to the console
+        // the expected warnings go to the lists only, not to the console
         logger.setAdditive(false);
+        monitorLogged.start();
+        monitorLogger.addAppender(monitorLogged);
+        monitorLogger.setAdditive(false);
     }
 
     @AfterEach
@@ -99,6 +113,9 @@ class StatsWriteSkipperTest {
         logger.detachAppender(logged);
         logger.setAdditive(true);
         logged.stop();
+        monitorLogger.detachAppender(monitorLogged);
+        monitorLogger.setAdditive(true);
+        monitorLogged.stop();
         buffer.destroy();
         store.close();
     }
@@ -161,9 +178,10 @@ class StatsWriteSkipperTest {
         assertThat(skipped()).isZero();
     }
 
+    // the free space falls below the watermark: the store refuses new data by itself
     private void storeIsFull() {
-        doThrow(new StoreFullException("full")).when(store).put(any(), any(), any(), any());
-        doThrow(new StoreFullException("full")).when(store).write(any(), any());
+        diskFull.set(true);
+        monitor.check();
     }
 
     private double skipped() {

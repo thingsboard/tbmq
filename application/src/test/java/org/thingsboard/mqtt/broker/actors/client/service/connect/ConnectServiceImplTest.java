@@ -36,8 +36,10 @@ import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.QueuedMqttMessages;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.dao.store.StoreCapacity;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
@@ -48,6 +50,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.data.ClientSessionFailureReason;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.delivery.MqttPublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
@@ -71,11 +74,13 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_PROTOCOL_ERROR;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_QUOTA_EXCEEDED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_USE_ANOTHER_SERVER;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_TOPIC_NAME_INVALID;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -130,6 +135,10 @@ public class ConnectServiceImplTest {
     NodeDrainService nodeDrainService;
     @MockitoBean
     ConnectionAdmission connectionAdmission;
+    @MockitoBean
+    StoreCapacity storeCapacity;
+    @MockitoBean
+    ClientSessionCache clientSessionCache;
 
     @MockitoSpyBean
     ConnectServiceImpl connectService;
@@ -272,6 +281,122 @@ public class ConnectServiceImplTest {
         var connectionAcceptedMsgCaptor = ArgumentCaptor.forClass(ConnectionAcceptedMsg.class);
         verify(clientMqttActorManager, timeout(5000)).notifyConnectionAccepted(eq("testClient"), connectionAcceptedMsgCaptor.capture());
         Assert.assertArrayEquals(serverFinalMessage, connectionAcceptedMsgCaptor.getValue().getConnAckAuthData());
+    }
+
+    @Test
+    public void givenNewPersistentMqtt5SessionBelowTheWatermark_whenStartConnection_thenRefusedWithQuotaExceededBeforeTheSessionIsStored() throws Exception {
+        UUID sessionId = givenAConnectingClient("disk-full-5", MqttVersion.MQTT_5);
+        when(storeCapacity.belowWatermark()).thenReturn(true);
+
+        connectService.startConnection(actorState, mqtt5ConnectMsg(sessionId, "disk-full-5", false, 3600), false);
+
+        verify(mqttMessageGenerator).createMqttConnAckMsg(CONNECTION_REFUSED_QUOTA_EXCEEDED);
+        verify(integrationLifecycleEventPublisher).publishConnectionFailed(eq(ctx), any(), eq("CONNECTION_REFUSED_QUOTA_EXCEEDED"));
+        verify(clientMqttActorManager).disconnect(eq("disk-full-5"), any());
+        verify(clientSessionEventService, never()).requestConnection(any(), any());
+        verify(connectionAdmission, never()).tryAdmit(any());
+        verify(ctx, never()).setSessionInfo(any());
+    }
+
+    @Test
+    public void givenNewPersistentMqtt311SessionBelowTheWatermark_whenStartConnection_thenRefusedWith0x03() throws Exception {
+        UUID sessionId = givenAConnectingClient("disk-full-311", MqttVersion.MQTT_3_1_1);
+        when(storeCapacity.belowWatermark()).thenReturn(true);
+
+        // clean session 0
+        connectService.startConnection(actorState, getMqttConnectMsg(sessionId, "disk-full-311"), false);
+
+        verify(mqttMessageGenerator).createMqttConnAckMsg(CONNECTION_REFUSED_SERVER_UNAVAILABLE);
+        verify(clientSessionEventService, never()).requestConnection(any(), any());
+        verify(connectionAdmission, never()).tryAdmit(any());
+        verify(ctx, never()).setSessionInfo(any());
+    }
+
+    @Test
+    public void givenReturningPersistentSessionBelowTheWatermark_whenStartConnection_thenConnectionGoesOn() throws Exception {
+        UUID sessionId = givenAConnectingClient("disk-full-returning", MqttVersion.MQTT_5);
+        when(storeCapacity.belowWatermark()).thenReturn(true);
+        when(clientSessionCache.getClientSessionInfo("disk-full-returning")).thenReturn(storedSession("disk-full-returning", false, 3600));
+        givenTheClusterAcceptsTheConnection();
+
+        connectService.startConnection(actorState, mqtt5ConnectMsg(sessionId, "disk-full-returning", false, 3600), false);
+
+        verify(clientSessionEventService).requestConnection(any(), any());
+        verify(clientMqttActorManager, timeout(5000)).notifyConnectionAccepted(eq("disk-full-returning"), any());
+        verify(mqttMessageGenerator, never()).createMqttConnAckMsg(any());
+    }
+
+    @Test
+    public void givenAClientWhoseStoredSessionIsNotPersistentBelowTheWatermark_whenStartConnectionAsPersistent_thenRefused() throws Exception {
+        // a clean session is not in the store: the persistent one would be a new record there
+        UUID sessionId = givenAConnectingClient("disk-full-was-clean", MqttVersion.MQTT_5);
+        when(storeCapacity.belowWatermark()).thenReturn(true);
+        when(clientSessionCache.getClientSessionInfo("disk-full-was-clean")).thenReturn(storedSession("disk-full-was-clean", true, 0));
+
+        connectService.startConnection(actorState, mqtt5ConnectMsg(sessionId, "disk-full-was-clean", false, 3600), false);
+
+        verify(mqttMessageGenerator).createMqttConnAckMsg(CONNECTION_REFUSED_QUOTA_EXCEEDED);
+        verify(clientSessionEventService, never()).requestConnection(any(), any());
+    }
+
+    @Test
+    public void givenNonPersistentSessionBelowTheWatermark_whenStartConnection_thenConnectionGoesOnWithoutASessionLookup() throws Exception {
+        UUID sessionId = givenAConnectingClient("disk-full-clean", MqttVersion.MQTT_5);
+        when(storeCapacity.belowWatermark()).thenReturn(true);
+        givenTheClusterAcceptsTheConnection();
+
+        connectService.startConnection(actorState, mqtt5ConnectMsg(sessionId, "disk-full-clean", true, 0), false);
+
+        verify(clientSessionEventService).requestConnection(any(), any());
+        verify(mqttMessageGenerator, never()).createMqttConnAckMsg(any());
+        verify(clientSessionCache, never()).getClientSessionInfo(anyString());
+    }
+
+    @Test
+    public void givenNewPersistentSessionAboveTheWatermark_whenStartConnection_thenConnectionGoesOnWithoutASessionLookup() throws Exception {
+        // the cluster edition: its store capacity is never below the watermark, so a connect costs no extra lookup
+        UUID sessionId = givenAConnectingClient("roomy", MqttVersion.MQTT_5);
+        when(storeCapacity.belowWatermark()).thenReturn(false);
+        givenTheClusterAcceptsTheConnection();
+
+        connectService.startConnection(actorState, mqtt5ConnectMsg(sessionId, "roomy", false, 3600), false);
+
+        verify(clientSessionEventService).requestConnection(any(), any());
+        verify(mqttMessageGenerator, never()).createMqttConnAckMsg(any());
+        verify(clientSessionCache, never()).getClientSessionInfo(anyString());
+    }
+
+    private UUID givenAConnectingClient(String clientId, MqttVersion version) {
+        UUID sessionId = UUID.randomUUID();
+        when(actorState.getCurrentSessionId()).thenReturn(sessionId);
+        when(actorState.getClientId()).thenReturn(clientId);
+        when(ctx.getClientId()).thenReturn(clientId);
+        when(ctx.getSessionId()).thenReturn(sessionId);
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(ctx.getMqttVersion()).thenReturn(version);
+        return sessionId;
+    }
+
+    private void givenTheClusterAcceptsTheConnection() {
+        when(clientSessionEventService.requestConnection(any(), any()))
+                .thenReturn(Futures.immediateFuture(new ConnectionResponse(true, true, null)));
+    }
+
+    private static ClientSessionInfo storedSession(String clientId, boolean cleanStart, int sessionExpiryInterval) {
+        return ClientSessionInfo.builder()
+                .clientId(clientId)
+                .type(ClientType.DEVICE)
+                .cleanStart(cleanStart)
+                .sessionExpiryInterval(sessionExpiryInterval)
+                .build();
+    }
+
+    private static MqttConnectMsg mqtt5ConnectMsg(UUID sessionId, String clientId, boolean cleanStart, int sessionExpiryInterval) {
+        MqttProperties properties = new MqttProperties();
+        if (sessionExpiryInterval > 0) {
+            properties.add(new MqttProperties.IntegerProperty(MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value(), sessionExpiryInterval));
+        }
+        return new MqttConnectMsg(sessionId, clientId, cleanStart, 1000, null, properties);
     }
 
     @Test
