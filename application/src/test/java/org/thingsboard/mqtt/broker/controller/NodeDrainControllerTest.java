@@ -23,7 +23,6 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.drain.NodeDrainService;
 import org.thingsboard.mqtt.broker.service.drain.NodeDrainState;
 import org.thingsboard.mqtt.broker.service.drain.NodeDrainStatus;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.verify;
@@ -32,7 +31,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@EditionTest
 public class NodeDrainControllerTest extends AbstractControllerTest {
 
     @MockitoBean

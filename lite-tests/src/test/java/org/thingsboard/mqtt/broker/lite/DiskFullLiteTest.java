@@ -38,7 +38,6 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.controller.AbstractWebTest;
 import org.thingsboard.mqtt.broker.controller.MqttPublishController;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.dao.rocksdb.disk.DiskSpaceMonitor;
 import org.thingsboard.mqtt.broker.dao.rocksdb.disk.FreeSpaceProbe;
@@ -71,7 +70,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = DiskFullLiteTest.class, loader = SpringBootContextLoader.class)
-@EditionTest
 @TestPropertySource(properties = {
         "store.disk.min-free-percent=5",
         "store.disk.min-free-bytes=268435456"

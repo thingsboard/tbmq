@@ -33,7 +33,6 @@ import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
 import org.thingsboard.mqtt.broker.exception.TbRateLimitsException;
 import org.thingsboard.mqtt.broker.service.mqtt.publish.RestPublishOutcome;
 import org.thingsboard.mqtt.broker.service.mqtt.publish.RestPublishService;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.concurrent.TimeUnit;
 
@@ -51,7 +50,6 @@ import static org.assertj.core.api.Assertions.assertThat;
         "mqtt.rate-limits.total.config=5:600",
         "mqtt.rate-limits.total.block-size=1"
 })
-@EditionTest
 @RunWith(SpringRunner.class)
 public class TotalThroughputQuotaRestPublishIntegrationTestCase extends AbstractTotalThroughputQuotaIntegrationTest {
 

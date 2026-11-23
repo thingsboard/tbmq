@@ -27,7 +27,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -37,7 +36,6 @@ import java.util.concurrent.TimeoutException;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = LastWillAndTestamentIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@EditionTest
 @RunWith(SpringRunner.class)
 public class LastWillAndTestamentIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

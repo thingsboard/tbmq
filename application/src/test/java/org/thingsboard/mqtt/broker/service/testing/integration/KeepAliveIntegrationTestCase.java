@@ -32,7 +32,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.concurrent.TimeUnit;
 
@@ -43,7 +42,6 @@ import java.util.concurrent.TimeUnit;
         "mqtt.keep-alive.monitoring-delay-ms=200",
         "mqtt.keep-alive.max-keep-alive=600"
 })
-@EditionTest
 @RunWith(SpringRunner.class)
 public class KeepAliveIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

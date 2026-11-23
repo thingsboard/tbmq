@@ -36,7 +36,6 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.http.HttpMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.service.auth.providers.http.HttpAuthClient;
 import org.thingsboard.mqtt.broker.service.auth.providers.http.HttpMqttClientAuthProvider;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.service.system.SystemSettingsNotificationService;
@@ -54,7 +53,6 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = HttpAuthAdmissionIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@EditionTest
 @RunWith(SpringRunner.class)
 public class HttpAuthAdmissionIntegrationTestCase extends AbstractPubSubIntegrationTest {
     @Autowired

@@ -48,7 +48,6 @@ import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubsc
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
@@ -63,7 +62,6 @@ import static org.junit.Assert.assertTrue;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = AppSharedSubscriptionsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@EditionTest
 @RunWith(SpringRunner.class)
 public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

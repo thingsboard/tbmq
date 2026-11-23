@@ -26,7 +26,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
@@ -37,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 @TestPropertySource(properties = {
         "listener.tcp.netty.max_payload_size=50"
 })
-@EditionTest
 @RunWith(SpringRunner.class)
 public class PacketTooLargeIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

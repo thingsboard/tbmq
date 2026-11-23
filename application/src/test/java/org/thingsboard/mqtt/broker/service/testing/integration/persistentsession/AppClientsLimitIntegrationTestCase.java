@@ -36,7 +36,6 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.concurrent.TimeUnit;
 
@@ -46,7 +45,6 @@ import java.util.concurrent.TimeUnit;
 @TestPropertySource(properties = {
         "mqtt.application-clients-limit=1"
 })
-@EditionTest
 @RunWith(SpringRunner.class)
 public class AppClientsLimitIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

@@ -36,14 +36,12 @@ import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = ClientSessionCredentialsIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@EditionTest
 @RunWith(SpringRunner.class)
 public class ClientSessionCredentialsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

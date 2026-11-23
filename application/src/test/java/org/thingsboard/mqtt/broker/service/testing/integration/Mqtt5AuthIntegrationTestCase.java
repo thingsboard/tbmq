@@ -55,7 +55,6 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramTestClient;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramTestClient.Mechanism;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -74,7 +73,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = Mqtt5AuthIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@EditionTest
 @RunWith(SpringRunner.class)
 public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

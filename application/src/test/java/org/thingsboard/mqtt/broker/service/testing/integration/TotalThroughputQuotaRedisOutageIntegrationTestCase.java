@@ -36,7 +36,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.testcontainers.containers.GenericContainer;
 import org.thingsboard.mqtt.broker.common.stats.StatsType;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 import org.thingsboard.mqtt.broker.testsupport.cluster.ClusterEditionTestInfrastructure;
 
 import java.nio.charset.StandardCharsets;
@@ -67,7 +66,6 @@ import java.util.concurrent.atomic.AtomicInteger;
         // surfacing to a real client, and recovery once the container answers again.
         "mqtt.rate-limits.total.degraded-grace-ms=0"
 })
-@EditionTest
 @RunWith(SpringRunner.class)
 public class TotalThroughputQuotaRedisOutageIntegrationTestCase extends AbstractTotalThroughputQuotaIntegrationTest {
 

@@ -29,7 +29,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +61,6 @@ import static org.junit.Assert.assertTrue;
         "mqtt.rate-limits.total.config=100:600",
         "mqtt.rate-limits.total.block-size=4"
 })
-@EditionTest
 @RunWith(SpringRunner.class)
 public class TotalThroughputQuotaFanOutIntegrationTestCase extends AbstractTotalThroughputQuotaIntegrationTest {
 

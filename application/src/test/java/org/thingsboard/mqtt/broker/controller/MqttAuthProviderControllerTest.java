@@ -30,7 +30,6 @@ import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderC
 import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.util.MqttAuthProviderUtil;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +38,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Slf4j
-@EditionTest
 public class MqttAuthProviderControllerTest extends AbstractControllerTest {
 
     @Before

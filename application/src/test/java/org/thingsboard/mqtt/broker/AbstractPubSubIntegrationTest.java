@@ -45,6 +45,7 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.service.mqtt.auth.MqttAuthProviderManagerService;
 import org.thingsboard.mqtt.broker.service.testing.integration.executor.ExternalExecutorService;
+import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 import org.thingsboard.mqtt.broker.testsupport.EditionTestInfrastructure;
 
 import java.nio.charset.StandardCharsets;
@@ -52,6 +53,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
+@EditionTest
 @ActiveProfiles("test")
 @ComponentScan({"org.thingsboard.mqtt.broker"})
 @WebAppConfiguration

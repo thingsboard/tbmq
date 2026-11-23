@@ -48,7 +48,6 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwksVerifierConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 import org.wiremock.integrations.testcontainers.WireMockContainer;
 
 import java.nio.charset.StandardCharsets;
@@ -62,7 +61,6 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = JwtJwksAuthorizationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@EditionTest
 @RunWith(SpringRunner.class)
 public class JwtJwksAuthorizationIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

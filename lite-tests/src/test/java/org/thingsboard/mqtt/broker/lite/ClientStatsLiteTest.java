@@ -33,7 +33,6 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.timeseries.ClientLatestStatsBuffe
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClientImpl;
 import org.thingsboard.mqtt.broker.service.test.util.RestartingSpringJUnit4ClassRunner;
 import org.thingsboard.mqtt.broker.service.test.util.SpringRestarter;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -49,7 +48,6 @@ import static org.awaitility.Awaitility.await;
  */
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = ClientStatsLiteTest.class, loader = SpringBootContextLoader.class)
-@EditionTest
 @RunWith(RestartingSpringJUnit4ClassRunner.class)
 public class ClientStatsLiteTest extends AbstractControllerTest {
 

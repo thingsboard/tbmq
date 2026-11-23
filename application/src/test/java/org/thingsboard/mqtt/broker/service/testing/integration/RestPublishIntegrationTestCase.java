@@ -33,7 +33,6 @@ import org.thingsboard.mqtt.broker.dto.RestPublishProperties;
 import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
 import org.thingsboard.mqtt.broker.dto.RestPublishResponse;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -50,7 +49,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * subscription matching and delivery to a Paho MQTT 5 subscriber.
  */
 @Slf4j
-@EditionTest
 public class RestPublishIntegrationTestCase extends AbstractControllerTest {
 
     private static final String PUBLISH_URL = MqttPublishController.PUBLISH_PATH;

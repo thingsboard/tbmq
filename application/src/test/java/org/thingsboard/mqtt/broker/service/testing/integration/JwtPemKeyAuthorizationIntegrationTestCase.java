@@ -42,7 +42,6 @@ import org.thingsboard.mqtt.broker.common.data.security.jwt.AlgorithmBasedVerifi
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.PemKeyAlgorithmConfiguration;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
@@ -59,7 +58,6 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = JwtPemKeyAuthorizationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@EditionTest
 @RunWith(SpringRunner.class)
 public class JwtPemKeyAuthorizationIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

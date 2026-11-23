@@ -40,7 +40,6 @@ import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
 import org.thingsboard.mqtt.broker.exception.PublishLimitExceededException;
 import org.thingsboard.mqtt.broker.exception.TbRateLimitsException;
 import org.thingsboard.mqtt.broker.service.mqtt.publish.RestPublishService;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -61,7 +60,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@EditionTest
 @TestPropertySource(properties = {
         "server.rest_publish.max_payload_size=" + MqttPublishControllerTest.MAX_PAYLOAD_SIZE,
         "server.rest_publish.timeout_ms=500",

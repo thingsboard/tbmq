@@ -47,7 +47,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxS
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.Arrays;
 import java.util.List;
@@ -60,7 +59,6 @@ import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNa
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = AppPersistedSessionIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@EditionTest
 @RunWith(SpringRunner.class)
 public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegrationTest {
 

@@ -37,7 +37,6 @@ import org.thingsboard.mqtt.broker.dao.user.UserDao;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionDao;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionDao;
 import org.thingsboard.mqtt.broker.service.security.auth.rest.LoginRequest;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.List;
 
@@ -49,7 +48,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * The real defaults of a fresh Lite install: without the test step that brings the data to {@code system-data.sql},
  * the store holds what the first-start seed wrote, and the broker and the REST API behave as on a new install.
  */
-@EditionTest
 @TestPropertySource(properties = "lite.test.system-data.enabled=false")
 public class FirstStartLiteTest extends AbstractControllerTest {
 

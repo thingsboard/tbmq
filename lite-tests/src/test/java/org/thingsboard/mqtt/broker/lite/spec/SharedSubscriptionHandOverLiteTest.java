@@ -26,7 +26,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.io.IOException;
 
@@ -42,7 +41,6 @@ import static org.awaitility.Awaitility.await;
  */
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = SharedSubscriptionHandOverLiteTest.class, loader = SpringBootContextLoader.class)
-@EditionTest
 @RunWith(SpringRunner.class)
 public class SharedSubscriptionHandOverLiteTest extends AbstractLiteSpecCase {
 

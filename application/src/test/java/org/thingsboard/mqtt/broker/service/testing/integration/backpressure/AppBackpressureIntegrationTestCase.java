@@ -48,7 +48,6 @@ import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubsc
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
-import org.thingsboard.mqtt.broker.testsupport.EditionTest;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -63,7 +62,6 @@ import static org.assertj.core.api.Assertions.assertThat;
         "listener.write_buffer_high_water_mark=64",
         "listener.write_buffer_low_water_mark=32"
 })
-@EditionTest
 @RunWith(SpringRunner.class)
 public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
