@@ -107,7 +107,11 @@ public class StandaloneBackupControllerTest extends AbstractControllerTest {
                 .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/gzip"))
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
                         matchesPattern("attachment; filename=\"tbmq-lite-backup-\\d{8}-\\d{6}\\.tar\\.gz\"")))
+                .andExpect(header().string("x-filename", matchesPattern("tbmq-lite-backup-\\d{8}-\\d{6}\\.tar\\.gz")))
                 .andReturn();
+        // the same name in both headers
+        assertThat(result.getResponse().getHeader(HttpHeaders.CONTENT_DISPOSITION))
+                .contains("filename=\"" + result.getResponse().getHeader("x-filename") + "\"");
 
         byte[] firstBlock;
         try (InputStream tar = new GZIPInputStream(new ByteArrayInputStream(result.getResponse().getContentAsByteArray()))) {

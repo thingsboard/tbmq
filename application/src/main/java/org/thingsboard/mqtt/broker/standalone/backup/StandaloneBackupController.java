@@ -62,6 +62,8 @@ public class StandaloneBackupController extends BaseController {
     // a timeout of 0 or less is none for the servlet container; -1 is also "none" for MockMvc
     static final long NO_ASYNC_TIMEOUT = -1;
 
+    private static final String FILENAME_HEADER = "x-filename";
+
     private static final MediaType APPLICATION_GZIP = MediaType.parseMediaType("application/gzip");
     private static final DateTimeFormatter FILE_TIMESTAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneOffset.UTC);
     private static final Object INTERCEPTOR_KEY = StandaloneBackupController.class.getName() + ".reservation";
@@ -94,6 +96,8 @@ public class StandaloneBackupController extends BaseController {
         return ResponseEntity.ok()
                 .contentType(APPLICATION_GZIP)
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(fileName).build().toString())
+                // the name the UI's download helper reads
+                .header(FILENAME_HEADER, fileName)
                 .body(body);
     }
 
