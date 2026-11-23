@@ -32,7 +32,7 @@ import java.util.TreeMap;
  * Brings a store from its stored schema version up to the version of this build. A store already at that version is
  * left alone, but for a record of an unfinished upgrade to a later schema, which is removed. An older one gets one
  * checkpoint {@code pre-upgrade-<from>-<to>} under {@code store.backups.path} before any step runs, and the name of that
- * checkpoint is recorded in the store's meta; then each step runs in version order and the stored version is bumped
+ * checkpoint is recorded in the store's meta right after it; then each step runs in version order and the stored version is bumped
  * after each, so a store from several versions back runs every step and a crash before a bump reruns only that step.
  * The last bump removes the record in the same write. After it the oldest checkpoints beyond {@code store.backups.keep}
  * are deleted; the checkpoint of this run, the first checkpoint of the upgrade and a checkpoint directory the store runs
@@ -42,8 +42,8 @@ import java.util.TreeMap;
  * instead of taking a new one: the store may already hold some of a step's writes by then, so only the first
  * checkpoint is a copy of the store before the upgrade, and repeated failed starts add no checkpoints. It resumes only
  * when the store is provably unchanged since the record was last written: the record carries the latest sequence
- * number of the store, which every write advances, as of its own write (right after the checkpoint, with every
- * intermediate bump, and when a step throws, an {@link Error} included), and the store must still be at it. So a step
+ * number of the store, which every write advances, as of its own write (with the checkpoint, with every intermediate
+ * bump, and when a step throws, an {@link Error} included), and the store must still be at it. So a step
  * that throws resumes with the first checkpoint on the next start, while a process killed in the middle of a step takes
  * a new checkpoint on the next start: it cannot prove the store unchanged. A new checkpoint is also taken when another
  * build wrote to the store since (an older build ignores the record), when the recorded checkpoint is gone and when the
@@ -54,6 +54,13 @@ import java.util.TreeMap;
  * run whatever {@code store.backups.keep} says, so the only copy of the store from before the upgrade outlives any
  * number of starts that could not resume; a checkpoint taken by one of those starts is an ordinary checkpoint once a
  * later start replaces it.
+ * <p>
+ * A start that cannot resume writes the record naming its new checkpoint before it takes it, and taking a checkpoint
+ * writes nothing to the store. So a start killed right after the checkpoint resumes with it, and one killed while it is
+ * taken finds it gone and takes another, the origin still carried forward; were the record written afterwards, such
+ * a kill would lose the origin. A checkpoint taken this way holds the record naming itself, at its own sequence
+ * number, which is harmless: a store restored from it resumes with it and keeps the origin protected. The first
+ * checkpoint of an upgrade is taken before there is a record, so it never holds one.
  * <p>
  * A step outside the schemas this build migrates, two steps from one schema, a missing step, a missing backups path,
  * a failed checkpoint and a failed step stop the open; the store stays at the last version reached. A failed deletion
@@ -158,10 +165,11 @@ public class StoreMigrationRunner {
     }
 
     /**
-     * How a start goes on with an upgrade: the checkpoint to resume with, or {@code null} to take a new one, and the
-     * origin of the upgrade, or {@code null} when the new checkpoint is the origin.
+     * How a start goes on with an upgrade: the checkpoint to resume with, or {@code null} to take a new one; the origin
+     * of the upgrade, or {@code null} when the new checkpoint is the origin; and whether the start abandons an
+     * unfinished upgrade it cannot resume.
      */
-    private record Checkpoints(Path resume, Path origin) {
+    private record Checkpoints(Path resume, Path origin, boolean abandoned) {
     }
 
     private final List<StoreMigrationStep> steps;
@@ -205,11 +213,18 @@ public class StoreMigrationRunner {
         Path origin = checkpoints.origin();
         if (checkpoint == null) {
             checkpoint = StoreCheckpoints.preUpgradeDir(backups, from, targetVersion, clock);
-            target.checkpoint(checkpoint);
             if (origin == null) {
                 origin = checkpoint;
             }
-            target.recordUpgradeCheckpoint(checkpoint.getFileName().toString(), origin.getFileName().toString());
+            if (checkpoints.abandoned()) {
+                // recorded first: a start killed while the checkpoint is taken finds it gone and keeps the origin
+                target.recordUpgradeCheckpoint(checkpoint.getFileName().toString(), origin.getFileName().toString());
+                target.checkpoint(checkpoint);
+            } else {
+                // the first checkpoint of the upgrade holds no record
+                target.checkpoint(checkpoint);
+                target.recordUpgradeCheckpoint(checkpoint.getFileName().toString(), origin.getFileName().toString());
+            }
             log.info("Took the pre-upgrade checkpoint {}", checkpoint);
         }
         String checkpointName = checkpoint.getFileName().toString();
@@ -279,14 +294,13 @@ public class StoreMigrationRunner {
 
     /**
      * How this start goes on with an unfinished upgrade of {@code target}. It resumes with the checkpoint the record
-     * names when that is still there and the store is at the sequence number the record carries. Otherwise it takes a
-     * new checkpoint, and the record is removed first, so that the new checkpoint does not hold it. The origin is the
-     * one the record names when that is still there.
+     * names when that is still there and the store is at the sequence number the record carries. Otherwise it abandons
+     * that checkpoint and takes a new one. The origin is the one the record names when that is still there.
      */
     private static Checkpoints checkpoints(Target target, Path backups) {
         byte[] stored = target.upgradeRecord();
         if (stored == null) {
-            return new Checkpoints(null, null);
+            return new Checkpoints(null, null, false);
         }
         UpgradeRecord record = UpgradeRecord.decode(stored);
         Path origin = null;
@@ -309,7 +323,7 @@ public class StoreMigrationRunner {
                 if (latest == record.sequenceNumber()) {
                     log.info("Resuming the unfinished upgrade of the store at {} with its pre-upgrade checkpoint {}",
                             target.path(), checkpoint);
-                    return new Checkpoints(checkpoint, origin == null ? checkpoint : origin);
+                    return new Checkpoints(checkpoint, origin == null ? checkpoint : origin, false);
                 }
                 log.warn("The store at {} was written since its unfinished upgrade (another build ran on it, or the "
                         + "upgrade was interrupted mid-step): it is at sequence number {}, the record of the upgrade at {}; "
@@ -318,8 +332,7 @@ public class StoreMigrationRunner {
                         target.path(), latest, record.sequenceNumber(), checkpoint, originFate(origin, record));
             }
         }
-        target.removeUpgradeRecord();
-        return new Checkpoints(null, origin);
+        return new Checkpoints(null, origin, true);
     }
 
     /**

@@ -177,9 +177,12 @@ class StoreMigrationRunnerTest {
             runner(List.of(new RecordingStep(1, store)), 2).run(store);
 
             Path taken = backups().resolve("pre-upgrade-1-2");
-            assertThat(store.events).containsExactly("unmark", "checkpoint pre-upgrade-1-2", "mark pre-upgrade-1-2", "step 1", "finish 2");
-            // the new checkpoint does not hold the stale record
-            assertThat(store.checkpoints).singleElement().satisfies(checkpoint -> assertThat(checkpoint.data()).isEmpty());
+            assertThat(store.events).containsExactly("mark pre-upgrade-1-2", "checkpoint pre-upgrade-1-2", "step 1", "finish 2");
+            // the new checkpoint holds the record naming itself instead of the stale one
+            assertThat(store.checkpoints).singleElement().satisfies(checkpoint -> {
+                assertThat(checkpoint.data()).containsOnlyKeys(key(StoreColumnFamily.META, UPGRADE_CHECKPOINT));
+                assertHoldsItsOwnRecord(checkpoint, "pre-upgrade-1-2");
+            });
             assertThat(store.recordedCheckpoint()).isNull();
             assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
                     .singleElement()
@@ -203,11 +206,11 @@ class StoreMigrationRunnerTest {
 
         Path first = backups().resolve("pre-upgrade-1-2");
         Path fresh = backups().resolve("pre-upgrade-1-2-20261123-101530");
-        assertThat(store.events).containsExactly("unmark", "checkpoint " + fresh.getFileName(),
-                "mark " + fresh.getFileName() + " from pre-upgrade-1-2", "step 1", "finish 2");
-        // the new checkpoint holds the older build's write and no record of the upgrade
-        assertThat(store.checkpoints.get(1).data()).containsKey(key(StoreColumnFamily.CLIENT_SESSION, RawStores.bytes("by-the-older-build")))
-                .doesNotContainKey(key(StoreColumnFamily.META, UPGRADE_CHECKPOINT));
+        assertThat(store.events).containsExactly("mark " + fresh.getFileName() + " from pre-upgrade-1-2",
+                "checkpoint " + fresh.getFileName(), "step 1", "finish 2");
+        // the new checkpoint holds the older build's write, and the record naming itself
+        assertThat(store.checkpoints.get(1).data()).containsKey(key(StoreColumnFamily.CLIENT_SESSION, RawStores.bytes("by-the-older-build")));
+        assertHoldsItsOwnRecord(store.checkpoints.get(1), "pre-upgrade-1-2");
         // with store.backups.keep=1 both stay: the first one until the upgrade finishes, and the one of this run
         assertThat(checkpointDirs()).containsExactlyInAnyOrder(first, fresh);
         assertThat(store.recordedCheckpoint()).isNull();
@@ -231,13 +234,65 @@ class StoreMigrationRunnerTest {
 
         Path first = backups().resolve("pre-upgrade-1-2");
         Path fresh = backups().resolve("pre-upgrade-1-2-20261123-101530");
-        assertThat(store.events).containsExactly("unmark", "checkpoint " + fresh.getFileName(),
-                "mark " + fresh.getFileName() + " from pre-upgrade-1-2", "step 1", "finish 2");
+        assertThat(store.events).containsExactly("mark " + fresh.getFileName() + " from pre-upgrade-1-2",
+                "checkpoint " + fresh.getFileName(), "step 1", "finish 2");
         assertThat(checkpointDirs()).containsExactlyInAnyOrder(first, fresh);
         assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
                 .singleElement()
                 .satisfies(event -> assertThat(event.getFormattedMessage()).contains("interrupted mid-step")
                         .contains("the first pre-upgrade checkpoint " + first + " is kept"));
+    }
+
+    @Test
+    void aStartKilledWhileTakingTheNewCheckpointKeepsTheFirstOneOnTheNextStart() {
+        FakeStore store = new FakeStore(1);
+        KilledStep step = new KilledStep(1, store, 1);
+        startKilled(store, List.of(step), 2);
+        store.killAtCheckpoint = CheckpointKill.DURING;
+        startKilled(store, List.of(step), 2);
+        Path first = backups().resolve("pre-upgrade-1-2");
+        Path fresh = backups().resolve("pre-upgrade-1-2-20261123-101530");
+        // the record names the new checkpoint, which was never completed
+        assertThat(store.recordedCheckpoint()).isEqualTo(fresh.getFileName().toString());
+        assertThat(fresh).doesNotExist();
+        store.events.clear();
+        logged.list.clear();
+
+        assertThat(runner(List.of(step), 2, 1).run(store)).isEqualTo(2);
+
+        // the name is free again, and the first checkpoint is still the origin
+        assertThat(store.events).containsExactly("mark " + fresh.getFileName() + " from pre-upgrade-1-2",
+                "checkpoint " + fresh.getFileName(), "step 1", "finish 2");
+        assertThat(checkpointDirs()).containsExactlyInAnyOrder(first, fresh);
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
+                .singleElement()
+                .satisfies(event -> assertThat(event.getFormattedMessage()).contains("is gone")
+                        .contains("the first pre-upgrade checkpoint " + first + " is kept"));
+    }
+
+    @Test
+    void aStartKilledRightAfterTheNewCheckpointResumesWithItOnTheNextStart() {
+        FakeStore store = new FakeStore(1);
+        KilledStep step = new KilledStep(1, store, 1);
+        startKilled(store, List.of(step), 2);
+        store.killAtCheckpoint = CheckpointKill.AFTER;
+        startKilled(store, List.of(step), 2);
+        Path first = backups().resolve("pre-upgrade-1-2");
+        Path fresh = backups().resolve("pre-upgrade-1-2-20261123-101530");
+        store.events.clear();
+        logged.list.clear();
+
+        assertThat(runner(List.of(step), 2, 1).run(store)).isEqualTo(2);
+
+        // no third checkpoint, and the first one is kept until the upgrade finishes
+        assertThat(store.events).containsExactly("step 1", "finish 2");
+        assertThat(store.checkpoints).extracting(Checkpoint::dir).containsExactly(first, fresh);
+        assertHoldsItsOwnRecord(store.checkpoints.get(1), "pre-upgrade-1-2");
+        assertThat(checkpointDirs()).containsExactlyInAnyOrder(first, fresh);
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN).isEmpty();
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.INFO)
+                .anySatisfy(event -> assertThat(event.getFormattedMessage()).contains("Resuming the unfinished upgrade")
+                        .contains(fresh.toString()));
     }
 
     @Test
@@ -302,7 +357,7 @@ class StoreMigrationRunnerTest {
         assertThat(runner(List.of(step), 2, 1).run(store)).isEqualTo(2);
 
         // the new checkpoint takes the free name and is the first one now; the second is an ordinary checkpoint
-        assertThat(store.events).containsExactly("unmark", "checkpoint pre-upgrade-1-2", "mark pre-upgrade-1-2", "step 1", "finish 2");
+        assertThat(store.events).containsExactly("mark pre-upgrade-1-2", "checkpoint pre-upgrade-1-2", "step 1", "finish 2");
         assertThat(checkpointDirs()).containsExactly(first);
         assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
                 .singleElement()
@@ -455,8 +510,11 @@ class StoreMigrationRunnerTest {
 
             runner(List.of(new RecordingStep(1, store)), 2).run(store);
 
-            assertThat(store.events).containsExactly("unmark", "checkpoint pre-upgrade-1-2", "mark pre-upgrade-1-2", "step 1", "finish 2");
-            assertThat(store.checkpoints).singleElement().satisfies(checkpoint -> assertThat(checkpoint.data()).isEmpty());
+            assertThat(store.events).containsExactly("mark pre-upgrade-1-2", "checkpoint pre-upgrade-1-2", "step 1", "finish 2");
+            assertThat(store.checkpoints).singleElement().satisfies(checkpoint -> {
+                assertThat(checkpoint.data()).containsOnlyKeys(key(StoreColumnFamily.META, UPGRADE_CHECKPOINT));
+                assertHoldsItsOwnRecord(checkpoint, "pre-upgrade-1-2");
+            });
             assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
                     .singleElement()
                     .satisfies(event -> assertThat(event.getFormattedMessage()).contains("malformed").contains(store.path()));
@@ -676,6 +734,14 @@ class StoreMigrationRunnerTest {
         return StoreCheckpoints.list(backups()).stream().map(CheckpointInfo::path).toList();
     }
 
+    /**
+     * {@code checkpoint} holds the record of the upgrade naming itself, with {@code origin}, at its own sequence number.
+     */
+    private static void assertHoldsItsOwnRecord(Checkpoint checkpoint, String origin) {
+        assertThat(checkpoint.record()).isEqualTo(new StoreMigrationRunner.UpgradeRecord(checkpoint.sequence(),
+                checkpoint.dir().getFileName().toString(), origin));
+    }
+
     private static byte[] concat(byte[]... parts) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         for (byte[] part : parts) {
@@ -760,7 +826,23 @@ class StoreMigrationRunnerTest {
 
     }
 
-    private record Checkpoint(Path dir, int version, Map<String, byte[]> data) {
+    /**
+     * A checkpoint the fake took: its directory, and the version, sequence number and data of the store then.
+     */
+    private record Checkpoint(Path dir, int version, long sequence, Map<String, byte[]> data) {
+
+        StoreMigrationRunner.UpgradeRecord record() {
+            byte[] value = data.get(key(StoreColumnFamily.META, UPGRADE_CHECKPOINT));
+            return value == null ? null : StoreMigrationRunner.UpgradeRecord.decode(value);
+        }
+
+    }
+
+    /**
+     * Where a checkpoint kills the process: while it is taken, leaving only RocksDB's staging directory, or right after.
+     */
+    private enum CheckpointKill {
+        DURING, AFTER
     }
 
     /**
@@ -775,6 +857,7 @@ class StoreMigrationRunnerTest {
         private int version;
         private long sequence;
         private boolean dead;
+        private CheckpointKill killAtCheckpoint;
         private RuntimeException checkpointFailure;
         private Throwable recordFailure;
 
@@ -870,13 +953,23 @@ class StoreMigrationRunnerTest {
             if (checkpointFailure != null) {
                 throw checkpointFailure;
             }
+            CheckpointKill kill = killAtCheckpoint;
+            killAtCheckpoint = null;
             try {
+                if (kill == CheckpointKill.DURING) {
+                    Files.createDirectories(target.resolveSibling(target.getFileName() + ".tmp"));
+                    kill();
+                    return;
+                }
                 Files.createDirectories(target);
             } catch (Exception e) {
                 throw new IllegalStateException(e);
             }
             events.add("checkpoint " + target.getFileName());
-            checkpoints.add(new Checkpoint(target, version, new HashMap<>(data)));
+            checkpoints.add(new Checkpoint(target, version, sequence, new HashMap<>(data)));
+            if (kill == CheckpointKill.AFTER) {
+                kill();
+            }
         }
 
         @Override

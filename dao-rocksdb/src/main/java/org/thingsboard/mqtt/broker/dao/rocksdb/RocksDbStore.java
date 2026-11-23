@@ -92,7 +92,7 @@ public class RocksDbStore {
     // while an upgrade is unfinished: the 8-byte big-endian latest sequence number of the store right after the last
     // write of this key, the directory name (UTF-8) of the checkpoint to resume with, one 0x00 byte and the directory
     // name (UTF-8) of the upgrade's first pre-upgrade checkpoint; removed by the last bump, and by a build that opens the
-    // store at its own schema
+    // store at its own schema. A checkpoint taken by a start that could not resume holds the record naming itself
     static final byte[] META_UPGRADE_CHECKPOINT_KEY = "upgrade_checkpoint".getBytes(StandardCharsets.UTF_8);
     // reserved: written and deleted in one batch, so it is never stored
     static final byte[] META_RESUME_PROBE_KEY = "resume_probe".getBytes(StandardCharsets.UTF_8);

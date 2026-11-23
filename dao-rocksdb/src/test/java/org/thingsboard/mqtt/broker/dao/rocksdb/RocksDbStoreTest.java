@@ -211,6 +211,14 @@ class RocksDbStoreTest {
         Path fresh = checkpoints.stream().filter(checkpoint -> !checkpoint.equals(first)).findFirst().orElseThrow();
         assertThat(readOnlyGet(fresh, StoreColumnFamily.CLIENT_SESSION, bytes("c1"))).isEqualTo(bytes("by the older build"));
         assertThat(readOnlyGet(first, StoreColumnFamily.CLIENT_SESSION, bytes("c1"))).isNull();
+        // recorded before it was taken: the new checkpoint opens and holds the record naming itself, at its own
+        // latest sequence number, with the first checkpoint as the origin
+        long freshSequence = withReadOnly(fresh, (db, handles) -> db.getLatestSequenceNumber());
+        assertThat(readOnlyGet(fresh, StoreColumnFamily.META, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY))
+                .isEqualTo(new StoreMigrationRunner.UpgradeRecord(freshSequence, fresh.getFileName().toString(),
+                        "pre-upgrade-1-2").encode());
+        // the first checkpoint was taken before the record
+        assertThat(readOnlyGet(first, StoreColumnFamily.META, RocksDbStore.META_UPGRADE_CHECKPOINT_KEY)).isNull();
         assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.WARN)
                 .singleElement()
                 .satisfies(event -> assertThat(event.getFormattedMessage()).contains("was written since its unfinished upgrade"));
@@ -260,6 +268,18 @@ class RocksDbStoreTest {
      * The value of {@code key} in the family {@code cf} of the store or checkpoint at {@code path}, opened read-only.
      */
     private static byte[] readOnlyGet(Path path, StoreColumnFamily cf, byte[] key) throws RocksDBException {
+        return withReadOnly(path, (db, handles) -> db.get(handles.get(cf.ordinal() + 1), key));
+    }
+
+    private interface ReadOnlyAction<T> {
+        T run(RocksDB db, List<ColumnFamilyHandle> handles) throws RocksDBException;
+    }
+
+    /**
+     * Opens the store or checkpoint at {@code path} read-only; the handles are the default family's, then one per
+     * {@link StoreColumnFamily} in ordinal order.
+     */
+    private static <T> T withReadOnly(Path path, ReadOnlyAction<T> action) throws RocksDBException {
         try (DBOptions dbOptions = new DBOptions(); ColumnFamilyOptions options = new ColumnFamilyOptions()) {
             List<ColumnFamilyDescriptor> descriptors = new ArrayList<>();
             descriptors.add(new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, options));
@@ -269,7 +289,7 @@ class RocksDbStoreTest {
             List<ColumnFamilyHandle> handles = new ArrayList<>();
             try (RocksDB raw = RocksDB.openReadOnly(dbOptions, path.toString(), descriptors, handles)) {
                 try {
-                    return raw.get(handles.get(cf.ordinal() + 1), key);
+                    return action.run(raw, handles);
                 } finally {
                     handles.forEach(ColumnFamilyHandle::close);
                 }
