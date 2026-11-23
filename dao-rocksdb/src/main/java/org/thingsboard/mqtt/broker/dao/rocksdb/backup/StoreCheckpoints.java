@@ -75,6 +75,13 @@ public final class StoreCheckpoints {
     }
 
     /**
+     * Whether {@code name} is the name of a checkpoint directory, as {@link #preUpgradeDir} names them.
+     */
+    public static boolean isCheckpointName(String name) {
+        return CHECKPOINT_NAME.matcher(name).matches();
+    }
+
+    /**
      * The checkpoint directories of {@code backupsPath}, newest first. A missing directory has none.
      */
     public static List<CheckpointInfo> list(Path backupsPath) {
@@ -83,7 +90,7 @@ public final class StoreCheckpoints {
         }
         try (Stream<Path> entries = Files.list(backupsPath)) {
             return entries
-                    .filter(path -> CHECKPOINT_NAME.matcher(path.getFileName().toString()).matches())
+                    .filter(path -> isCheckpointName(path.getFileName().toString()))
                     .filter(Files::isDirectory)
                     .map(StoreCheckpoints::describe)
                     .sorted(NEWEST_FIRST)

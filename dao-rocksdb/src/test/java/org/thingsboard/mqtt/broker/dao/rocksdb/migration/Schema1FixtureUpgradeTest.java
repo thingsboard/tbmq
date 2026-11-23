@@ -34,8 +34,11 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.StoreColumnFamily;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMeta;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
+import org.thingsboard.mqtt.broker.dao.rocksdb.backup.CheckpointInfo;
+import org.thingsboard.mqtt.broker.dao.rocksdb.backup.StoreCheckpoints;
 import org.thingsboard.mqtt.broker.dao.rocksdb.devicemsg.DeviceMsgEntryCodec;
 import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
+import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -57,6 +60,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * A copy of the committed schema 1 store, written by the schema 1 code, opened with this build: the migration brings it
@@ -129,6 +133,48 @@ class Schema1FixtureUpgradeTest {
         assertThat(opened.get(StoreColumnFamily.META, utf8("install_id"))).isEqualTo(utf8(FIXTURE_INSTALL_ID.toString()));
         // the seed is the application's: the store migration does not write it
         assertThat(opened.get(StoreColumnFamily.META, utf8("seeded"))).isNull();
+        // removed by the last bump of the upgrade
+        assertThat(opened.get(StoreColumnFamily.META, utf8("upgrade_checkpoint"))).isNull();
+    }
+
+    @Test
+    void failedStartsResumeWithTheCheckpointOfTheFirstAndAFinishedUpgradeRemovesItsRecord() {
+        StoreMigrationStep partlyWritingThenFailing = new StoreMigrationStep() {
+            @Override
+            public int fromVersion() {
+                return 1;
+            }
+
+            @Override
+            public void apply(MigrationContext ctx) {
+                ctx.put(StoreColumnFamily.CLIENT_SESSION, utf8("partly-migrated"), utf8("by a failed step"));
+                throw new IllegalStateException("boom");
+            }
+        };
+        for (int start = 0; start < 3; start++) {
+            assertThatThrownBy(() -> open(List.of(partlyWritingThenFailing)))
+                    .isInstanceOf(StoreException.class)
+                    .hasMessageContaining("boom");
+            store = null;
+            // the directory name of the checkpoint, in UTF-8
+            assertThat(meta(upgraded, "upgrade_checkpoint")).isEqualTo(utf8("pre-upgrade-1-2"));
+            assertThat(meta(upgraded, "schema_version")).isEqualTo(new byte[]{0, 0, 0, 1});
+        }
+
+        RocksDbStore opened = open();
+
+        assertThat(opened.meta().schemaVersion()).isEqualTo(2);
+        assertThat(opened.get(StoreColumnFamily.META, utf8("upgrade_checkpoint"))).isNull();
+        assertThat(opened.get(StoreColumnFamily.CLIENT_SESSION, utf8("partly-migrated"))).isEqualTo(utf8("by a failed step"));
+        Path checkpoint = backups.resolve("pre-upgrade-1-2");
+        assertThat(StoreCheckpoints.list(backups)).extracting(CheckpointInfo::path).containsExactly(checkpoint);
+        // the store before any step wrote, without the record of the upgrade
+        Map<String, List<String>> fixture = readOnly(pristine);
+        Map<String, List<String>> checkpointed = readOnly(checkpoint);
+        assertThat(checkpointed.get("meta")).isEqualTo(fixture.get("meta"));
+        for (StoreColumnFamily cf : BROKER_STATE.keySet()) {
+            assertThat(checkpointed.get(cf.columnFamilyName())).as(cf.columnFamilyName()).isEqualTo(fixture.get(cf.columnFamilyName()));
+        }
     }
 
     @Test
@@ -227,11 +273,15 @@ class Schema1FixtureUpgradeTest {
     }
 
     private RocksDbStore open() {
+        return open(List.of(new Schema1To2Step()));
+    }
+
+    private RocksDbStore open(List<StoreMigrationStep> steps) {
         StoreProperties properties = new StoreProperties();
         properties.setPath(upgraded.toString());
         properties.getBackups().setPath(backups.toString());
         store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0),
-                TestDiskSpaceMonitors.roomy(properties), List.of(new Schema1To2Step()));
+                TestDiskSpaceMonitors.roomy(properties), steps);
         store.open();
         return store;
     }

@@ -89,6 +89,8 @@ public class RocksDbStore {
     static final byte[] META_INSTALL_ID_KEY = "install_id".getBytes(StandardCharsets.UTF_8);
     static final byte[] META_JWT_SIGNING_KEY = "jwt_signing_key".getBytes(StandardCharsets.UTF_8);
     static final int JWT_SIGNING_KEY_BYTES = 64;
+    // the directory name (UTF-8) of the pre-upgrade checkpoint while an upgrade is unfinished; removed by its last bump
+    static final byte[] META_UPGRADE_CHECKPOINT_KEY = "upgrade_checkpoint".getBytes(StandardCharsets.UTF_8);
     // reserved: written and deleted in one batch, so it is never stored
     static final byte[] META_RESUME_PROBE_KEY = "resume_probe".getBytes(StandardCharsets.UTF_8);
 
@@ -263,6 +265,32 @@ public class RocksDbStore {
         @Override
         public void bumpSchemaVersion(int version) {
             put(StoreColumnFamily.META, META_SCHEMA_VERSION_KEY, Ints.toByteArray(version));
+        }
+
+        @Override
+        public void finishUpgrade(int version) {
+            try (WriteBatch batch = new WriteBatch(); WriteOptions synced = new WriteOptions().setSync(true)) {
+                batch.put(handles.get(StoreColumnFamily.META), META_SCHEMA_VERSION_KEY, Ints.toByteArray(version));
+                batch.delete(handles.get(StoreColumnFamily.META), META_UPGRADE_CHECKPOINT_KEY);
+                db.write(synced, batch);
+            } catch (RocksDBException e) {
+                throw failure(OP_WRITE, StoreColumnFamily.META, e);
+            }
+        }
+
+        @Override
+        public String upgradeCheckpoint() {
+            byte[] name = get(StoreColumnFamily.META, META_UPGRADE_CHECKPOINT_KEY);
+            return name == null ? null : new String(name, StandardCharsets.UTF_8);
+        }
+
+        @Override
+        public void recordUpgradeCheckpoint(String name) {
+            if (name == null) {
+                delete(StoreColumnFamily.META, META_UPGRADE_CHECKPOINT_KEY);
+            } else {
+                put(StoreColumnFamily.META, META_UPGRADE_CHECKPOINT_KEY, name.getBytes(StandardCharsets.UTF_8));
+            }
         }
 
         @Override
