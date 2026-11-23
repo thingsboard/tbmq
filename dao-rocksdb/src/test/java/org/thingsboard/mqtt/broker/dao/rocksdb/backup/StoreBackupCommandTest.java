@@ -115,6 +115,8 @@ class StoreBackupCommandTest {
         assertThat(err()).contains(LOCKED_MESSAGE.formatted(storePath));
         assertThat(out).doesNotExist();
         assertThat(names(dir)).containsExactly("db");
+        // the refused open still rotated the holder's info log, as the class documents
+        assertThat(names(storePath)).contains("LOG").anyMatch(name -> name.startsWith("LOG.old."));
         // the holder is untouched
         running.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.CLIENT_SESSION, bytes("k"), bytes("v"));
     }

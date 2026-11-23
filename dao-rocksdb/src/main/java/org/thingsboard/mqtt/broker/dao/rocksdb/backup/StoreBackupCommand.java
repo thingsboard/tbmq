@@ -45,7 +45,12 @@ import java.util.Set;
  * <p>
  * Exit codes: 0 the archive is written, 1 bad arguments or any other failure, 2 the store is held by a running broker.
  * The command never changes the store beyond what an open of a store of the current schema does: a missing store is
- * not created, and a store of an older schema is refused, because only the broker upgrades a store.
+ * not created, and a store of an older schema is refused, because only the broker upgrades a store. A store held by a
+ * running broker is refused, but RocksDB's refused open still rotates the broker's info log: it renames {@code LOG} to
+ * {@code LOG.old.<timestamp>}, where the broker goes on logging, and starts a new {@code LOG}; nothing else in the
+ * store is written.
+ * <p>
+ * The archive is written to a temporary file next to {@code --out}, synced, and only then moved to {@code --out}.
  */
 public final class StoreBackupCommand {
 
