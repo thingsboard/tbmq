@@ -48,8 +48,10 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.migration.StoreMigrationStep;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.time.Clock;
@@ -66,6 +68,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * The embedded RocksDB store of the standalone edition: one database under {@code store.path}, one column family
@@ -98,6 +102,11 @@ public class RocksDbStore {
     static final byte[] META_RESUME_PROBE_KEY = "resume_probe".getBytes(StandardCharsets.UTF_8);
 
     private static final long SLOW_CLOSE_MS = 1000;
+    private static final String CURRENT_FILE = "CURRENT";
+    // the files that prove a directory held a store's data: a store that ever held data has an SST file or a numbered WAL
+    // file. MANIFEST and OPTIONS files alone do not count: RocksDB writes them before CURRENT when it creates a store, so
+    // a first start interrupted in between (a kill, a full disk) leaves them without CURRENT and no data
+    private static final Pattern STORE_FILE = Pattern.compile("\\d+\\.(sst|log)");
     private static final int MAX_OPEN_FILES = 256;
     private static final int DEVICE_MSG_KEY_PREFIX_LENGTH = 8;
     private static final double BLOOM_BITS_PER_KEY = 10;
@@ -175,6 +184,12 @@ public class RocksDbStore {
         } catch (IOException e) {
             throw new StoreException("Cannot create the store directory " + path + ": " + e, e);
         }
+        // RocksDB takes a directory without CURRENT for no store: it would write a new CURRENT and MANIFEST and, on the
+        // next open, delete the files of the store as obsolete
+        List<String> storeFiles = storeFilesWithoutCurrent(Path.of(path));
+        if (!storeFiles.isEmpty()) {
+            throw StoreCorruptedException.missingCurrent(path, properties.getBackups().getPath(), storeFiles);
+        }
         try {
             RocksDB.loadLibrary();
             doOpen(path, walSyncMode);
@@ -184,11 +199,44 @@ public class RocksDbStore {
                     path, memoryBudget.blockCacheBytes(), memoryBudget.writeBufferBytes(), meta.installId());
         } catch (RocksDBException e) {
             releaseNativeResources();
-            throw new StoreException("Cannot open the store at " + path + ": " + e.getMessage(), e);
+            throw refusal(path, e);
         } catch (RuntimeException e) {
             releaseNativeResources();
+            // the reads of the meta load and of the migrations come wrapped in a StoreException
+            RocksDBException corruption = StoreCorruptedException.corruptionIn(e);
+            if (corruption != null) {
+                throw StoreCorruptedException.of(path, properties.getBackups().getPath(), corruption, e);
+            }
             throw e;
         }
+    }
+
+    /**
+     * The data files of a store in {@code dir} (SST and numbered WAL files, sorted by name) when it has no CURRENT file;
+     * empty when it has one, holds none of them, or does not exist. A directory with MANIFEST and OPTIONS files only is
+     * what a first start interrupted before CURRENT leaves: it holds no data and counts as no store.
+     *
+     * @throws StoreException when {@code dir} cannot be listed
+     */
+    public static List<String> storeFilesWithoutCurrent(Path dir) {
+        if (!Files.isDirectory(dir) || Files.exists(dir.resolve(CURRENT_FILE), LinkOption.NOFOLLOW_LINKS)) {
+            return List.of();
+        }
+        try (Stream<Path> entries = Files.list(dir)) {
+            return entries.map(entry -> entry.getFileName().toString())
+                    .filter(name -> STORE_FILE.matcher(name).matches())
+                    .sorted()
+                    .toList();
+        } catch (IOException | UncheckedIOException e) {
+            throw new StoreException("Cannot list the store directory " + dir + ": " + e, e);
+        }
+    }
+
+    private StoreException refusal(String path, RocksDBException e) {
+        if (StoreCorruptedException.corruptionIn(e) != null) {
+            return StoreCorruptedException.of(path, properties.getBackups().getPath(), e, e);
+        }
+        return new StoreException("Cannot open the store at " + path + ": " + e.getMessage(), e);
     }
 
     private void doOpen(String path, WalSyncMode walSyncMode) throws RocksDBException {
@@ -409,7 +457,7 @@ public class RocksDbStore {
      * RocksDB refuses to open a database without all its families, which would hide the readable schema refusal.
      */
     private List<byte[]> unknownColumnFamilies(String path) throws RocksDBException {
-        if (!Files.exists(Path.of(path, "CURRENT"))) {
+        if (!Files.exists(Path.of(path, CURRENT_FILE))) {
             return List.of();
         }
         Set<String> known = new HashSet<>(List.of("default"));
@@ -709,6 +757,15 @@ public class RocksDbStore {
             throw new StoreException("Failed to create a checkpoint of the store at " + properties.getPath()
                     + " in " + target + " (check store.backups.path): " + e, e);
         }
+    }
+
+    /**
+     * The record of an unfinished upgrade, or {@code null} when there is none or it is malformed. An open store normally
+     * holds none: an upgrade finishes before the store is published as open.
+     */
+    public StoreMigrationRunner.UpgradeRecord upgradeRecord() {
+        byte[] stored = get(StoreColumnFamily.META, META_UPGRADE_CHECKPOINT_KEY);
+        return stored == null ? null : StoreMigrationRunner.UpgradeRecord.decode(stored);
     }
 
     public StoreMeta meta() {

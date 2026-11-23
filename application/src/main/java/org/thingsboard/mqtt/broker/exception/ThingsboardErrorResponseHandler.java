@@ -48,6 +48,7 @@ import org.springframework.web.util.WebUtils;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.dao.store.BackupInProgressException;
 import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.service.security.exception.AuthMethodNotSupportedException;
 import org.thingsboard.mqtt.broker.service.security.exception.JwtExpiredTokenException;
@@ -137,6 +138,8 @@ public class ThingsboardErrorResponseHandler extends ResponseEntityExceptionHand
 
                 if (exception instanceof StoreFullException storeFullException) {
                     handleStoreFullException(storeFullException, response);
+                } else if (exception instanceof BackupInProgressException backupInProgressException) {
+                    handleBackupInProgressException(backupInProgressException, response);
                 } else if (exception instanceof ThingsboardException) {
                     ThingsboardException thingsboardException = (ThingsboardException) exception;
                     if (thingsboardException.getErrorCode() == ThingsboardErrorCode.SUBSCRIPTION_VIOLATION) {
@@ -192,6 +195,13 @@ public class ThingsboardErrorResponseHandler extends ResponseEntityExceptionHand
      */
     private void handleStoreFullException(StoreFullException exception, HttpServletResponse response) throws IOException {
         writeResponse(ThingsboardErrorResponse.of(exception.getMessage(), ThingsboardErrorCode.GENERAL, HttpStatus.INSUFFICIENT_STORAGE), response);
+    }
+
+    /**
+     * A backup of the standalone store was requested while another one runs; the cluster edition never throws it.
+     */
+    private void handleBackupInProgressException(BackupInProgressException exception, HttpServletResponse response) throws IOException {
+        writeResponse(ThingsboardErrorResponse.of(exception.getMessage(), ThingsboardErrorCode.GENERAL, HttpStatus.CONFLICT), response);
     }
 
     /**

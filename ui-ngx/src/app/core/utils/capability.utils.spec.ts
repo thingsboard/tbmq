@@ -16,9 +16,11 @@
 
 import { describe, expect, it } from 'vitest';
 import type { MenuSection } from '../services/menu.models';
+import { Authority } from '../../shared/models/authority.enum';
 import {
   configTableEntries,
   filterSectionsByCapability,
+  isBackupAvailable,
   isCapabilityEnabled,
   requiredCapabilities
 } from './capability.utils';
@@ -78,5 +80,27 @@ describe('capability.utils', () => {
   it('keeps edition and capabilities out of the config table', () => {
     expect(configTableEntries({ tcpPort: 1883, edition: 'cluster', capabilities: { kafka: true } } as any)
       .map(([k]) => k)).toEqual(['tcpPort']);
+  });
+
+  describe('isBackupAvailable', () => {
+    it('is true for the lite edition and a system administrator', () => {
+      expect(isBackupAvailable({ edition: 'lite' }, Authority.SYS_ADMIN)).toBe(true);
+    });
+
+    it('is false for the cluster edition', () => {
+      expect(isBackupAvailable({ edition: 'cluster' }, Authority.SYS_ADMIN)).toBe(false);
+    });
+
+    it('is false when the config is not loaded or has no edition', () => {
+      expect(isBackupAvailable(undefined, Authority.SYS_ADMIN)).toBe(false);
+      expect(isBackupAvailable(null, Authority.SYS_ADMIN)).toBe(false);
+      expect(isBackupAvailable({}, Authority.SYS_ADMIN)).toBe(false);
+    });
+
+    it('is false for other authorities', () => {
+      expect(isBackupAvailable({ edition: 'lite' }, Authority.REFRESH_TOKEN)).toBe(false);
+      expect(isBackupAvailable({ edition: 'lite' }, Authority.ANONYMOUS)).toBe(false);
+      expect(isBackupAvailable({ edition: 'lite' }, undefined)).toBe(false);
+    });
   });
 });

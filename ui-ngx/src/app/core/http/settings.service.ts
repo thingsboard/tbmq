@@ -17,7 +17,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import { mergeMap, Observable, of } from 'rxjs';
+import { map, mergeMap, Observable, of } from 'rxjs';
 import { defaultHttpOptionsFromConfig, RequestConfig } from '../http/http-utils';
 import {
   AdminSettings,
@@ -31,6 +31,7 @@ import {
 } from '@shared/models/settings.models';
 import { ConfigService } from '@core/http/config.service';
 import { BrokerConfig, settingsConfigPortMap } from '@shared/models/config.model';
+import { ResourcesService } from '@core/services/resources.service';
 
 @Injectable({
   providedIn: 'root'
@@ -40,7 +41,12 @@ export class SettingsService {
   connectivitySettings: ConnectivitySettings;
 
   constructor(private http: HttpClient,
-              private configService: ConfigService) {
+              private configService: ConfigService,
+              private resourcesService: ResourcesService) {
+  }
+
+  public downloadBackup(): Observable<void> {
+    return this.resourcesService.downloadResource('/api/system/backup').pipe(map(() => undefined));
   }
 
   public getAdminSettings<T>(key: string): Observable<AdminSettings<T>> {
