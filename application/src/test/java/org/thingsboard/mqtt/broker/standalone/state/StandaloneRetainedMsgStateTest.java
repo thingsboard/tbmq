@@ -15,14 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.standalone.state;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
+import org.slf4j.LoggerFactory;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.store.BrokerStateStores;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
@@ -55,8 +62,24 @@ class StandaloneRetainedMsgStateTest {
     private StandaloneRetainedMsgPersistenceService persistence;
     private StandaloneRetainedMsgConsumer consumer;
 
+    private Logger serviceLogger;
+    private ListAppender<ILoggingEvent> logged;
+
+    @AfterEach
+    void detachAppender() {
+        serviceLogger.detachAppender(logged);
+        serviceLogger.setAdditive(true);
+        serviceLogger.setLevel(null);
+    }
+
     @BeforeEach
     void setUp() {
+        serviceLogger = (Logger) LoggerFactory.getLogger(StandaloneRetainedMsgPersistenceService.class);
+        logged = new ListAppender<>();
+        logged.start();
+        serviceLogger.addAppender(logged);
+        serviceLogger.setAdditive(false);
+        serviceLogger.setLevel(Level.DEBUG);
         store = new InMemoryKeyValueStore();
         storeSpy = spy(store);
         BrokerStateStores stores = mock(BrokerStateStores.class);
@@ -125,6 +148,28 @@ class StandaloneRetainedMsgStateTest {
 
         assertThat(consumer.initLoad().get("t").getProperties().getProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID))
                 .isNull();
+    }
+
+    @Test
+    void aFullStoreFailsTheCallbackWithoutAnErrorOrAWarning() {
+        doThrow(new StoreFullException("Not enough free disk space")).when(storeSpy).put(eq("t"), any());
+
+        persistence.persistRetainedMsgAsync("t", proto(retained("t", 1)), callback);
+
+        verify(callback).onFailure(any(StoreFullException.class));
+        assertThat(logged.list).noneMatch(event -> event.getLevel().isGreaterOrEqual(Level.WARN));
+    }
+
+    @Test
+    void anyOtherStoreErrorIsStillLoggedAtErrorWithTheTrace() {
+        doThrow(new StoreException("put failed")).when(storeSpy).put(eq("t"), any());
+
+        persistence.persistRetainedMsgAsync("t", proto(retained("t", 1)), callback);
+
+        assertThat(logged.list).filteredOn(event -> event.getLevel() == Level.ERROR).singleElement().satisfies(event -> {
+            assertThat(event.getFormattedMessage()).isEqualTo("[t] Failed to store retained msg");
+            assertThat(event.getThrowableProxy().getMessage()).isEqualTo("put failed");
+        });
     }
 
     @Test

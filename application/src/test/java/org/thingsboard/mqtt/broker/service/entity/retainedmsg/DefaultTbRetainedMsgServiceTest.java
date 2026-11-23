@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.dao.clock.CleanupClockGuard;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
@@ -58,7 +59,7 @@ class DefaultTbRetainedMsgServiceTest {
     @BeforeEach
     void setUp() {
         retainedMsgListenerService = new RetainedMsgListenerServiceImpl(retainedMsgService, persistenceService,
-                mock(ServiceInfoProvider.class), mock(StatsManager.class));
+                mock(ServiceInfoProvider.class), mock(StatsManager.class), mock(CleanupClockGuard.class));
         retainedMsgListenerService.init(Map.of(TOPIC, retainedMsg()));
         service = new DefaultTbRetainedMsgService(retainedMsgService, retainedMsgListenerService);
     }

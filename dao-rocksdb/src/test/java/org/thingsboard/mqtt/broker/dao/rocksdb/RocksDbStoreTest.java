@@ -31,6 +31,7 @@ import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.slf4j.LoggerFactory;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
 
 import java.io.IOException;
@@ -645,7 +646,7 @@ class RocksDbStoreTest {
         StoreProperties properties = new StoreProperties();
         properties.setPath(path.toString());
         properties.setWalSync("periodic");
-        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), nanoClock);
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties), nanoClock);
         opened.add(store);
         store.open();
         return store;
@@ -659,7 +660,7 @@ class RocksDbStoreTest {
         StoreProperties properties = new StoreProperties();
         properties.setPath(path.toString());
         properties.setWalSync(walSync);
-        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0));
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties));
         opened.add(store);
         store.open();
         return store;

@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.dao.rocksdb;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.thingsboard.mqtt.broker.dao.rocksdb.disk.TestDiskSpaceMonitors;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -87,7 +88,7 @@ class RocksDbStoreSeedStateTest {
         StoreProperties properties = new StoreProperties();
         properties.setPath(dir.toString());
         properties.setWalSync("periodic");
-        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0));
+        RocksDbStore store = new RocksDbStore(properties, StoreMemoryBudget.forContainerMemory(1L << 30, 0, 0), TestDiskSpaceMonitors.roomy(properties));
         opened.add(store);
         store.open();
         return store;

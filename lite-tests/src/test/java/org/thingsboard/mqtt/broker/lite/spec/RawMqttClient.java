@@ -52,7 +52,7 @@ import java.util.Optional;
  * sends with its DUP flag, packet id and Message Expiry Interval. The encoder and the decoder share one channel, so the
  * decoder knows the protocol version from the encoded CONNECT. One thread uses a client at a time.
  */
-final class RawMqttClient implements AutoCloseable {
+public final class RawMqttClient implements AutoCloseable {
 
     /**
      * Keeps an MQTT 5 session after the connection closes: long enough for any test, short enough to clean itself up.
@@ -82,40 +82,68 @@ final class RawMqttClient implements AutoCloseable {
      * Connects with Clean Start 0 and, on MQTT 5, a Session Expiry Interval of {@value #SESSION_EXPIRY_INTERVAL_SEC} s,
      * so the session outlives the connection.
      */
-    static RawMqttClient connectPersistent(int port, String clientId, MqttVersion version) throws IOException {
+    public static RawMqttClient connectPersistent(int port, String clientId, MqttVersion version) throws IOException {
         return connect(port, clientId, version, false, SESSION_EXPIRY_INTERVAL_SEC);
     }
 
     /**
      * Connects an MQTT 5 client with Clean Start 0 and the given Session Expiry Interval in seconds.
      */
-    static RawMqttClient connectPersistent(int port, String clientId, int sessionExpiryIntervalSec) throws IOException {
+    public static RawMqttClient connectPersistent(int port, String clientId, int sessionExpiryIntervalSec) throws IOException {
         return connect(port, clientId, MqttVersion.MQTT_5, false, sessionExpiryIntervalSec);
     }
 
     /**
      * Connects with Clean Start 1 and no session after the connection.
      */
-    static RawMqttClient connectClean(int port, String clientId, MqttVersion version) throws IOException {
+    public static RawMqttClient connectClean(int port, String clientId, MqttVersion version) throws IOException {
         return connect(port, clientId, version, true, 0);
+    }
+
+    /**
+     * Sends a CONNECT, with a username and password when {@code username} is not {@code null}, and returns the return
+     * code of the CONNACK, whatever it is; the connection is closed afterwards.
+     */
+    public static MqttConnectReturnCode connectForReturnCode(int port, String clientId, MqttVersion version, boolean cleanStart,
+                                                             int sessionExpiryIntervalSec, String username, String password) throws IOException {
+        try (RawMqttClient client = new RawMqttClient(clientId, port)) {
+            MqttMessageBuilders.ConnectBuilder connect = connectBuilder(clientId, version, cleanStart, sessionExpiryIntervalSec);
+            if (username != null) {
+                connect.username(username).password(password.getBytes(StandardCharsets.UTF_8));
+            }
+            client.send(connect.build());
+            MqttMessage connAck = client.nextMessage(ACK_TIMEOUT);
+            try {
+                if (!(connAck instanceof MqttConnAckMessage ack)) {
+                    throw new AssertionError("[" + clientId + "] Expected a CONNACK, got " + connAck);
+                }
+                return ack.variableHeader().connectReturnCode();
+            } finally {
+                ReferenceCountUtil.release(connAck);
+            }
+        }
+    }
+
+    private static MqttMessageBuilders.ConnectBuilder connectBuilder(String clientId, MqttVersion version, boolean cleanStart,
+                                                                     int sessionExpiryIntervalSec) {
+        MqttProperties properties = new MqttProperties();
+        if (version == MqttVersion.MQTT_5 && !cleanStart) {
+            properties.add(new MqttProperties.IntegerProperty(
+                    MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value(), sessionExpiryIntervalSec));
+        }
+        return MqttMessageBuilders.connect()
+                .clientId(clientId)
+                .protocolVersion(version)
+                .cleanSession(cleanStart)
+                .keepAlive(KEEP_ALIVE_SEC)
+                .properties(properties);
     }
 
     private static RawMqttClient connect(int port, String clientId, MqttVersion version, boolean cleanStart,
                                          int sessionExpiryIntervalSec) throws IOException {
         RawMqttClient client = new RawMqttClient(clientId, port);
         try {
-            MqttProperties properties = new MqttProperties();
-            if (version == MqttVersion.MQTT_5 && !cleanStart) {
-                properties.add(new MqttProperties.IntegerProperty(
-                        MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value(), sessionExpiryIntervalSec));
-            }
-            client.send(MqttMessageBuilders.connect()
-                    .clientId(clientId)
-                    .protocolVersion(version)
-                    .cleanSession(cleanStart)
-                    .keepAlive(KEEP_ALIVE_SEC)
-                    .properties(properties)
-                    .build());
+            client.send(connectBuilder(clientId, version, cleanStart, sessionExpiryIntervalSec).build());
             MqttMessage connAck = client.nextMessage(ACK_TIMEOUT);
             if (!(connAck instanceof MqttConnAckMessage accepted)
                     || accepted.variableHeader().connectReturnCode() != MqttConnectReturnCode.CONNECTION_ACCEPTED) {
@@ -129,14 +157,14 @@ final class RawMqttClient implements AutoCloseable {
         }
     }
 
-    boolean sessionPresent() {
+    public boolean sessionPresent() {
         return sessionPresent;
     }
 
     /**
      * Subscribes and checks that the broker granted the QoS asked for.
      */
-    void subscribe(String topicFilter, int qos) throws IOException {
+    public void subscribe(String topicFilter, int qos) throws IOException {
         int packetId = 1;
         send(MqttMessageBuilders.subscribe()
                 .messageId(packetId)
@@ -153,7 +181,11 @@ final class RawMqttClient implements AutoCloseable {
      *
      * @param msgExpiryInterval the Message Expiry Interval in seconds, or {@code null} to send none
      */
-    void publish(String topic, int qos, int packetId, String payload, Integer msgExpiryInterval) throws IOException {
+    public void publish(String topic, int qos, int packetId, String payload, Integer msgExpiryInterval) throws IOException {
+        publish(topic, qos, packetId, payload, msgExpiryInterval, false);
+    }
+
+    private void publish(String topic, int qos, int packetId, String payload, Integer msgExpiryInterval, boolean retained) throws IOException {
         MqttProperties properties = new MqttProperties();
         if (msgExpiryInterval != null) {
             properties.add(new MqttProperties.IntegerProperty(
@@ -163,7 +195,7 @@ final class RawMqttClient implements AutoCloseable {
                 .topicName(topic)
                 .qos(MqttQoS.valueOf(qos))
                 .messageId(packetId)
-                .retained(false)
+                .retained(retained)
                 .payload(Unpooled.copiedBuffer(payload, StandardCharsets.UTF_8))
                 .properties(properties)
                 .build());
@@ -172,8 +204,16 @@ final class RawMqttClient implements AutoCloseable {
     /**
      * Publishes at QoS 1 and returns the PUBACK's reason code.
      */
-    int publishQos1(String topic, int packetId, String payload, Integer msgExpiryInterval) throws IOException {
+    public int publishQos1(String topic, int packetId, String payload, Integer msgExpiryInterval) throws IOException {
         publish(topic, 1, packetId, payload, msgExpiryInterval);
+        return expect(MqttMessageType.PUBACK, packetId).reasonCode();
+    }
+
+    /**
+     * Publishes a retained message at QoS 1 and returns the PUBACK's reason code.
+     */
+    public int publishRetainedQos1(String topic, int packetId, String payload) throws IOException {
+        publish(topic, 1, packetId, payload, null, true);
         return expect(MqttMessageType.PUBACK, packetId).reasonCode();
     }
 
@@ -181,7 +221,7 @@ final class RawMqttClient implements AutoCloseable {
      * Publishes at QoS 2 and returns the PUBREC's reason code; a successful PUBREC is followed by PUBREL and PUBCOMP,
      * which completes the flow.
      */
-    int publishQos2(String topic, int packetId, String payload, Integer msgExpiryInterval) throws IOException {
+    public int publishQos2(String topic, int packetId, String payload, Integer msgExpiryInterval) throws IOException {
         publish(topic, 2, packetId, payload, msgExpiryInterval);
         Packet pubRec = expect(MqttMessageType.PUBREC, packetId);
         if (pubRec.reasonCode() == 0) {
@@ -191,7 +231,7 @@ final class RawMqttClient implements AutoCloseable {
         return pubRec.reasonCode();
     }
 
-    void pubAck(int packetId) throws IOException {
+    public void pubAck(int packetId) throws IOException {
         sendPubReply(MqttMessageType.PUBACK, MqttQoS.AT_MOST_ONCE, packetId);
     }
 
@@ -211,7 +251,7 @@ final class RawMqttClient implements AutoCloseable {
     /**
      * @return the next packet, which must be of {@code type} with {@code packetId}
      */
-    Packet expect(MqttMessageType type, int packetId) throws IOException {
+    public Packet expect(MqttMessageType type, int packetId) throws IOException {
         Packet packet = next(ACK_TIMEOUT);
         if (packet.type() != type || packet.packetId() != packetId) {
             throw new AssertionError("[" + clientId + "] Expected " + type + " " + packetId + ", got " + packet);
@@ -223,7 +263,7 @@ final class RawMqttClient implements AutoCloseable {
      * @return the next packet the broker sends; fails when none arrives within {@code timeout}
      * @throws EOFException when the broker closed the connection first
      */
-    Packet next(Duration timeout) throws IOException {
+    public Packet next(Duration timeout) throws IOException {
         return poll(timeout).orElseThrow(() ->
                 new AssertionError("[" + clientId + "] No packet from the broker within " + timeout.toMillis() + " ms"));
     }
@@ -232,7 +272,7 @@ final class RawMqttClient implements AutoCloseable {
      * @return the next packet the broker sends, or empty when none arrives within {@code timeout}
      * @throws EOFException when the broker closed the connection first
      */
-    Optional<Packet> poll(Duration timeout) throws IOException {
+    public Optional<Packet> poll(Duration timeout) throws IOException {
         MqttMessage msg = pollMessage(timeout);
         if (msg == null) {
             return Optional.empty();
@@ -247,7 +287,7 @@ final class RawMqttClient implements AutoCloseable {
     /**
      * Sends a DISCONNECT with reason code 0, which keeps the session, and closes the socket.
      */
-    void disconnect() throws IOException {
+    public void disconnect() throws IOException {
         try {
             send(MqttMessageBuilders.disconnect().build());
         } finally {
@@ -343,7 +383,7 @@ final class RawMqttClient implements AutoCloseable {
      * or the first granted QoS of a SUBACK. {@code msgExpiryInterval} is the Message Expiry Interval of a PUBLISH,
      * {@code null} when it has none.
      */
-    record Packet(MqttMessageType type, int packetId, boolean dup, int qos, String topic, String payload,
+    public record Packet(MqttMessageType type, int packetId, boolean dup, int qos, String topic, String payload,
                   Integer msgExpiryInterval, int reasonCode) {
 
         static Packet of(MqttMessage msg) {

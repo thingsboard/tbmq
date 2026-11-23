@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgQueueStore;
 import org.thingsboard.mqtt.broker.dao.messages.NewDeviceMsg;
 import org.thingsboard.mqtt.broker.dao.messages.QueueAppend;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -141,7 +142,12 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
             store.append(queues.entrySet().stream().map(queue -> new QueueAppend(queue.getKey(), queue.getValue())).toList());
         } catch (Throwable t) {
             toStore.forEach(copy -> fail(copy, t));
-            log.error("Failed to store {} messages for {} DEVICE clients", toStore.size(), queues.size(), t);
+            if (t instanceof StoreFullException) {
+                // expected while the disk is full: the disk monitor warns about it while the store is below the watermark
+                log.debug("Failed to store {} messages for {} DEVICE clients: {}", toStore.size(), queues.size(), t.getMessage());
+            } else {
+                log.error("Failed to store {} messages for {} DEVICE clients", toStore.size(), queues.size(), t);
+            }
             return;
         }
         toStore.forEach(this::succeed);

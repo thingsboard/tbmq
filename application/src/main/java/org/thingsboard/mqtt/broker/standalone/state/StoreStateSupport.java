@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.dao.store.KeyValueStore;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 
 import java.util.HashMap;
@@ -37,16 +38,21 @@ final class StoreStateSupport {
 
     /**
      * Runs the write, then reports the outcome. The callback fires only after the write has finished. A failed write
-     * is logged through {@code logFailure} and goes to the callback. With no callback it is only logged, never
-     * thrown: a caller that passes none is fire-and-forget, like the cluster producers whose failure is logged in the
-     * producer callback, and it goes on with its next steps (for example the rest of a session removal) after the
-     * call returns.
+     * goes to the callback. A store refusing the write because it is full is logged here at debug without the trace:
+     * it is expected while the disk is full, and the disk monitor warns about it. Any other failure is logged through
+     * {@code logFailure}. With no callback a failure is only logged, never thrown: a caller that passes none is
+     * fire-and-forget, like the cluster producers whose failure is logged in the producer callback, and it goes on
+     * with its next steps (for example the rest of a session removal) after the call returns.
      */
     static void writeThenCallback(Runnable write, BasicCallback callback, Consumer<StoreException> logFailure) {
         try {
             write.run();
         } catch (StoreException e) {
-            logFailure.accept(e);
+            if (e instanceof StoreFullException) {
+                log.debug("The store is full, a write of the broker state is refused: {}", e.getMessage());
+            } else {
+                logFailure.accept(e);
+            }
             if (callback != null) {
                 callback.onFailure(e);
             }

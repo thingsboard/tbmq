@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
 import org.passay.LengthRule;
@@ -42,6 +43,7 @@ import org.thingsboard.mqtt.broker.common.data.security.model.UserPasswordPolicy
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
@@ -55,6 +57,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.thingsboard.mqtt.broker.common.data.SysAdminSettingType.GENERAL;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DefaultSystemSecurityService implements SystemSecurityService {
@@ -108,7 +111,13 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
             throw new DisabledException("User is not active");
         }
 
-        userService.onUserLoginSuccessful(userCredentials.getUserId());
+        try {
+            userService.onUserLoginSuccessful(userCredentials.getUserId());
+        } catch (StoreFullException e) {
+            // the standalone store's volume is full: the last login time is not kept, so an admin can still sign in
+            // to free space; the cluster edition never throws it
+            log.warn("[{}] Failed to save the last login time of the user: {}", userCredentials.getUserId(), e.getMessage());
+        }
 
         SecuritySettings securitySettings = getSecuritySettings();
         if (isPositiveInteger(securitySettings.getPasswordPolicy().getPasswordExpirationPeriodDays())) {

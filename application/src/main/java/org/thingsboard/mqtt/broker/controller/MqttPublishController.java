@@ -37,6 +37,7 @@ import org.springframework.web.context.request.async.DeferredResult;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
+import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.dto.RestPublishRequest;
 import org.thingsboard.mqtt.broker.dto.RestPublishResponse;
 import org.thingsboard.mqtt.broker.exception.PublishFailures;
@@ -101,6 +102,11 @@ public class MqttPublishController extends BaseController {
 
             @Override
             public void onFailure(Throwable t) {
+                if (t instanceof StoreFullException) {
+                    // the standalone store has no room for it, as for a management write; the cluster never throws it
+                    result.setResult(insufficientStorage(t.getMessage()));
+                    return;
+                }
                 String message = "Failed to publish the message: " + t.getMessage();
                 result.setResult(PublishFailures.isLimitExceeded(t) ? tooManyRequests(message) : serviceUnavailable(message));
             }
@@ -111,6 +117,11 @@ public class MqttPublishController extends BaseController {
     private static ResponseEntity<?> tooManyRequests(String message) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .body(ThingsboardErrorResponse.of(message, ThingsboardErrorCode.TOO_MANY_REQUESTS, HttpStatus.TOO_MANY_REQUESTS));
+    }
+
+    private static ResponseEntity<?> insufficientStorage(String message) {
+        return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE)
+                .body(ThingsboardErrorResponse.of(message, ThingsboardErrorCode.GENERAL, HttpStatus.INSUFFICIENT_STORAGE));
     }
 
     private static ResponseEntity<?> serviceUnavailable(String message) {

@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.client.unauthorized.UnauthorizedC
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.dao.clock.CleanupClockGuard;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.Optional;
@@ -46,6 +47,7 @@ public class UnauthorizedClientServiceImpl implements UnauthorizedClientService 
     private boolean ttlTaskExecutionEnabled;
 
     private final UnauthorizedClientDao unauthorizedClientDao;
+    private final CleanupClockGuard cleanupClockGuard;
 
     @Override
     public ListenableFuture<Void> save(UnauthorizedClient unauthorizedClient) {
@@ -148,6 +150,10 @@ public class UnauthorizedClientServiceImpl implements UnauthorizedClientService 
 
     @Scheduled(initialDelayString = RANDOM_DELAY_INTERVAL_MS_EXPRESSION, fixedDelayString = "${sql.ttl.unauthorized_client.execution_interval_ms}")
     public void cleanUp() {
+        if (!cleanupClockGuard.cleanupAllowed()) {
+            log.debug("Cleaning up expired unauthorized clients is postponed: the clock is behind its last record");
+            return;
+        }
         if (ttlTaskExecutionEnabled) {
             cleanupUnauthorizedClients(ttlInSec);
         }
