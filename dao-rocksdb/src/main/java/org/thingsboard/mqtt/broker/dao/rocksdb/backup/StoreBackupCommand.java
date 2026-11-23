@@ -27,8 +27,11 @@ import org.thingsboard.mqtt.broker.dao.store.StoreException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
@@ -133,17 +136,33 @@ public final class StoreBackupCommand {
         Path temp = Files.createTempFile(out.getParent(), out.getFileName().toString() + ".", ".tmp");
         boolean moved = false;
         try {
-            try (OutputStream stream = Files.newOutputStream(temp)) {
+            try (FileChannel channel = FileChannel.open(temp, StandardOpenOption.WRITE);
+                 OutputStream stream = Channels.newOutputStream(channel)) {
                 backup.write(stream);
+                // on disk before it gets the name: a crash never leaves a named archive with missing content
+                channel.force(true);
             }
             Files.move(temp, out);
             moved = true;
+            syncDirectory(out.getParent());
         } finally {
             if (!moved) {
                 Files.deleteIfExists(temp);
             }
         }
         return EXIT_OK;
+    }
+
+    /**
+     * Makes the move into {@code directory} durable where the platform can sync a directory; where it cannot open one,
+     * the archive's own content is still synced.
+     */
+    private static void syncDirectory(Path directory) {
+        try (FileChannel channel = FileChannel.open(directory, StandardOpenOption.READ)) {
+            channel.force(true);
+        } catch (IOException | UnsupportedOperationException e) {
+            // e.g. Windows refuses to open a directory as a channel
+        }
     }
 
     private static int openFailed(Path storePath, StoreException e, PrintStream err) {
