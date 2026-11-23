@@ -19,9 +19,11 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.controller.AbstractControllerTest;
+import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
 import org.thingsboard.mqtt.broker.dao.store.StoreBackup;
 import org.thingsboard.mqtt.broker.lite.TempBackupsPathRule;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
@@ -38,8 +40,10 @@ import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
@@ -63,6 +67,8 @@ public class StandaloneBackupControllerTest extends AbstractControllerTest {
     private StoreBackup storeBackup;
     @Autowired
     private JwtTokenFactory jwtTokenFactory;
+    @Autowired
+    private StoreProperties storeProperties;
 
     @Test
     public void anAnonymousRequestIsUnauthorized() throws Exception {
@@ -124,6 +130,32 @@ public class StandaloneBackupControllerTest extends AbstractControllerTest {
                     .andExpect(jsonPath("$.message").value("A backup of the store is already in progress; try again once it finishes"));
         }
 
+        MvcResult started = doGet(BACKUP_PATH).andExpect(request().asyncStarted()).andReturn();
+        mockMvc.perform(asyncDispatch(started)).andExpect(status().isOk());
+    }
+
+    @Test
+    public void aCheckpointThatCannotBeTakenFailsBeforeTheDownloadStarts() throws Exception {
+        loginSysAdmin();
+        String backupsPath = storeProperties.getBackups().getPath();
+        // a regular file where the backups directory should be: the checkpoint cannot be created under it
+        Path notADirectory = Files.write(backups.dir().resolve("not-a-directory"), new byte[]{1});
+        try {
+            storeProperties.getBackups().setPath(notADirectory.toString());
+
+            doGet(BACKUP_PATH)
+                    .andExpect(request().asyncNotStarted())
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(header().doesNotExist(HttpHeaders.CONTENT_DISPOSITION))
+                    .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.message").value(containsString("checkpoint")));
+        } finally {
+            storeProperties.getBackups().setPath(backupsPath);
+            Files.delete(notADirectory);
+        }
+
+        // the slot is free and no checkpoint is left
+        assertThat(tmpBackups()).isZero();
         MvcResult started = doGet(BACKUP_PATH).andExpect(request().asyncStarted()).andReturn();
         mockMvc.perform(asyncDispatch(started)).andExpect(status().isOk());
     }

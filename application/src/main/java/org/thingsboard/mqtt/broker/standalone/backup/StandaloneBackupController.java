@@ -47,9 +47,10 @@ import java.util.concurrent.Callable;
  * it: stop the broker, replace the {@code db} directory of the data volume with the one of the archive
  * ({@code rm -rf /data/db && tar -xzf <archive> -C /data db}) and start the broker.
  * <p>
- * The single backup slot is taken in the handler, so a second download while one runs fails with 409 before the
- * response starts. The archive is streamed afterwards on the async executor, without the async request timeout, and
- * the slot is released when the stream ends or, when it never starts, when the request ends.
+ * The single backup slot and the checkpoint of the store are taken in the handler, so a second download while one runs
+ * (409) or a checkpoint that cannot be taken (500, e.g. on a full disk) fails before the response starts. The archive is
+ * streamed afterwards on the async executor, without the async request timeout; the slot is released and the
+ * checkpoint deleted when the stream ends or, when it never starts, when the request ends.
  */
 @Slf4j
 @RestController

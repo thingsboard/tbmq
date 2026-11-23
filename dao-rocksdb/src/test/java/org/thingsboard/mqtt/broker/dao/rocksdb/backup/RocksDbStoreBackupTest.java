@@ -177,6 +177,36 @@ class RocksDbStoreBackupTest {
     }
 
     @Test
+    void aReservationHoldsTheCheckpointUntilItIsClosed() throws IOException {
+        Path backups = dir.resolve("backups");
+        RocksDbStore store = open(dir.resolve("db"), backups);
+        RocksDbStoreBackup backup = backup(store);
+
+        StoreBackup.Reservation reservation = backup.reserve();
+
+        assertThat(names(backups)).singleElement().satisfies(name -> assertThat(RocksDbStoreBackup.isTemporaryName(name)).isTrue());
+        reservation.close();
+        assertThat(names(backups)).as("the checkpoint of a reservation never written with").isEmpty();
+        backup.reserve().close();
+    }
+
+    @Test
+    void aCheckpointThatCannotBeTakenFailsTheReservationAndFreesTheSlot() throws IOException {
+        Path backups = dir.resolve("backups");
+        RocksDbStore store = open(dir.resolve("db"), backups);
+        RocksDbStoreBackup backup = backup(store);
+        Path notADirectory = Files.write(dir.resolve("not-a-directory"), bytes("x"));
+        propertiesOf(store).getBackups().setPath(notADirectory.toString());
+
+        assertThatThrownBy(backup::reserve).isInstanceOf(StoreException.class)
+                .hasMessageContaining("checkpoint");
+
+        propertiesOf(store).getBackups().setPath(backups.toString());
+        backup.reserve().close();
+        assertThat(names(backups)).isEmpty();
+    }
+
+    @Test
     void theTemporaryCheckpointIsDeletedWhenTheClientDisconnects() throws IOException {
         Path backups = dir.resolve("backups");
         RocksDbStore store = open(dir.resolve("db"), backups);

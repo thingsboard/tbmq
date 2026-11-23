@@ -25,11 +25,14 @@ import java.io.OutputStream;
 public interface StoreBackup {
 
     /**
-     * Takes the single backup slot without writing anything yet, so that a caller can refuse a second backup before it
-     * commits to a response, and write the archive later, on another thread.
+     * Takes the single backup slot and the point-in-time copy of the store the archive is made of, without writing
+     * anything yet: a second backup, or a copy that cannot be taken, fails before the caller commits to a response, and
+     * the archive is written later, possibly on another thread. The caller must write with or close the reservation,
+     * which releases the slot and deletes the copy.
      *
      * @throws BackupInProgressException while another backup holds the slot
-     * @throws StoreException            when the store cannot be backed up at all, e.g. its backups directory is not set
+     * @throws StoreException            when the copy cannot be taken, e.g. the backups directory is not set or the
+     *                                   disk is full
      */
     Reservation reserve();
 
@@ -47,9 +50,10 @@ public interface StoreBackup {
     }
 
     /**
-     * The backup slot taken by {@link #reserve()}. {@link #writeTo} may be called once, from any thread, and releases
-     * the slot when it ends. {@link #close()} releases a slot that was never written with, and does nothing while
-     * {@link #writeTo} runs or after it, so it is safe to call from every path that ends the request.
+     * The backup slot and the copy of the store taken by {@link #reserve()}. {@link #writeTo} may be called once, from
+     * any thread, and releases both when it ends. {@link #close()} releases a reservation that was never written with,
+     * and does nothing while {@link #writeTo} runs or after it, so it is safe to call from every path that ends the
+     * request.
      */
     interface Reservation extends AutoCloseable {
 

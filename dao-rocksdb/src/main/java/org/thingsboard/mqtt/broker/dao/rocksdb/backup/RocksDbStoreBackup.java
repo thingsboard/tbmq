@@ -53,8 +53,9 @@ import java.util.stream.Stream;
 
 /**
  * Backs up the store as a {@code .tar.gz} archive: a {@value #MANIFEST_NAME} that names the store, then every file of
- * a checkpoint of the store under {@code db/}. The checkpoint is taken into {@code <store.backups.path>/tmp-backup-<uuid>}
- * and deleted once the archive is written or fails, also when the output stream fails because the client is gone.
+ * a checkpoint of the store under {@code db/}. {@link #reserve()} takes the checkpoint into
+ * {@code <store.backups.path>/tmp-backup-<uuid>}; it is deleted once the archive is written or fails, also when the
+ * output stream fails because the client is gone, or when the reservation is closed without writing.
  * The extracted {@code db} directory opens as a store. One backup runs at a time.
  * <p>
  * Usable without Spring: the second constructor takes everything the backup needs.
@@ -148,13 +149,31 @@ public class RocksDbStoreBackup implements StoreBackup {
         return TMP_NAME.matcher(name).matches() && !StoreCheckpoints.isCheckpointName(name);
     }
 
+    /**
+     * Takes the slot and the checkpoint, so that a failure of either surfaces before anything is written; the
+     * reservation owns the checkpoint and deletes it when it is written with or closed.
+     */
     @Override
     public Reservation reserve() {
         Path backups = backupsPath();
         if (!running.compareAndSet(false, true)) {
             throw new BackupInProgressException("A backup of the store is already in progress; try again once it finishes");
         }
-        return new SlotReservation(backups);
+        Path checkpoint = backups.resolve(TMP_PREFIX + UUID.randomUUID());
+        try {
+            StoreMeta meta = store.meta();
+            Instant createdAt = clock.instant();
+            store.createCheckpoint(checkpoint);
+            List<Path> files = checkpointFiles(checkpoint);
+            return new SlotReservation(checkpoint, manifest(meta, createdAt), files);
+        } catch (IOException | RuntimeException e) {
+            deleteCheckpoint(checkpoint);
+            running.set(false);
+            if (e instanceof IOException io) {
+                throw new StoreException("Cannot back up the store at " + properties.getPath() + ": " + io, io);
+            }
+            throw (RuntimeException) e;
+        }
     }
 
     private Path backupsPath() {
@@ -165,27 +184,22 @@ public class RocksDbStoreBackup implements StoreBackup {
         return Path.of(configured);
     }
 
-    private void writeArchive(Path backups, OutputStream out) throws IOException {
+    private void writeArchive(byte[] manifest, List<Path> files, OutputStream out) throws IOException {
         long startNs = System.nanoTime();
-        Path checkpoint = backups.resolve(TMP_PREFIX + UUID.randomUUID());
-        try {
-            StoreMeta meta = store.meta();
-            Instant createdAt = clock.instant();
-            store.createCheckpoint(checkpoint);
-            List<Path> files = checkpointFiles(checkpoint);
-            try (TarGzWriter tar = new TarGzWriter(out)) {
-                tar.addBytes(MANIFEST_NAME, manifest(meta, createdAt));
-                for (Path file : files) {
-                    tar.addFile(DB_PREFIX + file.getFileName(), file);
-                }
-                tar.finish();
+        try (TarGzWriter tar = new TarGzWriter(out)) {
+            tar.addBytes(MANIFEST_NAME, manifest);
+            for (Path file : files) {
+                tar.addFile(DB_PREFIX + file.getFileName(), file);
             }
-            log.info("Backed up the store at {}: {} files in {} ms", properties.getPath(), files.size(),
-                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs));
-        } finally {
-            deleteQuietly(checkpoint);
-            deleteQuietly(checkpoint.resolveSibling(checkpoint.getFileName() + STAGING_SUFFIX));
+            tar.finish();
         }
+        log.info("Backed up the store at {}: {} files in {} ms", properties.getPath(), files.size(),
+                TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNs));
+    }
+
+    private static void deleteCheckpoint(Path checkpoint) {
+        deleteQuietly(checkpoint);
+        deleteQuietly(checkpoint.resolveSibling(checkpoint.getFileName() + STAGING_SUFFIX));
     }
 
     private byte[] manifest(StoreMeta meta, Instant createdAt) {
@@ -248,7 +262,8 @@ public class RocksDbStoreBackup implements StoreBackup {
     }
 
     /**
-     * The slot of one backup: released by the end of {@link #writeTo}, or by {@link #close()} when nothing was written.
+     * The slot of one backup and its checkpoint: both released by the end of {@link #writeTo}, or by {@link #close()}
+     * when nothing was written.
      */
     private final class SlotReservation implements Reservation {
 
@@ -257,10 +272,14 @@ public class RocksDbStoreBackup implements StoreBackup {
         private static final int RELEASED = 2;
 
         private final AtomicInteger state = new AtomicInteger(RESERVED);
-        private final Path backups;
+        private final Path checkpoint;
+        private final byte[] manifest;
+        private final List<Path> files;
 
-        private SlotReservation(Path backups) {
-            this.backups = backups;
+        private SlotReservation(Path checkpoint, byte[] manifest, List<Path> files) {
+            this.checkpoint = checkpoint;
+            this.manifest = manifest;
+            this.files = files;
         }
 
         @Override
@@ -269,16 +288,24 @@ public class RocksDbStoreBackup implements StoreBackup {
                 throw new IllegalStateException("This backup reservation was already used or released");
             }
             try {
-                writeArchive(backups, out);
+                writeArchive(manifest, files, out);
             } finally {
-                state.set(RELEASED);
-                running.set(false);
+                release();
             }
         }
 
         @Override
         public void close() {
-            if (state.compareAndSet(RESERVED, RELEASED)) {
+            if (state.compareAndSet(RESERVED, WRITING)) {
+                release();
+            }
+        }
+
+        private void release() {
+            try {
+                deleteCheckpoint(checkpoint);
+            } finally {
+                state.set(RELEASED);
                 running.set(false);
             }
         }

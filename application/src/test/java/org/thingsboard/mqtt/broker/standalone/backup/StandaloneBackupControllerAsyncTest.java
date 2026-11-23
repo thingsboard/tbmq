@@ -20,6 +20,7 @@ import jakarta.servlet.AsyncListener;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.http.ResponseEntity;
@@ -37,8 +38,12 @@ import org.thingsboard.mqtt.broker.dao.store.StoreBackup;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
@@ -55,14 +60,19 @@ class StandaloneBackupControllerAsyncTest {
     // what spring.mvc.async.request-timeout sets on every async request
     private static final long GLOBAL_ASYNC_TIMEOUT_MS = 30000;
 
-    private final FakeStoreBackup storeBackup = new FakeStoreBackup();
+    @TempDir
+    Path backups;
+
+    private FakeStoreBackup storeBackup;
     private final HeldExecutor executor = new HeldExecutor();
-    private final StandaloneBackupController controller = new StandaloneBackupController(storeBackup);
+    private StandaloneBackupController controller;
 
     private MockHttpServletRequest request;
 
     @BeforeEach
     void startRequest() {
+        storeBackup = new FakeStoreBackup(backups);
+        controller = new StandaloneBackupController(storeBackup);
         request = new MockHttpServletRequest("GET", "/api/system/backup");
         request.setAsyncSupported(true);
     }
@@ -82,6 +92,7 @@ class StandaloneBackupControllerAsyncTest {
         asyncContext().complete();
 
         assertThat(storeBackup.held).isFalse();
+        assertThat(storeBackup.checkpoint).as("the temporary checkpoint").doesNotExist();
         assertThat(storeBackup.written).isZero();
     }
 
@@ -95,6 +106,7 @@ class StandaloneBackupControllerAsyncTest {
         asyncContext().complete();
 
         assertThat(storeBackup.held).isFalse();
+        assertThat(storeBackup.checkpoint).as("the temporary checkpoint").doesNotExist();
         assertThat(executor.tasks).singleElement().satisfies(task -> assertThat(task.isCancelled()).isTrue());
         assertThat(storeBackup.written).isZero();
     }
@@ -109,6 +121,7 @@ class StandaloneBackupControllerAsyncTest {
         asyncContext().complete();
 
         assertThat(storeBackup.held).isFalse();
+        assertThat(storeBackup.checkpoint).as("the temporary checkpoint").doesNotExist();
         assertThat(storeBackup.written).isZero();
     }
 
@@ -120,6 +133,7 @@ class StandaloneBackupControllerAsyncTest {
 
         assertThat(storeBackup.written).isEqualTo(1);
         assertThat(storeBackup.held).isFalse();
+        assertThat(storeBackup.checkpoint).as("the temporary checkpoint").doesNotExist();
         assertThat(response.getContentAsString()).isEqualTo("archive");
         assertThat(WebAsyncUtils.getAsyncManager(request).getConcurrentResult()).isNull();
     }
@@ -132,6 +146,7 @@ class StandaloneBackupControllerAsyncTest {
         executor.runAll();
 
         assertThat(storeBackup.held).isFalse();
+        assertThat(storeBackup.checkpoint).as("the temporary checkpoint").doesNotExist();
         assertThat(WebAsyncUtils.getAsyncManager(request).getConcurrentResult()).isSameAs(storeBackup.failure);
     }
 
@@ -170,16 +185,31 @@ class StandaloneBackupControllerAsyncTest {
         return (MockAsyncContext) request.getAsyncContext();
     }
 
+    /**
+     * Holds the slot and a temporary checkpoint directory like the store backup does: both released when the
+     * reservation is written with or closed unused.
+     */
     private static final class FakeStoreBackup implements StoreBackup {
 
+        private final Path backups;
         private boolean held;
         private int written;
         private IOException failure;
+        private Path checkpoint;
+
+        private FakeStoreBackup(Path backups) {
+            this.backups = backups;
+        }
 
         @Override
         public Reservation reserve() {
             if (held) {
                 throw new BackupInProgressException("A backup of the store is already in progress");
+            }
+            try {
+                checkpoint = Files.createDirectory(backups.resolve("tmp-backup-" + UUID.randomUUID()));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
             held = true;
             return new Reservation() {
@@ -195,17 +225,27 @@ class StandaloneBackupControllerAsyncTest {
                         out.write("archive".getBytes());
                         written++;
                     } finally {
-                        held = false;
+                        release();
                     }
                 }
 
                 @Override
                 public void close() {
                     if (!used) {
-                        held = false;
+                        used = true;
+                        release();
                     }
                 }
             };
+        }
+
+        private void release() {
+            try {
+                Files.deleteIfExists(checkpoint);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            held = false;
         }
 
     }
