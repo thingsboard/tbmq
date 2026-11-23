@@ -226,6 +226,25 @@ class StoreBackupCommandTest {
     }
 
     @Test
+    void aDirectoryLeftByAFirstStartInterruptedBeforeCurrentIsNoStore() throws IOException {
+        Path storePath = Files.createDirectory(dir.resolve("db"));
+        Files.writeString(storePath.resolve("MANIFEST-000001"), "m");
+        Files.writeString(storePath.resolve("OPTIONS-000007"), "o");
+        Files.writeString(storePath.resolve("IDENTITY"), "i");
+        Map<String, byte[]> before = allFiles(storePath);
+
+        int exit = StoreBackupCommand.run(new String[]{"--store-path", storePath.toString(),
+                "--out", dir.resolve("o.tar.gz").toString()}, err);
+
+        assertThat(exit).isEqualTo(1);
+        assertThat(err()).contains("No store at " + storePath);
+        Map<String, byte[]> after = allFiles(storePath);
+        assertThat(after).containsOnlyKeys(before.keySet());
+        before.forEach((name, content) -> assertThat(after.get(name)).as(name).isEqualTo(content));
+        assertThat(names(dir)).containsExactly("db");
+    }
+
+    @Test
     void aStoreWithoutItsCurrentFileIsReportedAsCorrupted() throws IOException {
         Path storePath = dir.resolve("db");
         RocksDbStore store = open(storePath);

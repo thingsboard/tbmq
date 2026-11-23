@@ -103,8 +103,10 @@ public class RocksDbStore {
 
     private static final long SLOW_CLOSE_MS = 1000;
     private static final String CURRENT_FILE = "CURRENT";
-    // what RocksDB keeps of a store besides CURRENT: SST files, numbered WAL files, MANIFEST and OPTIONS files
-    private static final Pattern STORE_FILE = Pattern.compile("\\d+\\.(sst|log)|MANIFEST-\\d+|OPTIONS-\\d+");
+    // the files that prove a directory held a store's data: a store that ever held data has an SST file or a numbered WAL
+    // file. MANIFEST and OPTIONS files alone do not count: RocksDB writes them before CURRENT when it creates a store, so
+    // a first start interrupted in between (a kill, a full disk) leaves them without CURRENT and no data
+    private static final Pattern STORE_FILE = Pattern.compile("\\d+\\.(sst|log)");
     private static final int MAX_OPEN_FILES = 256;
     private static final int DEVICE_MSG_KEY_PREFIX_LENGTH = 8;
     private static final double BLOOM_BITS_PER_KEY = 10;
@@ -210,8 +212,9 @@ public class RocksDbStore {
     }
 
     /**
-     * The files of a store in {@code dir} (SST, numbered WAL, MANIFEST and OPTIONS files, sorted by name) when it has
-     * no CURRENT file; empty when it has one, holds none of them, or does not exist.
+     * The data files of a store in {@code dir} (SST and numbered WAL files, sorted by name) when it has no CURRENT file;
+     * empty when it has one, holds none of them, or does not exist. A directory with MANIFEST and OPTIONS files only is
+     * what a first start interrupted before CURRENT leaves: it holds no data and counts as no store.
      *
      * @throws StoreException when {@code dir} cannot be listed
      */

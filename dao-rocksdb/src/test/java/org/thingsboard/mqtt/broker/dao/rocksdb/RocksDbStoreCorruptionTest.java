@@ -249,6 +249,29 @@ class RocksDbStoreCorruptionTest {
     }
 
     @Test
+    void aFirstStartInterruptedBeforeCurrentLeavesADirectoryThatStartsAgain() throws Exception {
+        Path path = dir.resolve("store");
+        UUID firstId = open(path, List.of()).meta().installId();
+        closeAll();
+        // RocksDB writes MANIFEST and OPTIONS before CURRENT: what is left of a first start killed in between
+        for (String name : fileNames(path)) {
+            if (name.equals("CURRENT") || name.endsWith(".sst") || name.matches("\\d+\\.log")) {
+                Files.delete(path.resolve(name));
+            }
+        }
+        assertThat(fileNames(path)).anyMatch(name -> name.startsWith("MANIFEST-")).anyMatch(name -> name.startsWith("OPTIONS-"))
+                .doesNotContain("CURRENT");
+
+        UUID secondId = open(path, List.of()).meta().installId();
+        closeAll();
+        RocksDbStore third = open(path, List.of());
+
+        assertThat(secondId).isNotEqualTo(firstId);
+        assertThat(third.meta().installId()).isEqualTo(secondId);
+        assertThat(path.resolve("CURRENT")).isRegularFile();
+    }
+
+    @Test
     void anEmptyDirectoryStillBecomesANewStore() throws Exception {
         Path path = Files.createDirectories(dir.resolve("store"));
 
@@ -268,7 +291,7 @@ class RocksDbStoreCorruptionTest {
             assertThat(thrown).as("open %d", attempt).isInstanceOf(StoreCorruptedException.class);
             assertThat(thrown.getMessage()).as("open %d", attempt)
                     .startsWith("The store at " + path + " is corrupted: CURRENT is missing but the directory holds the store's files (")
-                    .contains("MANIFEST-")
+                    .containsPattern("\\d+\\.(log|sst)")
                     .contains("No pre-upgrade checkpoint under " + backups() + ".")
                     .contains("To restore a backup: stop the broker, replace " + path + " with the backup's db directory, start the broker.");
             assertThat(snapshot(path)).as("open %d", attempt).isEqualTo(before);
