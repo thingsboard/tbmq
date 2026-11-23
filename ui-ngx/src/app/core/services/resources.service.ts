@@ -77,7 +77,7 @@ export class ResourcesService {
         }}).pipe(
         map((response) => {
           const headers = response.headers;
-          const filename = headers.get('x-filename');
+          const filename = headers.get('x-filename') ?? this.filenameFromContentDisposition(headers.get('content-disposition'));
           const contentType = headers.get('content-type');
           const linkElement = document.createElement('a');
           try {
@@ -99,6 +99,19 @@ export class ResourcesService {
           }
         })
       );
+    }
+
+    private filenameFromContentDisposition(contentDisposition: string | null): string | null {
+        const encoded = /filename\*\s*=\s*UTF-8''([^;]+)/i.exec(contentDisposition ?? '');
+        if (encoded) {
+            try {
+                return decodeURIComponent(encoded[1].trim());
+            } catch (e) {
+                // fall through to the plain filename
+            }
+        }
+        const plain = /filename\s*=\s*(?:"([^"]*)"|([^;]+))/i.exec(contentDisposition ?? '');
+        return plain ? (plain[1] ?? plain[2]).trim() : null;
     }
 
     private clearModulesCache() {

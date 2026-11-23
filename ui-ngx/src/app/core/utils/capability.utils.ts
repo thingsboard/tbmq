@@ -16,6 +16,7 @@
 
 import type { BrokerConfig, Capability, EditionCapabilities } from '../../shared/models/config.model';
 import type { MenuSection } from '../services/menu.models';
+import { Authority } from '../../shared/models/authority.enum';
 
 export function isCapabilityEnabled(capabilities: Partial<EditionCapabilities> | null | undefined,
                                     capability?: Capability): boolean {
@@ -46,6 +47,11 @@ export function requiredCapabilities(routeData: Array<{ capability?: Capability 
     }
   }
   return result;
+}
+
+export function isBackupAvailable(config: Partial<BrokerConfig> | null | undefined,
+                                  authority: Authority | undefined): boolean {
+  return config?.edition === 'lite' && authority === Authority.SYS_ADMIN;
 }
 
 export function configTableEntries(config: BrokerConfig): Array<[string, unknown]> {

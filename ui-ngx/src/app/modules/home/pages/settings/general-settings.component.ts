@@ -20,6 +20,7 @@ import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import {
   AdminSettings,
   ConnectivityProtocol,
@@ -41,15 +42,19 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
 import { ToggleOption } from '@shared/components/toggle-header.component';
 import { HasConfirmForm } from '@core/guards/confirm-on-exit.guard';
+import { ConfigService } from '@core/http/config.service';
+import { getCurrentAuthUser } from '@core/auth/auth.selectors';
+import { isBackupAvailable } from '@core/utils/capability.utils';
 
 @Component({
     selector: 'tb-general-settings',
     templateUrl: './general-settings.component.html',
     styleUrls: ['./general-settings.component.scss'],
-    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatSlideToggle, MatIcon, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatButton, ToggleSelectComponent, ToggleOption, NgTemplateOutlet, AsyncPipe]
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatSlideToggle, MatIcon, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatButton, MatProgressSpinner, ToggleSelectComponent, ToggleOption, NgTemplateOutlet, AsyncPipe]
 })
 export class GeneralSettingsComponent extends PageComponent implements OnDestroy, HasConfirmForm {
 
@@ -60,6 +65,9 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   protocol = 'mqtt';
   listenerPortMap = new Map<ConnectivityProtocol, number>();
 
+  backupAvailable = false;
+  backupDownloading = false;
+
   private generalSettings: AdminSettings<GeneralSettings>;
   private webSocketSettings: AdminSettings<WebSocketSettings>;
   private connectivitySettings: AdminSettings<ConnectivitySettings>;
@@ -69,10 +77,12 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   constructor(protected store: Store<AppState>,
               private settingsService: SettingsService,
               private mqttJsClientService: MqttJsClientService,
+              private configService: ConfigService,
               public fb: UntypedFormBuilder) {
     super(store);
     this.buildForms();
     this.getSettings();
+    this.backupAvailable = isBackupAvailable(this.configService.brokerConfig, getCurrentAuthUser(this.store)?.authority);
   }
 
   ngOnDestroy() {
@@ -117,6 +127,16 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
         this.processConnectivitySettings(settings);
         this.settingsService.getConnectivitySettings().subscribe();
       });
+  }
+
+  downloadBackup(): void {
+    if (this.backupDownloading) {
+      return;
+    }
+    this.backupDownloading = true;
+    this.settingsService.downloadBackup()
+      .pipe(finalize(() => this.backupDownloading = false))
+      .subscribe({error: () => {}});
   }
 
   discardGeneralSettings(): void {
