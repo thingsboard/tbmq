@@ -140,6 +140,36 @@ class StoreBackupCommandTest {
     }
 
     @Test
+    void aMissingOutDirectoryIsRefusedBeforeTheStoreIsOpened() throws IOException {
+        Path storePath = dir.resolve("db");
+        open(storePath).close();
+        List<String> storeBefore = names(storePath);
+        Path out = dir.resolve("missing").resolve("o.tar.gz");
+
+        int exit = StoreBackupCommand.run(new String[]{"--store-path", storePath.toString(), "--out", out.toString()}, err);
+
+        assertThat(exit).isEqualTo(1);
+        assertThat(err()).contains("Cannot write " + out + ": the directory " + dir.resolve("missing") + " does not exist");
+        assertThat(names(dir)).containsExactly("db");
+        // not opened: an open would have rotated the info log
+        assertThat(names(storePath)).containsExactlyInAnyOrderElementsOf(storeBefore);
+    }
+
+    @Test
+    void anOutUnderAFileIsRefused() throws IOException {
+        Path storePath = dir.resolve("db");
+        open(storePath).close();
+        Path file = Files.write(dir.resolve("file"), bytes("x"));
+        Path out = file.resolve("o.tar.gz");
+
+        int exit = StoreBackupCommand.run(new String[]{"--store-path", storePath.toString(), "--out", out.toString()}, err);
+
+        assertThat(exit).isEqualTo(1);
+        assertThat(err()).contains("Cannot write " + out + ": " + file + " is not a directory");
+        assertThat(names(dir)).containsExactlyInAnyOrder("db", "file");
+    }
+
+    @Test
     void aMissingOutIsAUsageError() {
         int exit = StoreBackupCommand.run(new String[]{"--store-path", dir.resolve("db").toString()}, err);
 

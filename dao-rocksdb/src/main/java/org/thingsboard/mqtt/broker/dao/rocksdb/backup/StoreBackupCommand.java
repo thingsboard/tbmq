@@ -101,6 +101,15 @@ public final class StoreBackupCommand {
             err.println("Cannot write " + out + ": it already exists");
             return EXIT_FAILURE;
         }
+        Path outDir = out.getParent();
+        if (outDir == null || !Files.exists(outDir)) {
+            err.println("Cannot write " + out + ": the directory " + outDir + " does not exist");
+            return EXIT_FAILURE;
+        }
+        if (!Files.isDirectory(outDir)) {
+            err.println("Cannot write " + out + ": " + outDir + " is not a directory");
+            return EXIT_FAILURE;
+        }
         RocksDbStore store = null;
         try {
             StoreProperties properties = new StoreProperties();
