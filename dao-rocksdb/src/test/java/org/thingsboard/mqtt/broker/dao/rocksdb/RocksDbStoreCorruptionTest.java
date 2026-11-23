@@ -551,7 +551,7 @@ class RocksDbStoreCorruptionTest {
         List<ColumnFamilyHandle> handles = new ArrayList<>();
         try (DBOptions options = new DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true);
              RocksDB db = RocksDB.open(options, path.toString(), descriptors, handles)) {
-            // the meta of a store that Phase 2 had opened once
+            // the meta of a store an earlier build had opened once
             try {
                 db.put(handles.get(1), RocksDbStore.META_SCHEMA_VERSION_KEY, new byte[]{0, 0, 0, 1});
                 db.put(handles.get(1), RocksDbStore.META_PRODUCT_KEY, bytes("LITE"));
