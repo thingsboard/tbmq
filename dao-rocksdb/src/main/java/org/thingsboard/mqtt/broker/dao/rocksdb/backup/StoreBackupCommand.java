@@ -61,8 +61,9 @@ public final class StoreBackupCommand {
     private static final String BACKUPS_PATH = "--backups-path";
     private static final Set<String> OPTIONS = Set.of(STORE_PATH, OUT, BACKUPS_PATH);
     private static final String UNKNOWN_VERSION = "unknown";
-    // the lock RocksDB takes on <store>/LOCK is a file lock; a second open fails with an IO error that names it
-    private static final String LOCK_MESSAGE_PART = "lock";
+    // the lock RocksDB takes on <store>/LOCK is a file lock; a second open fails with an IO error that names the file
+    // as "<store>/LOCK: <reason>"
+    private static final String LOCK_FILE = "LOCK";
     private static final String NO_MIGRATION_STEP = "no migration step from schema";
 
     private StoreBackupCommand() {
@@ -166,7 +167,7 @@ public final class StoreBackupCommand {
     }
 
     private static int openFailed(Path storePath, StoreException e, PrintStream err) {
-        if (isLocked(e)) {
+        if (isLocked(e, storePath)) {
             err.println("The store at " + storePath + " is in use by a running broker; back it up through GET /api/system/backup");
             return EXIT_IN_USE;
         }
@@ -180,13 +181,15 @@ public final class StoreBackupCommand {
 
     /**
      * RocksDB refuses to open a store another process, or another open in this process, holds: an IO error whose
-     * message names the lock. Anything else, such as a corrupt store, is not "in use".
+     * message names the store's lock file, {@code <storePath>/LOCK:}. Anything else, such as a corrupt store or an IO
+     * error on another file, is not "in use".
      */
-    static boolean isLocked(Throwable failure) {
+    static boolean isLocked(Throwable failure, Path storePath) {
+        String lockFile = storePath.resolve(LOCK_FILE) + ":";
         for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
             if (cause instanceof RocksDBException rocks && rocks.getStatus() != null
                     && rocks.getStatus().getCode() == Status.Code.IOError
-                    && rocks.getMessage() != null && rocks.getMessage().toLowerCase().contains(LOCK_MESSAGE_PART)) {
+                    && rocks.getMessage() != null && rocks.getMessage().contains(lockFile)) {
                 return true;
             }
             if (cause.getCause() == cause) {

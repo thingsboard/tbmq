@@ -18,6 +18,8 @@ package org.thingsboard.mqtt.broker.dao.rocksdb.backup;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.rocksdb.RocksDBException;
+import org.rocksdb.Status;
 import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreColumnFamily;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
@@ -115,6 +117,26 @@ class StoreBackupCommandTest {
         assertThat(names(dir)).containsExactly("db");
         // the holder is untouched
         running.put(StoreWriteClass.NEW_DATA, StoreColumnFamily.CLIENT_SESSION, bytes("k"), bytes("v"));
+    }
+
+    @Test
+    void onlyAnIoErrorOnTheStoresLockFileMeansInUse() {
+        Path storePath = Path.of("/data/blocks/db");
+        // what RocksDB reports for the lock, from another process and from another open in this process
+        assertThat(StoreBackupCommand.isLocked(ioError("While lock file: /data/blocks/db/LOCK: Resource temporarily unavailable"),
+                storePath)).isTrue();
+        assertThat(StoreBackupCommand.isLocked(new StoreException("Cannot open the store",
+                ioError("lock hold by current process, acquire time 1 acquiring thread 2: /data/blocks/db/LOCK: No locks available")),
+                storePath)).isTrue();
+
+        // an IO error on another file of a path that holds "lock" is no lock
+        assertThat(StoreBackupCommand.isLocked(ioError("While open a file for appending: /data/blocks/db/000012.log: No space left on device"),
+                storePath)).isFalse();
+        // the lock file of another store, and a lock message without the IO error code
+        assertThat(StoreBackupCommand.isLocked(ioError("While lock file: /other/db/LOCK: Resource temporarily unavailable"),
+                storePath)).isFalse();
+        assertThat(StoreBackupCommand.isLocked(new RocksDBException("/data/blocks/db/LOCK: x", new Status(Status.Code.Corruption,
+                Status.SubCode.None, "/data/blocks/db/LOCK: x")), storePath)).isFalse();
     }
 
     @Test
@@ -254,6 +276,10 @@ class StoreBackupCommandTest {
         assertThat(exit).isEqualTo(1);
         assertThat(err()).contains("checkpoint");
         assertThat(names(dir)).containsExactlyInAnyOrder("db", "not-a-directory");
+    }
+
+    private static RocksDBException ioError(String message) {
+        return new RocksDBException(message, new Status(Status.Code.IOError, Status.SubCode.None, message));
     }
 
     private String err() {
