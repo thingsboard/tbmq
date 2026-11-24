@@ -15,13 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.common.data.security.jwt;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.List;
+import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -69,6 +73,51 @@ public class JwtMqttAuthProviderConfigurationTest {
     public void shouldPassWithValidDefaultConfiguration() {
         JwtMqttAuthProviderConfiguration config = JwtMqttAuthProviderConfiguration.defaultConfiguration();
         assertThatCode(config::validate).doesNotThrowAnyException();
+    }
+
+    @Test
+    public void jwtDefaultConfigurationConfiguresDeviceOnly() {
+        assertThat(JwtMqttAuthProviderConfiguration.defaultConfiguration().configuredClientTypes())
+                .containsExactly(ClientType.DEVICE);
+    }
+
+    @Test
+    public void jwtWithDeviceDefaultAndClaimsConfiguresBothTypes() {
+        var config = JwtMqttAuthProviderConfiguration.defaultConfiguration();
+        config.setClientTypeClaims(Map.of("role", "app"));
+
+        assertThat(config.configuredClientTypes()).containsExactlyInAnyOrder(ClientType.DEVICE, ClientType.APPLICATION);
+    }
+
+    @Test
+    public void jwtWithApplicationDefaultAndClaimsConfiguresBothTypes() {
+        var config = JwtMqttAuthProviderConfiguration.defaultConfiguration();
+        config.setDefaultClientType(ClientType.APPLICATION);
+        config.setClientTypeClaims(Map.of("role", "dev"));
+
+        assertThat(config.configuredClientTypes()).containsExactlyInAnyOrder(ClientType.DEVICE, ClientType.APPLICATION);
+    }
+
+    @Test
+    public void jwtWithApplicationDefaultAndNoClaimsConfiguresApplicationOnly() {
+        var config = JwtMqttAuthProviderConfiguration.defaultConfiguration();
+        config.setDefaultClientType(ClientType.APPLICATION);
+
+        assertThat(config.configuredClientTypes()).containsExactly(ClientType.APPLICATION);
+    }
+
+    @Test
+    public void jwtWithNullDefaultIsDevice() {
+        var config = JwtMqttAuthProviderConfiguration.defaultConfiguration();
+        config.setDefaultClientType(null);
+
+        assertThat(config.configuredClientTypes()).containsExactly(ClientType.DEVICE);
+    }
+
+    @Test
+    public void configuredClientTypesIsNotSerialized() throws JsonProcessingException {
+        assertThat(new ObjectMapper().writeValueAsString(JwtMqttAuthProviderConfiguration.defaultConfiguration()))
+                .doesNotContain("configuredClientTypes");
     }
 
 }

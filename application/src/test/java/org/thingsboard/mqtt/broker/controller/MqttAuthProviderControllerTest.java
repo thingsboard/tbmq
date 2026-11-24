@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -30,6 +31,8 @@ import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderC
 import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.util.MqttAuthProviderUtil;
+import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
+import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,6 +75,7 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
 
     @Test
     public void updateDefaultJwtMqttAuthProviderTest() throws Exception {
+        Assume.assumeFalse("Lite refuses APPLICATION providers", isLite());
         MqttAuthProvider mqttAuthProvider = getMqttAuthProvider(MqttAuthProviderType.JWT);
         assertThat(mqttAuthProvider.isEnabled()).isFalse();
         assertThat(mqttAuthProvider.getConfiguration()).isInstanceOf(JwtMqttAuthProviderConfiguration.class);
@@ -293,6 +297,10 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
         provider.setType(MqttAuthProviderType.MQTT_BASIC);
         provider.setConfiguration(new BasicMqttAuthProviderConfiguration());
         return provider;
+    }
+
+    private boolean isLite() {
+        return TbmqEditionResolver.resolve(getClass().getClassLoader()) == TbmqEdition.LITE;
     }
 
 }

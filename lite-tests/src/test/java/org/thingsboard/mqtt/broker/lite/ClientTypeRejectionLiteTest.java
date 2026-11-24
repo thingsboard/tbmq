@@ -25,6 +25,10 @@ import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCrede
 import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportColumnType;
 import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportRequest;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.http.HttpMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.controller.AbstractControllerTest;
@@ -34,6 +38,7 @@ import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -45,6 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ClientTypeRejectionLiteTest extends AbstractControllerTest {
 
     private static final String CREDENTIALS_URL = "/api/mqtt/client/credentials";
+    private static final String PROVIDER_URL = "/api/mqtt/auth/provider";
 
     @Autowired
     private MqttClientCredentialsDao credentialsDao;
@@ -115,6 +121,37 @@ public class ClientTypeRejectionLiteTest extends AbstractControllerTest {
         assertThat(mqttClientCredentialsService.findCredentialsByName("bulk-a")).isNotNull();
         assertThat(mqttClientCredentialsService.findCredentialsByName("bulk-b")).isNull();
         assertThat(mqttClientCredentialsService.findCredentialsByName("bulk-c")).isNotNull();
+    }
+
+    @Test
+    public void givenJwtProviderWithApplication_whenSave_thenBadRequest() throws Exception {
+        MqttAuthProvider provider = getMqttAuthProvider(MqttAuthProviderType.JWT);
+        JwtMqttAuthProviderConfiguration configuration = (JwtMqttAuthProviderConfiguration) provider.getConfiguration();
+
+        configuration.setDefaultClientType(ClientType.APPLICATION);
+        doPost(PROVIDER_URL, provider).andExpect(status().isBadRequest())
+                .andExpect(statusReason(containsString(ClientTypeConstraint.LITE_MESSAGE)));
+
+        configuration.setDefaultClientType(ClientType.DEVICE);
+        configuration.setClientTypeClaims(Map.of("role", "app"));
+        doPost(PROVIDER_URL, provider).andExpect(status().isBadRequest())
+                .andExpect(statusReason(containsString(ClientTypeConstraint.LITE_MESSAGE)));
+
+        configuration.setClientTypeClaims(null);
+        doPost(PROVIDER_URL, provider).andExpect(status().isOk());
+    }
+
+    @Test
+    public void givenHttpProviderWithApplicationDefault_whenSave_thenBadRequest() throws Exception {
+        MqttAuthProvider provider = getMqttAuthProvider(MqttAuthProviderType.HTTP);
+        HttpMqttAuthProviderConfiguration configuration = (HttpMqttAuthProviderConfiguration) provider.getConfiguration();
+
+        configuration.setDefaultClientType(ClientType.APPLICATION);
+        doPost(PROVIDER_URL, provider).andExpect(status().isBadRequest())
+                .andExpect(statusReason(containsString(ClientTypeConstraint.LITE_MESSAGE)));
+
+        configuration.setDefaultClientType(ClientType.DEVICE);
+        doPost(PROVIDER_URL, provider).andExpect(status().isOk());
     }
 
     private static BulkImportRequest.ColumnMapping column(BulkImportColumnType type) {

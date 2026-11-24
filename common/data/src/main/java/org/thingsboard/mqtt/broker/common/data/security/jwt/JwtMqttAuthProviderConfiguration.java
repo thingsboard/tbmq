@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.PUB_SUB_AUTH_RULES_ALLOW_ALL;
 
@@ -79,6 +80,15 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
 
     public Map<String, String> getClientTypeClaims() {
         return CollectionUtils.isEmpty(clientTypeClaims) ? Map.of() : clientTypeClaims;
+    }
+
+    @Override
+    public Set<ClientType> configuredClientTypes() {
+        ClientType defaultType = getDefaultClientType();
+        if (getClientTypeClaims().isEmpty()) {
+            return Set.of(defaultType);
+        }
+        return Set.of(ClientType.DEVICE, ClientType.APPLICATION);
     }
 
     public static JwtMqttAuthProviderConfiguration defaultConfiguration() {

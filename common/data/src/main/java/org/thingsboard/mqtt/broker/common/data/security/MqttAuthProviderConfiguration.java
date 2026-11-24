@@ -20,11 +20,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.http.HttpMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
+
+import java.util.Set;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(
@@ -43,5 +46,14 @@ public interface MqttAuthProviderConfiguration {
     MqttAuthProviderType getType();
 
     default void validate() {}
+
+    /**
+     * Client types this configuration can assign to the clients it authenticates.
+     * Providers that assign no client type of their own keep the empty default.
+     */
+    @JsonIgnore
+    default Set<ClientType> configuredClientTypes() {
+        return Set.of();
+    }
 
 }
