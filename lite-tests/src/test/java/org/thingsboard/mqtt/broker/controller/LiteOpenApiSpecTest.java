@@ -38,7 +38,8 @@ public class LiteOpenApiSpecTest extends AbstractOpenApiSpecTest {
     private static final List<String> CLUSTER_ONLY_PREFIXES = List.of(
             "/api/integration",
             "/api/app/shared/subs",
-            "/api/events"
+            "/api/events",
+            "/api/node/drain"
     );
 
     @Override

@@ -19,8 +19,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 
 @Component("nodeDrain")
+@ClusterComponent
 @RequiredArgsConstructor
 public class NodeDrainHealthIndicator implements HealthIndicator {
 
