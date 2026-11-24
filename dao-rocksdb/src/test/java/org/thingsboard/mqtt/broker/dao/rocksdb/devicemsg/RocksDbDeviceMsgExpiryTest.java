@@ -121,15 +121,16 @@ class RocksDbDeviceMsgExpiryTest {
     }
 
     @Test
-    void anIntervalOfZeroLivesForOneSecondOnly() {
+    void anIntervalOfZeroHasNoMessageExpiryTimeAndGoesOnlyAtTheTtl() {
         store.append(List.of(new QueueAppend("c1", List.of(msg(clock.millis(), 0)))));
-        assertThat(store.read("c1", 0, 100)).hasSize(1);
-        clock.advanceMillis(1001);
+        clock.advanceSeconds(TTL_SECONDS - 1);                                         // far past any message expiry time, before the operator TTL
+        assertThat(store.read("c1", 0, 100)).extracting(StoredDeviceMsg::msgExpiresAtMs).containsExactly(0L);
+        clock.advanceSeconds(2);
         assertThat(store.read("c1", 0, 100)).isEmpty();
     }
 
     @Test
-    void mqtt_1_5_3_anIntervalOfTwoToThe31SecondsOrMoreIsReadAsUnsigned() {      // Trello #657
+    void mqtt_1_5_3_anIntervalOfTwoToThe31SecondsOrMoreIsReadAsUnsigned() {
         // netty reads the Four Byte Integer into a signed int: 0xFFFFFFFF arrives as -1, 2^31 s as Integer.MIN_VALUE
         long createdTimeMs = clock.millis();
         store.append(List.of(new QueueAppend("c1", List.of(msg(createdTimeMs, -1), msg(createdTimeMs, Integer.MIN_VALUE)))));

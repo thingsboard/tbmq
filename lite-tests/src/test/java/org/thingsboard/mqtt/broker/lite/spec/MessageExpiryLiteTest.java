@@ -33,9 +33,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * Message Expiry Interval of a message kept for a persistent DEVICE subscriber ([MQTT-3.3.2-5], [MQTT-3.3.2-6]). An
- * interval of 0 is a lifetime of 0 seconds: the message reaches a subscriber that is online when it is dispatched, and
- * is not kept for one that is offline (the card #653 rule in Lite).
+ * Message Expiry Interval of a message kept for a persistent DEVICE subscriber ([MQTT-3.3.2-5], [MQTT-3.3.2-6]) and of
+ * a retained message. An interval of 0 never expires: the message is kept for a subscriber that is offline, like a
+ * message without an interval, until the store's TTL, and is delivered with an interval of 0.
  */
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ContextConfiguration(classes = MessageExpiryLiteTest.class, loader = SpringBootContextLoader.class)
@@ -61,7 +61,7 @@ public class MessageExpiryLiteTest extends AbstractLiteSpecCase {
     }
 
     @Test
-    public void mqtt_3_3_2_5_intervalZeroIsNotKeptForAnOfflinePersistentSubscriber() throws Exception {
+    public void mqtt_3_3_2_5_intervalZeroIsKeptForAnOfflinePersistentSubscriberAndDeliveredWithIntervalZero() throws Exception {
         String topic = "spec/expiry/zero-offline";
         String subscriberId = "expiry-zero-offline-sub";
         disconnect(persistentSubscriber(subscriberId, topic, 1), subscriberId);
@@ -70,15 +70,36 @@ public class MessageExpiryLiteTest extends AbstractLiteSpecCase {
         RawMqttClient publisher = connectClean("expiry-zero-offline-pub", MqttVersion.MQTT_5);
 
         assertThat(publisher.publishQos1(topic, 1, "zero", 0)).isEqualTo(SUCCESS);
-        // the copy is discarded and counted before the publish is acknowledged; one kept in the queue would count
-        // only once the store expired it
-        assertThat(expiredDeviceMsgs()).isEqualTo(expiredBefore + 1);
 
         RawMqttClient subscriber = connectPersistent(subscriberId);
         assertThat(subscriber.sessionPresent()).isTrue();
-        assertTheNextMessageIsAMarker(publisher, subscriber, topic);
-        // counted as expired, not as dropped
+        RawMqttClient.Packet publish = nextPublish(subscriber);
+        assertThat(publish.payload()).isEqualTo("zero");
+        assertThat(publish.msgExpiryInterval()).isZero();
+        subscriber.pubAck(publish.packetId());
+        assertThat(expiredDeviceMsgs()).as("expiredDeviceMsgs").isEqualTo(expiredBefore);
         assertThat(droppedMsgs()).as("droppedMsgs").isEqualTo(droppedBefore);
+    }
+
+    @Test
+    public void mqtt_3_3_2_5_aRetainedMessageWithIntervalZeroIsDeliveredToALaterSubscriberWithIntervalZero() throws Exception {
+        String topic = "spec/expiry/zero-retained";
+        RawMqttClient publisher = connectClean("expiry-zero-retained-pub", MqttVersion.MQTT_5);
+        assertThat(publisher.publishRetainedQos1(topic, 1, "zero", 0)).isEqualTo(SUCCESS);
+        // an interval of 0 does not pass: the message must outlive the second it would have lived if 0 meant one second
+        Thread.sleep(Duration.ofSeconds(2));
+
+        RawMqttClient subscriber = connectClean("expiry-zero-retained-sub", MqttVersion.MQTT_5);
+        subscriber.subscribe(topic, 1);
+        try {
+            RawMqttClient.Packet publish = nextPublish(subscriber);
+            assertThat(publish.payload()).isEqualTo("zero");
+            assertThat(publish.msgExpiryInterval()).isZero();
+            subscriber.pubAck(publish.packetId());
+        } finally {
+            // an empty retained payload clears the retained message
+            assertThat(publisher.publishRetainedQos1(topic, 2, "")).isEqualTo(SUCCESS);
+        }
     }
 
     @Test
