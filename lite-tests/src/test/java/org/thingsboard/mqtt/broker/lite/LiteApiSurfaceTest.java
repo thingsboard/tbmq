@@ -18,6 +18,8 @@ package org.thingsboard.mqtt.broker.lite;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.controller.AbstractControllerTest;
 
+import java.util.UUID;
+
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -34,6 +36,13 @@ public class LiteApiSurfaceTest extends AbstractControllerTest {
         doGet(NODE_DRAIN_PATH).andExpect(status().isNotFound());
         doPost(NODE_DRAIN_PATH).andExpect(status().isNotFound());
         doDelete(NODE_DRAIN_PATH).andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void integrationSubscriptionsEndpointIsNotFound() throws Exception {
+        loginSysAdmin();
+
+        doGet("/api/subscription/integration?integrationId=" + UUID.randomUUID()).andExpect(status().isNotFound());
     }
 
 }
