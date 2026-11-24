@@ -41,6 +41,7 @@ import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.controller.BaseController;
 import org.thingsboard.mqtt.broker.dao.store.BackupInProgressException;
 import org.thingsboard.mqtt.broker.dao.store.StoreBackup;
+import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponse;
 
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -84,12 +85,16 @@ public class StandaloneBackupController extends BaseController {
      */
     @ApiOperation(value = "Download a backup of the store (downloadStoreBackup)",
             notes = "Streams a consistent backup of the broker store as a gzip-compressed tar archive " +
-                    "(tbmq-lite-backup-<yyyyMMdd-HHmmss>.tar.gz, UTC); the file name is in the 'Content-Disposition' and 'x-filename' response headers. " +
+                    "(tbmq-lite-backup-yyyyMMdd-HHmmss.tar.gz, UTC); the file name is in the 'Content-Disposition' and 'x-filename' response headers. " +
                     "Only one backup runs at a time: while another one is in progress the request fails with 409. " +
                     "The archive contains secrets, the signing key of the store and the credential hashes, so keep it as protected as the store itself. " +
                     "Available to SYS_ADMIN only.",
-            responses = @ApiResponse(responseCode = "200", description = "The backup archive.",
-                    content = @Content(mediaType = "application/gzip", schema = @Schema(type = "string", format = "binary"))))
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "The backup archive.",
+                            content = @Content(mediaType = "application/gzip", schema = @Schema(type = "string", format = "binary"))),
+                    @ApiResponse(responseCode = "409", description = "Another backup is in progress.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ThingsboardErrorResponse.class)))
+            })
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping("/backup")
     public ResponseEntity<StreamingResponseBody> downloadBackup(HttpServletRequest request) {
