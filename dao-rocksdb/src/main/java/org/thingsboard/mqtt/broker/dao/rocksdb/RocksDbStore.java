@@ -46,6 +46,7 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.migration.MigrationContext;
 import org.thingsboard.mqtt.broker.dao.rocksdb.migration.StoreMigrationRunner;
 import org.thingsboard.mqtt.broker.dao.rocksdb.migration.StoreMigrationStep;
 import org.thingsboard.mqtt.broker.dao.store.StoreException;
+import org.thingsboard.mqtt.broker.dao.store.StoreMemoryUsage;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -119,6 +120,8 @@ public class RocksDbStore {
     private static final String OP_SYNC_WAL = "sync the WAL";
     private static final String OP_META = "read the meta";
     private static final String OP_CHECKPOINT = "create a checkpoint";
+    private static final String PROPERTY_MEMTABLES_SIZE = "rocksdb.cur-size-all-mem-tables";
+    private static final String PROPERTY_TABLE_READERS_MEM = "rocksdb.estimate-table-readers-mem";
 
     private final StoreProperties properties;
     private final StoreMemoryBudget memoryBudget;
@@ -137,6 +140,7 @@ public class RocksDbStore {
     private WriteOptions writeOptions;
     private StoreMeta meta;
     private RocksDB db;
+    private Cache blockCache;
     private boolean open;
 
     @Autowired
@@ -240,7 +244,7 @@ public class RocksDbStore {
     }
 
     private void doOpen(String path, WalSyncMode walSyncMode) throws RocksDBException {
-        Cache blockCache = register(new LRUCache(memoryBudget.blockCacheBytes()));
+        blockCache = register(new LRUCache(memoryBudget.blockCacheBytes()));
         WriteBufferManager writeBufferManager = register(new WriteBufferManager(memoryBudget.writeBufferBytes(), blockCache));
         // with an SST file manager RocksDB recovers from an out-of-space background error by itself once space is back
         SstFileManager sstFileManager = register(new SstFileManager(Env.getDefault()));
@@ -562,7 +566,44 @@ public class RocksDbStore {
             }
         }
         nativeResources.clear();
+        blockCache = null;
         writeOptions = null;
+    }
+
+    /**
+     * RocksDB's own figures of the memory the store holds: the block cache, the memtables and the table readers
+     * (index and filter blocks of the open SST files). All zeros when the store is not open.
+     */
+    public StoreMemoryUsage memoryUsage() {
+        lock.readLock().lock();
+        try {
+            if (!open) {
+                return StoreMemoryUsage.ZERO;
+            }
+            long memtables = 0;
+            long tableReaders = 0;
+            for (ColumnFamilyHandle handle : handles.values()) {
+                memtables += property(handle, PROPERTY_MEMTABLES_SIZE);
+                tableReaders += property(handle, PROPERTY_TABLE_READERS_MEM);
+            }
+            for (ColumnFamilyHandle handle : otherHandles) {
+                memtables += property(handle, PROPERTY_MEMTABLES_SIZE);
+                tableReaders += property(handle, PROPERTY_TABLE_READERS_MEM);
+            }
+            return new StoreMemoryUsage(blockCache.getUsage(), blockCache.getPinnedUsage(), memtables, tableReaders);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    // a property that cannot be read counts as 0: a scrape must not fail
+    private long property(ColumnFamilyHandle handle, String name) {
+        try {
+            return db.getLongProperty(handle, name);
+        } catch (RocksDBException e) {
+            log.debug("Failed to read the property {} of the store at {}", name, properties.getPath(), e);
+            return 0;
+        }
     }
 
     private <T extends AutoCloseable> T register(T resource) {

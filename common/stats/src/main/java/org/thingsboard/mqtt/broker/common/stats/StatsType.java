@@ -88,6 +88,10 @@ public enum StatsType {
     PUBLISH_PAUSES("publishPauses"),
     PAUSED_CONNECTIONS("pausedConnections"),
     DISK_FULL_SKIPPED_STATS_WRITES("diskFullSkippedStatsWrites"),
+    STORE_BLOCK_CACHE_USAGE("storeBlockCacheUsage"),
+    STORE_BLOCK_CACHE_PINNED_USAGE("storeBlockCachePinnedUsage"),
+    STORE_MEMTABLES_SIZE("storeMemtablesSize"),
+    STORE_TABLE_READERS_MEM("storeTableReadersMem"),
     ;
 
     private final String printName;
