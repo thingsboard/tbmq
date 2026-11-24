@@ -58,19 +58,33 @@ spec:
           ports:
             - containerPort: 8082
               name: http
+          # Kafka topic settings for Google Cloud Managed Service for Apache Kafka; see kafka/managed/
+          envFrom:
+            - configMapRef:
+                name: tbmq-kafka-topics-config
+                optional: true
           env:
             - name: TB_SERVICE_ID
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
 
+            # Uncomment the following lines to connect to Google Cloud Managed Service for Apache Kafka
+            # - name: TB_KAFKA_SERVERS
+            #   value: "PUT_YOUR_KAFKA_BOOTSTRAP_ADDRESS_HERE"
+            # - name: TB_KAFKA_DEFAULT_PRODUCER_CONSUMER_CONFIG
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: tbmq-kafka-credentials
+            #       key: kafka-config
+
             # Uncomment the following lines to connect to Apache Kafka
-            #            - name: TB_KAFKA_SERVERS
-            #              value: "tbmq-kafka:9092"
+            # - name: TB_KAFKA_SERVERS
+            #   value: "tbmq-kafka:9092"
 
             # Uncomment the following lines to connect to Strimzi
-            #            - name: TB_KAFKA_SERVERS
-            #              value: "tbmq-kafka-bootstrap:9092"
+            # - name: TB_KAFKA_SERVERS
+            #   value: "tbmq-kafka-bootstrap:9092"
 
             - name: TB_SERVICE_INTEGRATIONS_SUPPORTED
               value: "ALL"

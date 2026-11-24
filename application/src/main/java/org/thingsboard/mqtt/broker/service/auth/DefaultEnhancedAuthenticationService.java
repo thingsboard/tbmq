@@ -159,6 +159,11 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
         this.enabled = false;
     }
 
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
     private EnhancedAuthFinalResponse processAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {
         var server = sessionCtx.getScramServerWithCallbackHandler();
         if (server == null) {

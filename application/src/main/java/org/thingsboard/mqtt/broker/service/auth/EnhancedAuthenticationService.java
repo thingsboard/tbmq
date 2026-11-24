@@ -36,4 +36,6 @@ public interface EnhancedAuthenticationService {
     void enable();
 
     void disable();
+
+    boolean isEnabled();
 }

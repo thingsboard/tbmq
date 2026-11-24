@@ -172,6 +172,7 @@ public class BrokerConstants {
     public static final String TOTAL_RATE_LIMITS_DETECTED = "Total rate limits detected";
     public static final String SUBSCRIPTION_ID_IS_0_ERROR_MSG = "It is a Protocol Error if the Subscription Identifier has a value of 0";
     public static final String BLOCKED_CLIENT_MSG = "Blocked client by ";
+    public static final String SCRAM_ONLY_AUTH_ENABLED_MSG = "Only SCRAM authentication is enabled; the client must use an MQTT 5 Authentication Method";
 
     public static final String BASIC_DOWNLINK_CG_PREFIX = "basic-downlink-msg-consumer-group-";
     public static final String PERSISTED_DOWNLINK_CG_PREFIX = "persisted-downlink-msg-consumer-group-";

@@ -25,15 +25,18 @@ data:
   CACHE_STATS_ENABLED: "true"
   CACHE_STATS_INTERVAL_SEC: "60"
 
-  # Valkey standalone
-  #REDIS_CONNECTION_TYPE: "standalone"
-  # Make sure that the REDIS_HOST value does not contain the port (:6379).
-  REDIS_HOST: "YOUR_VALKEY_ENDPOINT_URL_WITHOUT_PORT"
-  #REDIS_PASSWORD: "YOUR_REDIS_PASSWORD"
+  # Azure Managed Redis with the Enterprise clustering policy: one TLS endpoint on port 10000
+  REDIS_CONNECTION_TYPE: "standalone"
+  # Make sure that the REDIS_HOST value does not contain the port.
+  REDIS_HOST: "YOUR_REDIS_HOST_NAME"
+  REDIS_PORT: "10000"
+  REDIS_PASSWORD: "YOUR_REDIS_ACCESS_KEY"
+  REDIS_SSL_ENABLED: "true"
+  # CA certificates of the TBMQ image, which include the roots that Azure certificates chain to
+  REDIS_SSL_CERT_FILE: "/etc/ssl/certs/ca-certificates.crt"
 
-  # Valkey cluster
-  REDIS_CONNECTION_TYPE: "cluster"
-  REDIS_NODES: "COMMA_SEPARATED_LIST_OF_NODES"
-
+  # Valkey cluster, for example the OSS clustering policy of Azure Managed Redis or a Valkey cluster in AKS
+  #REDIS_CONNECTION_TYPE: "cluster"
+  #REDIS_NODES: "COMMA_SEPARATED_LIST_OF_NODES"
   # Recommended to enable in Kubernetes environments in case of Valkey cluster setup to handle dynamic IP changes and nodes failover
   #REDIS_LETTUCE_CLUSTER_TOPOLOGY_REFRESH_ENABLED: "true"

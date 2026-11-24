@@ -41,6 +41,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SCRAM_ONLY_AUTH_ENABLED_MSG;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -57,6 +60,9 @@ public class DefaultAuthorizationRoutingServiceTest {
 
     @Mock
     private HttpMqttClientAuthProvider httpMqttClientAuthProvider;
+
+    @Mock
+    private EnhancedAuthenticationService enhancedAuthenticationService;
 
     @Mock
     private AuthContext authContext;
@@ -177,12 +183,62 @@ public class DefaultAuthorizationRoutingServiceTest {
         given(sslMqttClientAuthProvider.isEnabled()).willReturn(false);
         given(jwtMqttClientAuthProvider.isEnabled()).willReturn(false);
         given(httpMqttClientAuthProvider.isEnabled()).willReturn(false);
+        given(enhancedAuthenticationService.isEnabled()).willReturn(false);
 
         // when
         AuthResponse result = service.executeAuthFlow(authContext);
 
         // then
         assertThat(result).isEqualTo(AuthResponse.defaultAuthResponse());
+    }
+
+    @Test
+    public void shouldRefuseNonScramClient_WhenScramIsTheOnlyEnabledProvider() {
+        // given
+        MqttAuthSettingsProto settings = MqttAuthSettingsProto.newBuilder()
+                .addPriorities(MqttAuthProviderTypeProto.MQTT_BASIC)
+                .addPriorities(MqttAuthProviderTypeProto.SCRAM)
+                .build();
+        service.onMqttAuthSettingsUpdate(settings);
+
+        given(basicMqttClientAuthProvider.isEnabled()).willReturn(false);
+        given(sslMqttClientAuthProvider.isEnabled()).willReturn(false);
+        given(jwtMqttClientAuthProvider.isEnabled()).willReturn(false);
+        given(httpMqttClientAuthProvider.isEnabled()).willReturn(false);
+        given(enhancedAuthenticationService.isEnabled()).willReturn(true);
+
+        // when
+        AuthResponse result = service.executeAuthFlow(authContext);
+
+        // then
+        assertThat(result.isFailure()).isTrue();
+        assertThat(result.getReason()).isEqualTo(SCRAM_ONLY_AUTH_ENABLED_MSG);
+        assertThat(result.getClientType()).isNull();
+        assertThat(result.getAuthRulePatterns()).isNull();
+        then(basicMqttClientAuthProvider).should(never()).authenticate(authContext);
+    }
+
+    @Test
+    public void shouldRunNonScramProviders_WhenScramAndBasicAreEnabled() {
+        // given
+        MqttAuthSettingsProto settings = MqttAuthSettingsProto.newBuilder()
+                .addPriorities(MqttAuthProviderTypeProto.SCRAM)
+                .addPriorities(MqttAuthProviderTypeProto.MQTT_BASIC)
+                .build();
+        service.onMqttAuthSettingsUpdate(settings);
+
+        given(basicMqttClientAuthProvider.isEnabled()).willReturn(true);
+        lenient().when(enhancedAuthenticationService.isEnabled()).thenReturn(true);
+        given(basicMqttClientAuthProvider.authenticate(authContext))
+                .willReturn(AuthResponse.failure("basic failed"));
+
+        // when
+        AuthResponse result = service.executeAuthFlow(authContext);
+
+        // then
+        assertThat(result.isFailure()).isTrue();
+        assertThat(result.getReason()).isEqualTo("basic failed");
+        then(basicMqttClientAuthProvider).should().authenticate(authContext);
     }
 
     @Test
