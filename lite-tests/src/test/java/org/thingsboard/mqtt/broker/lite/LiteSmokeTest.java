@@ -48,6 +48,7 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
+import org.thingsboard.mqtt.broker.controller.NodeDrainController;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
@@ -55,6 +56,7 @@ import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.event.EventService;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.drain.NodeDrainService;
 import org.thingsboard.mqtt.broker.service.mqtt.auth.MqttAuthProviderManagerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.standalone.application.NoOpApplicationSharedSubscriptionService;
@@ -120,6 +122,14 @@ public class LiteSmokeTest {
         assertThat(context.getBeanNamesForType(EventService.class)).isEmpty();
         assertThat(context.getBeanNamesForType(ApplicationSessionCtxService.class)).isEmpty();
         assertThat(context.getBean(ApplicationSharedSubscriptionService.class)).isInstanceOf(NoOpApplicationSharedSubscriptionService.class);
+    }
+
+    @Test
+    public void nodeDrainHasNoRestEndpointOrHealthContributor() {
+        assertThat(context.getBeanNamesForType(NodeDrainController.class)).isEmpty();
+        assertThat(context.containsBean("nodeDrain")).isFalse();
+        // the connect path still asks the service whether the node accepts connections
+        assertThat(context.getBeanNamesForType(NodeDrainService.class)).isNotEmpty();
     }
 
     @Test

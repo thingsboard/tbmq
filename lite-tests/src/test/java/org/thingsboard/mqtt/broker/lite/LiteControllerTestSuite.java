@@ -22,7 +22,7 @@ import org.junit.runner.RunWith;
  * The application's controller tests on the Lite classpath. Like the integration suite, it selects them by name from
  * the application's test-jar, so a new controller test runs here too unless it is excluded below with its reason.
  * {@code OpenApiSpecTest} is not a {@code *ControllerTest}, so it is not picked up: it checks the cluster edition's
- * spec.
+ * spec. Lite has its own twin, {@code LiteOpenApiSpecTest}, which surefire runs by its {@code *Test} name.
  */
 @RunWith(ClasspathSuite.class)
 @ClasspathSuite.IncludeJars(true)
@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
         // Lite has neither integrations nor node drain
         "!.*IntegrationControllerTest",
         "!.*NodeDrainControllerTest",
+        "!.*ClusterSubscriptionControllerTest",
         // application shared subscriptions: Lite has none
         "!.*AppSharedSubscriptionLookupControllerTest",
 })

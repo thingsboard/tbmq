@@ -120,11 +120,4 @@ public class SubscriptionController extends BaseController {
                 new ClientSubscriptionQuery(pageLink, clientId, topicFilter, allQos, allNoLocal, allRetainAsPublish, allRetainHandling, subscriptionId)
         ));
     }
-
-    @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @GetMapping(value = "integration", params = {"integrationId"})
-    public Set<String> getIntegrationSubscriptions(@RequestParam String integrationId) throws ThingsboardException {
-        toUUID(integrationId); // check if integrationId is UUID
-        return checkNotNull(clientSubscriptionCache.getIntegrationSubscriptions(integrationId));
-    }
 }
