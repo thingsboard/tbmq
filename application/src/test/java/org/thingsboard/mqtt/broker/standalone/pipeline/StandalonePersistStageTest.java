@@ -275,7 +275,6 @@ class StandalonePersistStageTest {
 
     @Test
     void aStoreErrorFailsEveryCopyOfTheBatch() {
-        givenSession("c2", false);
         doThrow(new StoreException("disk")).when(store).append(any());
 
         submit("c1", msg("m1"), cb1);

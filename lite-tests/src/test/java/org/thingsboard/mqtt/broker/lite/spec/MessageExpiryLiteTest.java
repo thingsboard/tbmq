@@ -70,6 +70,8 @@ public class MessageExpiryLiteTest extends AbstractLiteSpecCase {
         RawMqttClient publisher = connectClean("expiry-zero-offline-pub", MqttVersion.MQTT_5);
 
         assertThat(publisher.publishQos1(topic, 1, "zero", 0)).isEqualTo(SUCCESS);
+        // the subscriber stays away 2 s: an interval of 0 does not pass, however long the subscriber is offline
+        Thread.sleep(Duration.ofSeconds(2));
 
         RawMqttClient subscriber = connectPersistent(subscriberId);
         assertThat(subscriber.sessionPresent()).isTrue();
