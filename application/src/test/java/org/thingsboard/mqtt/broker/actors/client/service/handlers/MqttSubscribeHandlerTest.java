@@ -374,11 +374,23 @@ public class MqttSubscribeHandlerTest {
     @Test
     public void givenTopicSubscription_whenGetExpiredRetainedMessagesForTopicSubscription_thenReturnEmptyResult() {
         MqttProperties properties = new MqttProperties();
-        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, -10));
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, 10));
+        long createdTime = System.currentTimeMillis() - 11_000;
 
-        when(retainedMsgService.getRetainedMessages("tf")).thenReturn(List.of(new RetainedMsg("tf", null, 1, properties)));
+        when(retainedMsgService.getRetainedMessages("tf")).thenReturn(List.of(new RetainedMsg("tf", null, 1, properties, createdTime)));
         List<RetainedMsg> messages = mqttSubscribeHandler.getRetainedMessagesForTopicSubscription(new ClientTopicSubscription("tf", 0));
         assertTrue(messages.isEmpty());
+    }
+
+    @Test
+    public void givenRetainedMsgWithMaxUnsignedExpiryInterval_whenGetRetainedMessagesForTopicSubscription_thenReturnIt() {
+        // MQTT-5 §1.5.3: the interval is unsigned; netty reads 0xFFFFFFFF into an int as -1
+        MqttProperties properties = new MqttProperties();
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, 0xFFFFFFFF));
+
+        when(retainedMsgService.getRetainedMessages("tf")).thenReturn(List.of(new RetainedMsg("tf", null, 1, properties)));
+        List<RetainedMsg> messages = mqttSubscribeHandler.getRetainedMessagesForTopicSubscription(new ClientTopicSubscription("tf", 1));
+        assertEquals(1, messages.size());
     }
 
     @Test
