@@ -20,6 +20,9 @@ import java.nio.file.Path;
 /**
  * Keeps the committed api/openapi.json in sync with the REST API.
  * Regenerate with: mvn test -pl application -Dtest=OpenApiSpecTest -Dtbmq.openapi.update=true
+ * <p>
+ * A change to a controller that also serves the single-node edition changes api/openapi-lite.json too: regenerate it
+ * with: mvn test -pl lite-tests -am -Dtest=LiteOpenApiSpecTest -Dsurefire.failIfNoSpecifiedTests=false -Dtbmq.openapi.update=true
  */
 public class OpenApiSpecTest extends AbstractOpenApiSpecTest {
 
@@ -32,6 +35,6 @@ public class OpenApiSpecTest extends AbstractOpenApiSpecTest {
 
     @Override
     protected String regenerateHint() {
-        return "mvn test -pl application -Dtest=OpenApiSpecTest -D" + UPDATE_PROPERTY + "=true";
+        return REGENERATE_CLUSTER;
     }
 }

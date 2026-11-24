@@ -42,6 +42,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Keeps a committed OpenAPI spec in sync with the REST API of the edition under test.
  * A subclass names the committed file and the command that regenerates it.
+ * <p>
+ * Most controllers serve both editions, so a REST API change usually changes both api/openapi.json and
+ * api/openapi-lite.json: regenerate both, with {@link #REGENERATE_CLUSTER} and {@link #REGENERATE_LITE}.
  */
 @Slf4j
 @TestPropertySource(properties = "springdoc.api-docs.enabled=true")
@@ -49,6 +52,10 @@ public abstract class AbstractOpenApiSpecTest extends AbstractControllerTest {
 
     private static final String API_DOCS_URL = "/v3/api-docs/TBMQ";
     protected static final String UPDATE_PROPERTY = "tbmq.openapi.update";
+    protected static final String REGENERATE_CLUSTER =
+            "mvn test -pl application -Dtest=OpenApiSpecTest -D" + UPDATE_PROPERTY + "=true";
+    protected static final String REGENERATE_LITE =
+            "mvn test -pl lite-tests -am -Dtest=LiteOpenApiSpecTest -Dsurefire.failIfNoSpecifiedTests=false -D" + UPDATE_PROPERTY + "=true";
 
     @Autowired
     @Qualifier("requestMappingHandlerMapping")
@@ -83,7 +90,9 @@ public abstract class AbstractOpenApiSpecTest extends AbstractControllerTest {
             Files.writeString(generatedPath, generated, StandardCharsets.UTF_8);
             fail((committed == null ? specPath + " does not exist" : specPath + " is out of date") +
                     ". The generated spec is at " + generatedPath +
-                    ". Regenerate with: " + regenerateHint() + " and commit the result.");
+                    ". Regenerate with: " + regenerateHint() + " and commit the result." +
+                    " Most controllers serve both editions, so regenerate the other edition's spec too: " +
+                    (REGENERATE_LITE.equals(regenerateHint()) ? REGENERATE_CLUSTER : REGENERATE_LITE));
         }
     }
 

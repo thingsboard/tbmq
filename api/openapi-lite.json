@@ -9361,7 +9361,7 @@
           "standalone-backup-controller"
         ],
         "summary": "Download a backup of the store (downloadStoreBackup)",
-        "description": "Streams a consistent backup of the broker store as a gzip-compressed tar archive (tbmq-lite-backup-<yyyyMMdd-HHmmss>.tar.gz, UTC); the file name is in the 'Content-Disposition' and 'x-filename' response headers. Only one backup runs at a time: while another one is in progress the request fails with 409. The archive contains secrets, the signing key of the store and the credential hashes, so keep it as protected as the store itself. Available to SYS_ADMIN only.",
+        "description": "Streams a consistent backup of the broker store as a gzip-compressed tar archive (tbmq-lite-backup-yyyyMMdd-HHmmss.tar.gz, UTC); the file name is in the 'Content-Disposition' and 'x-filename' response headers. Only one backup runs at a time: while another one is in progress the request fails with 409. The archive contains secrets, the signing key of the store and the credential hashes, so keep it as protected as the store itself. Available to SYS_ADMIN only.",
         "operationId": "downloadBackup",
         "responses": {
           "200": {
@@ -9371,6 +9371,16 @@
                 "schema": {
                   "type": "string",
                   "format": "binary"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Another backup is in progress.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
                 }
               }
             }
@@ -10096,153 +10106,6 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/TopicSubscription"
-                  },
-                  "uniqueItems": true
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-400": {
-                    "summary": "Bad Request",
-                    "value": {
-                      "status": 400,
-                      "message": "Invalid UUID string: 123",
-                      "errorCode": 31,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-401": {
-                    "summary": "Unauthorized",
-                    "value": {
-                      "status": 401,
-                      "message": "Authentication failed",
-                      "errorCode": 10,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-403": {
-                    "summary": "Forbidden",
-                    "value": {
-                      "status": 403,
-                      "message": "You don't have permission to perform this operation!",
-                      "errorCode": 20,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-404": {
-                    "summary": "Not Found",
-                    "value": {
-                      "status": 404,
-                      "message": "Requested item wasn't found!",
-                      "errorCode": 32,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too Many Requests",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
-                },
-                "examples": {
-                  "error-code-429": {
-                    "summary": "Too Many Requests",
-                    "value": {
-                      "status": 429,
-                      "message": "Too many requests for current admin!",
-                      "errorCode": 33,
-                      "timestamp": "2026-01-01T00:00:00.000+00:00"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HttpLoginForm": [
-              "SYS_ADMIN"
-            ]
-          }
-        ]
-      }
-    },
-    "/api/subscription/integration": {
-      "get": {
-        "tags": [
-          "subscription-controller"
-        ],
-        "summary": "getIntegrationSubscriptions",
-        "operationId": "getIntegrationSubscriptions",
-        "parameters": [
-          {
-            "name": "integrationId",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
                   },
                   "uniqueItems": true
                 }
