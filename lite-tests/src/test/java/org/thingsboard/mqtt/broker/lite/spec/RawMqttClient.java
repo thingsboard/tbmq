@@ -213,7 +213,16 @@ public final class RawMqttClient implements AutoCloseable {
      * Publishes a retained message at QoS 1 and returns the PUBACK's reason code.
      */
     public int publishRetainedQos1(String topic, int packetId, String payload) throws IOException {
-        publish(topic, 1, packetId, payload, null, true);
+        return publishRetainedQos1(topic, packetId, payload, null);
+    }
+
+    /**
+     * Publishes a retained message at QoS 1 and returns the PUBACK's reason code.
+     *
+     * @param msgExpiryInterval the Message Expiry Interval in seconds, or {@code null} to send none
+     */
+    public int publishRetainedQos1(String topic, int packetId, String payload, Integer msgExpiryInterval) throws IOException {
+        publish(topic, 1, packetId, payload, msgExpiryInterval, true);
         return expect(MqttMessageType.PUBACK, packetId).reasonCode();
     }
 

@@ -155,17 +155,20 @@ class StandalonePersistStageTest {
     }
 
     @Test
-    void mqtt_3_3_2_5_anIntervalOfZeroIsNotKeptForAnOfflineSubscriber() {
+    void anIntervalOfZeroIsStoredForAnOfflineSubscriber() {
         givenSession("c1", false);
 
         submit("c1", withExpiry(0), callback);
         runBatch();
 
-        verify(store, never()).append(any());
+        assertThat(captureSingleAppend()).singleElement().satisfies(append -> {
+            assertThat(append.queueKey()).isEqualTo("c1");
+            assertThat(append.messages()).extracting(NewDeviceMsg::msgExpiryIntervalSec).containsExactly(0);
+        });
         verify(callback).onSuccess();
         verify(callback, never()).onFailure(any());
         verifyNoInteractions(deviceActorManager);
-        assertThat(expiredCounter().count()).isEqualTo(1.0);
+        assertThat(expiredCounter().count()).isZero();
     }
 
     @Test
@@ -185,23 +188,11 @@ class StandalonePersistStageTest {
     }
 
     @Test
-    void anIntervalOfZeroIsNotKeptForAnOfflineGroup() {                                   // a group key never has a session
+    void anIntervalOfZeroIsStoredForAnOfflineGroup() {                                    // a group key never has a session
         submit("ss_g_t", withExpiry(0), callback);
         runBatch();
 
-        verify(store, never()).append(any());
-        verify(callback).onSuccess();
-        assertThat(expiredCounter().count()).isEqualTo(1.0);
-    }
-
-    @Test
-    void anIntervalOfZeroIsStoredForAConnectedClientWhoseIdLooksLikeAGroupKey() {
-        givenSession("ss_client", true);
-
-        submit("ss_client", withExpiry(0), callback);
-        runBatch();
-
-        assertThat(captureSingleAppend()).extracting(QueueAppend::queueKey).containsExactly("ss_client");
+        assertThat(captureSingleAppend()).extracting(QueueAppend::queueKey).containsExactly("ss_g_t");
         verify(callback).onSuccess();
         assertThat(expiredCounter().count()).isZero();
     }
@@ -283,19 +274,20 @@ class StandalonePersistStageTest {
     }
 
     @Test
-    void aStoreErrorFailsOnlyTheCopiesItTriedToStore() {
-        givenSession("c2", false);
+    void aStoreErrorFailsEveryCopyOfTheBatch() {
         doThrow(new StoreException("disk")).when(store).append(any());
 
         submit("c1", msg("m1"), cb1);
-        submit("c2", withExpiry(0), cb2);                                                // expired before the append
+        submit("c2", withExpiry(0), cb2);
         submit("c1", msg("m3"), cb3);
         runBatch();
 
         verify(cb1).onFailure(isA(StoreException.class));
+        verify(cb2).onFailure(isA(StoreException.class));
         verify(cb3).onFailure(isA(StoreException.class));
-        verify(cb2).onSuccess();
-        verify(cb2, never()).onFailure(any());
+        verify(cb1, never()).onSuccess();
+        verify(cb2, never()).onSuccess();
+        verify(cb3, never()).onSuccess();
         verifyNoInteractions(deviceActorManager);
     }
 
@@ -322,16 +314,16 @@ class StandalonePersistStageTest {
     void aThrowingCallbackOrWakeUpLeavesTheRestOfTheBatchServed() {
         givenSession("c1", true);
         givenSession("c2", true);
-        doThrow(new IllegalStateException("expired callback")).when(callback).onSuccess();
+        doThrow(new IllegalStateException("first callback")).when(callback).onSuccess();
         doThrow(new IllegalStateException("stored callback")).when(cb1).onSuccess();
         doThrow(new IllegalStateException("wake-up")).when(deviceActorManager).notifyPublishMsg(eq("c1"), any());
 
-        submit("ss_g_t", withExpiry(0), callback);                                      // expired: its callback throws
+        submit("c0", msg("m0"), callback);                                              // its callback throws
         submit("c1", msg("m1"), cb1);
         submit("c2", msg("m2"), cb2);
         runBatch();
 
-        assertThat(captureSingleAppend()).extracting(QueueAppend::queueKey).containsExactly("c1", "c2");
+        assertThat(captureSingleAppend()).extracting(QueueAppend::queueKey).containsExactly("c0", "c1", "c2");
         verify(cb2).onSuccess();
         verify(deviceActorManager).notifyPublishMsg(eq("c2"), any());
         assertThat(consumerLog.list).hasSize(3).allSatisfy(event -> assertThat(event.getLevel()).isEqualTo(Level.ERROR));
@@ -351,14 +343,11 @@ class StandalonePersistStageTest {
     }
 
     @Test
-    void theCountersAddWhatTheStoreExpiredAndTrimmed() {
+    void theCountersReadWhatTheStoreExpiredAndTrimmed() {
         when(store.expiredEntries()).thenReturn(5L);
         when(store.trimmedEntries()).thenReturn(7L);
 
-        submit("ss_g_t", withExpiry(0), callback);
-        runBatch();
-
-        assertThat(expiredCounter().count()).isEqualTo(6.0);
+        assertThat(expiredCounter().count()).isEqualTo(5.0);
         assertThat(meterRegistry.get("trimmedDeviceMsgs").functionCounter().count()).isEqualTo(7.0);
     }
 

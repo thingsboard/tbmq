@@ -43,7 +43,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Stage 2 of the publish pipeline: writes the copies for persistent DEVICE subscribers to their store queues. The
@@ -66,9 +65,6 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
     private final ClientSessionCache clientSessionCache;
     private final DeviceActorManager deviceActorManager;
 
-    // copies with a Message Expiry Interval of 0 that were not kept; the store counts the entries it expires itself
-    private final AtomicLong expiredCopies = new AtomicLong();
-
     private PartitionedWorkers<PendingCopy> workers;
 
     @PostConstruct
@@ -76,7 +72,7 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
         workers = new PartitionedWorkers<>(THREAD_NAME_PREFIX, properties.effectivePersistPartitions(),
                 properties.persistPartitionQueueCapacity(), properties.getPersist().getBatchSize());
         statsFactory.createGauge(PERSIST_QUEUED_GAUGE, workers, PartitionedWorkers::queued);
-        statsFactory.createFunctionCounter(StatsType.EXPIRED_DEVICE_MSGS.getPrintName(), this, StandaloneDeviceMsgQueueConsumer::expiredDeviceMsgs);
+        statsFactory.createFunctionCounter(StatsType.EXPIRED_DEVICE_MSGS.getPrintName(), store, DeviceMsgQueueStore::expiredEntries);
         statsFactory.createFunctionCounter(StatsType.TRIMMED_DEVICE_MSGS.getPrintName(), store, DeviceMsgQueueStore::trimmedEntries);
     }
 
@@ -114,21 +110,12 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
             String clientId = copy.clientId();
             DevicePublishMsg msg;
             NewDeviceMsg newMsg;
-            boolean expired;
             try {
                 msg = ProtoConverter.protoToDevicePublishMsg(clientId, copy.msg().getValue(), copy.msg().getHeaders());
                 newMsg = DeviceMsgBodyCodec.toNew(msg);
-                Integer msgExpiryInterval = newMsg.msgExpiryIntervalSec();
-                expired = msgExpiryInterval != null && msgExpiryInterval == 0 && !isConnected(clientId);
             } catch (Throwable t) {
                 fail(copy, t);
                 log.error("[{}] Failed to prepare the message for the DEVICE queue", clientId, t);
-                continue;
-            }
-            if (expired) {
-                // [MQTT-3.3.2-5] a lifetime of 0 seconds has passed before an offline subscriber could take it
-                expiredCopies.incrementAndGet();
-                succeed(copy);
                 continue;
             }
             queues.computeIfAbsent(clientId, id -> new ArrayList<>()).add(newMsg);
@@ -196,10 +183,6 @@ public class StandaloneDeviceMsgQueueConsumer implements DeviceMsgQueueConsumer 
             // the other copies of the batch must still be completed
             log.error("[{}] The success callback of a DEVICE queue message failed", copy.clientId(), t);
         }
-    }
-
-    private double expiredDeviceMsgs() {
-        return expiredCopies.get() + store.expiredEntries();
     }
 
     @PreDestroy
