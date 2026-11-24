@@ -38,17 +38,7 @@ public class MqttPropertiesUtil {
      */
 
     public static boolean isRetainedMsgExpired(RetainedMsg retainedMsg, long currentTs) {
-        MqttProperties.IntegerProperty property = getPubExpiryIntervalProperty(retainedMsg);
-        if (property != null && property.value() > 0) {
-            int messageExpiryInterval = property.value();
-            long createdTime = retainedMsg.getCreatedTime();
-            return isMsgExpired(createdTime, messageExpiryInterval, currentTs);
-        }
-        return false;
-    }
-
-    private static boolean isMsgExpired(long createdTime, int messageExpiryInterval, long currentTs) {
-        return createdTime + TimeUnit.SECONDS.toMillis(messageExpiryInterval) < currentTs;
+        return getMsgExpiryResult(retainedMsg, currentTs).isExpired();
     }
 
     public static boolean isRetainedMsgNotExpired(RetainedMsg retainedMsg, long currentTs) {
@@ -338,18 +328,24 @@ public class MqttPropertiesUtil {
     }
 
     public static MsgExpiryResult getMsgExpiryResult(MqttProperties properties, long createdTime, long currentTs) {
-        int messageExpiryInterval;
-
         MqttProperties.IntegerProperty pubExpiryIntervalProperty = getPubExpiryIntervalProperty(properties);
         if (pubExpiryIntervalProperty == null) {
             return new MsgExpiryResult(false, false, 0);
-        } else {
-            messageExpiryInterval = pubExpiryIntervalProperty.value();
-            if (messageExpiryInterval == 0) {
-                return new MsgExpiryResult(true, false, 0);
-            }
         }
+        return getMsgExpiryResult(pubExpiryIntervalProperty.value(), createdTime, currentTs);
+    }
 
+    /**
+     * @return the expiry of a message received at {@code createdTime} with a Message Expiry Interval of
+     * {@code messageExpiryInterval} seconds; an interval of 0 stays 0 and never expires here. The interval is a Four
+     * Byte Integer, i.e. unsigned [MQTT-5 1.5.3]: netty reads it into a signed int, so 0xFFFFFFFF arrives as -1 and every
+     * value of 2^31 or more as a negative one. The interval left goes back into an int the same way, and netty writes
+     * it unsigned.
+     */
+    public static MsgExpiryResult getMsgExpiryResult(int messageExpiryInterval, long createdTime, long currentTs) {
+        if (messageExpiryInterval == 0) {
+            return new MsgExpiryResult(true, false, 0);
+        }
         long publishMsgExpiryInterval = calculatePublishMsgExpiryInterval(createdTime, messageExpiryInterval, currentTs);
         if (publishMsgExpiryInterval < 0) {
             return new MsgExpiryResult(true, true, 0);
@@ -379,22 +375,22 @@ public class MqttPropertiesUtil {
             createdTime = BytesUtil.bytesToLong(createdTimeBytes);
         }
 
-        long publishMsgExpiryInterval = calculatePublishMsgExpiryInterval(createdTime, messageExpiryInterval, currentTs);
-        if (publishMsgExpiryInterval < 0) {
-            return new MsgExpiryResult(true, true, 0);
-        } else {
-            return new MsgExpiryResult(true, false, msToSeconds(publishMsgExpiryInterval));
-        }
+        return getMsgExpiryResult(messageExpiryInterval, createdTime, currentTs);
     }
 
     // The PUBLISH packet sent to a Client by the Server MUST contain a Message Expiry Interval set to the received value
-    // minus the time that the Application Message has been waiting in the Server
+    // minus the time that the Application Message has been waiting in the Server. A createdTime ahead of currentTs (it may
+    // come from another node's clock) counts as no wait, so the result never exceeds the received value.
     private static long calculatePublishMsgExpiryInterval(long createdTime, int messageExpiryInterval, long currentTs) {
-        return TimeUnit.SECONDS.toMillis(messageExpiryInterval) - (currentTs - createdTime);
+        long waitedMs = Math.max(0, currentTs - createdTime);
+        return TimeUnit.SECONDS.toMillis(Integer.toUnsignedLong(messageExpiryInterval)) - waitedMs;
     }
 
+    /**
+     * @return the whole seconds as an unsigned int; they fit, as they never exceed the unsigned interval they come from
+     */
     private static int msToSeconds(long value) {
-        return Math.toIntExact(TimeUnit.MILLISECONDS.toSeconds(value));
+        return (int) TimeUnit.MILLISECONDS.toSeconds(value);
     }
 
     public static MqttProperties getMqttProperties(PublishMsg publishMsg) {
