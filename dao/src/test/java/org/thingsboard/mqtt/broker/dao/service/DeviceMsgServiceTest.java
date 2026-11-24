@@ -15,18 +15,24 @@
  */
 package org.thingsboard.mqtt.broker.dao.service;
 
+import io.lettuce.core.ScriptOutputType;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.After;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.thingsboard.mqtt.broker.cache.CacheProperties;
+import org.thingsboard.mqtt.broker.cache.LettuceConnectionManager;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.dao.messages.ClientIdMessagesCacheKey;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -38,6 +44,14 @@ public class DeviceMsgServiceTest extends AbstractServiceTest {
 
     @Autowired
     private DeviceMsgService deviceMsgService;
+
+    @Autowired
+    private LettuceConnectionManager connectionManager;
+    @Autowired
+    private CacheProperties cacheProperties;
+
+    @Value("${mqtt.persistent-session.device.persisted-messages.ttl}")
+    private int defaultTtl;
 
     private final String TEST_CLIENT_ID = "testClientId";
     private final byte[] TEST_PAYLOAD = "testPayload".getBytes();
@@ -228,6 +242,60 @@ public class DeviceMsgServiceTest extends AbstractServiceTest {
             updateLatch.countDown();
         });
         assertThat(updateLatch.await(2, TimeUnit.SECONDS)).isTrue();
+    }
+
+    @Test
+    public void givenNoExpiryInterval_whenSave_thenStoredWithDefaultTtl() throws Exception {
+        saveMsgWithExpiryInterval(null);
+
+        assertThat(readMsgTtls()).singleElement().satisfies(ttl -> assertThat(ttl).isBetween(1L, (long) defaultTtl));
+    }
+
+    @Test
+    public void givenExpiryIntervalZero_whenSave_thenStoredWithDefaultTtlAndReadable() throws Exception {
+        saveMsgWithExpiryInterval(0);
+
+        List<DevicePublishMsg> persistedMsgs = deviceMsgService.findPersistedMessages(TEST_CLIENT_ID).toCompletableFuture().get(2, TimeUnit.SECONDS);
+        assertThat(persistedMsgs).singleElement().satisfies(msg -> assertThat(msg.getMsgExpiryInterval()).isZero());
+        assertThat(readMsgTtls()).singleElement().satisfies(ttl -> assertThat(ttl).isBetween(1L, (long) defaultTtl));
+    }
+
+    @Test
+    public void givenExpiryIntervalAtOrAbove2Pow31_whenSave_thenStoredWithTtlCappedAtDefault() throws Exception {
+        // MQTT-5 1.5.3: the interval is unsigned; netty reads 2^31 into an int as Integer.MIN_VALUE and 0xFFFFFFFF as -1
+        saveMsgWithExpiryInterval((int) 2147483648L);
+        saveMsgWithExpiryInterval(-1);
+
+        List<DevicePublishMsg> persistedMsgs = deviceMsgService.findPersistedMessages(TEST_CLIENT_ID).toCompletableFuture().get(2, TimeUnit.SECONDS);
+        assertThat(persistedMsgs).extracting(DevicePublishMsg::getMsgExpiryInterval).containsExactlyInAnyOrder((int) 2147483648L, -1);
+        assertThat(readMsgTtls()).hasSize(2).allSatisfy(ttl -> assertThat(ttl).isBetween(1L, (long) defaultTtl));
+    }
+
+    @Test
+    public void givenExpiryIntervalAboveDefaultTtl_whenSave_thenStoredWithTtlCappedAtDefault() throws Exception {
+        saveMsgWithExpiryInterval(defaultTtl + 1000);
+
+        assertThat(readMsgTtls()).singleElement().satisfies(ttl -> assertThat(ttl).isBetween(1L, (long) defaultTtl));
+    }
+
+    @Test
+    public void givenExpiryIntervalBelowDefaultTtl_whenSave_thenStoredWithThatTtl() throws Exception {
+        saveMsgWithExpiryInterval(60);
+
+        assertThat(readMsgTtls()).singleElement().satisfies(ttl -> assertThat(ttl).isBetween(1L, 60L));
+    }
+
+    private void saveMsgWithExpiryInterval(Integer msgExpiryInterval) throws Exception {
+        DevicePublishMsg msg = newDevicePublishMsgWithBlankPacketId();
+        msg.setMsgExpiryInterval(msgExpiryInterval);
+        deviceMsgService.saveAndReturnPreviousPacketId(TEST_CLIENT_ID, List.of(msg), false).toCompletableFuture().get(2, TimeUnit.SECONDS);
+    }
+
+    private List<Long> readMsgTtls() throws Exception {
+        byte[] messagesKey = ClientIdMessagesCacheKey.toBytesKey(TEST_CLIENT_ID, cacheProperties.getCachePrefix());
+        String script = "local ttls = {} for _, key in ipairs(redis.call('ZRANGE', KEYS[1], 0, -1)) do table.insert(ttls, redis.call('TTL', key)) end return ttls";
+        CompletionStage<List<Long>> ttls = connectionManager.evalAsync(script, ScriptOutputType.MULTI, messagesKey);
+        return ttls.toCompletableFuture().get(2, TimeUnit.SECONDS);
     }
 
     private DevicePublishMsg newDevicePublishMsgWithBlankPacketId() {

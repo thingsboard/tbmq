@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentMap;
 @Service
 public class DeviceMsgServiceImpl implements DeviceMsgService {
 
-    private static final String ADD_MESSAGES_SCRIPT_SHA = "b871298e156d1e8490eef02fdc96cc28d4442e36";
+    private static final String ADD_MESSAGES_SCRIPT_SHA = "43026632d4e759150850e9dbd531374194e449fd";
     private static final String GET_MESSAGES_SCRIPT_SHA = "e083e5645a5f268448aca2ec1d3150ee6de510ef";
     private static final String REMOVE_MESSAGES_SCRIPT_SHA = "efd7dd0e8b3ba4862b53691798fd5ff1f8f6e629";
     private static final String REMOVE_MESSAGE_SCRIPT_SHA = "af40a579a941a140cace4e5243fc0921a4c7b4b0";
@@ -80,9 +80,21 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                 score = score + 1
                 local msgKey = messagesKey .. "_" .. lastPacketId
                 local msgJson = cjson.encode(msg)
-                local msgExpiryInterval = msg.msgExpiryInterval or defaultTtl
+                -- The TTL is the message expiry interval capped at the default TTL; EX accepts only positive values
+                local ttl = defaultTtl
+                local msgExpiryInterval = msg.msgExpiryInterval
+                if type(msgExpiryInterval) == 'number' then
+                    -- The interval is an unsigned Four Byte Integer, serialized as a signed int: 2^31 and above arrive negative
+                    if msgExpiryInterval < 0 then
+                        msgExpiryInterval = msgExpiryInterval + 4294967296
+                    end
+                    -- An interval of 0 never expires, so the message keeps the default TTL
+                    if msgExpiryInterval > 0 and msgExpiryInterval < ttl then
+                        ttl = msgExpiryInterval
+                    end
+                end
                 -- Store the message as a separate key with TTL
-                redis.call('SET', msgKey, msgJson, 'EX', msgExpiryInterval)
+                redis.call('SET', msgKey, msgJson, 'EX', ttl)
                 -- Add the key to the sorted set using packetId as the score
                 redis.call('ZADD', messagesKey, score, msgKey)
             end

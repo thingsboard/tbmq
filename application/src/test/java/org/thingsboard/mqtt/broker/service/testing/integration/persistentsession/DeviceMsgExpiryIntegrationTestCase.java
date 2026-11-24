@@ -145,4 +145,43 @@ public class DeviceMsgExpiryIntegrationTestCase extends AbstractPubSubIntegratio
         assertFalse(receivedExpirationMsg.get());
     }
 
+    @Test
+    public void givenDevPersistentClient_whenSendPubMsgWithZeroExpiryInterval_thenReceiveMsg() throws Throwable {
+        // TBMQ never expires a message with a Message Expiry Interval of 0
+        assertMsgWithExpiryIntervalReceivedOnReconnect(0L);
+    }
+
+    @Test
+    public void givenDevPersistentClient_whenSendPubMsgWithMaxUnsignedExpiryInterval_thenReceiveMsg() throws Throwable {
+        // MQTT-5 1.5.3: the interval is unsigned; netty reads 0xFFFFFFFF into an int as -1
+        assertMsgWithExpiryIntervalReceivedOnReconnect(0xFFFFFFFFL);
+    }
+
+    private void assertMsgWithExpiryIntervalReceivedOnReconnect(long messageExpiryInterval) throws Throwable {
+        CountDownLatch receivedResponses = new CountDownLatch(1);
+
+        persistedClient = new MqttClient(SERVER_URI + mqttPort, DEV_MSG_EXPIRY_CLIENT);
+        persistedClient.connect(getOptions(false, MSG_EXPIRY_USER_NAME));
+        IMqttMessageListener[] listeners = {(topic, msg) -> {
+            log.debug("[{}] Received msg with id: {}", topic, msg.getId());
+            receivedResponses.countDown();
+        }};
+        MqttSubscription[] subscriptions = {new MqttSubscription("expiration/topic", 1)};
+        persistedClient.subscribe(subscriptions, listeners);
+        persistedClient.disconnect();
+
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.randomAlphabetic(10));
+        pubClient.connect(getOptions(true, MSG_EXPIRY_USER_NAME));
+
+        MqttProperties properties = new MqttProperties();
+        properties.setMessageExpiryInterval(messageExpiryInterval);
+        MqttMessage mqttMessage = new MqttMessage(BrokerConstants.DUMMY_PAYLOAD, 1, false, properties);
+        pubClient.publish("expiration/topic", mqttMessage);
+        TestUtils.disconnectAndCloseClient(pubClient);
+
+        persistedClient.connect(getOptions(false, MSG_EXPIRY_USER_NAME));
+
+        assertTrue(receivedResponses.await(2, TimeUnit.SECONDS));
+    }
+
 }
