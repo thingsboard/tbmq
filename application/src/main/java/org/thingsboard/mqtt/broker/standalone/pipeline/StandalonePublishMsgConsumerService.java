@@ -90,7 +90,8 @@ public class StandalonePublishMsgConsumerService implements PublishMsgConsumerSe
     }
 
     /**
-     * Counts the outcome of a publish once, whichever of the dispatcher and the worker resolves it first.
+     * Counts the outcome of a publish once, whichever of the dispatcher and the worker resolves it first, after the
+     * delegate ran, so a counted publish has already released its share and been acknowledged.
      */
     private static final class CountedPublishCallback implements PublishMsgCallback {
 
@@ -105,18 +106,26 @@ public class StandalonePublishMsgConsumerService implements PublishMsgConsumerSe
 
         @Override
         public void onSuccess() {
-            if (resolved.compareAndSet(false, true)) {
-                stats.onSuccess();
+            boolean first = resolved.compareAndSet(false, true);
+            try {
+                delegate.onSuccess();
+            } finally {
+                if (first) {
+                    stats.onSuccess();
+                }
             }
-            delegate.onSuccess();
         }
 
         @Override
         public void onFailure(Throwable t) {
-            if (resolved.compareAndSet(false, true)) {
-                stats.onFailure();
+            boolean first = resolved.compareAndSet(false, true);
+            try {
+                delegate.onFailure(t);
+            } finally {
+                if (first) {
+                    stats.onFailure();
+                }
             }
-            delegate.onFailure(t);
         }
 
     }

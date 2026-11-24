@@ -20,13 +20,13 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.google.protobuf.ByteString;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.mockito.ArgumentCaptor;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
@@ -281,6 +281,30 @@ class StandalonePublishStageTest {
         assertThat(consumed("totalMsgs")).isEqualTo(2);
         assertThat(consumed("failedMsgs")).isEqualTo(1);
         assertThat(consumed("successfulMsgs")).isEqualTo(1);
+    }
+
+    @Test
+    void aPublishIsCountedOnlyAfterItsCallbackRan() throws Exception {
+        List<Double> successAtCallback = new CopyOnWriteArrayList<>();
+        List<Double> failureAtCallback = new CopyOnWriteArrayList<>();
+        doAnswer(inv -> {
+            successAtCallback.add(consumed("successfulMsgs"));
+            return null;
+        }).when(queueCallback).onSuccess(any());
+        doAnswer(inv -> {
+            failureAtCallback.add(consumed("failedMsgs"));
+            return null;
+        }).when(queueCallback).onFailure(any());
+
+        publisher.sendMsg(qos1("t/1"), queueCallback);
+        nextDispatch().callback().onSuccess();
+        publisher.sendMsg(qos1("t/2"), queueCallback);
+        nextDispatch().callback().onFailure(new RuntimeException("failed"));
+
+        assertThat(successAtCallback).containsExactly(0.0);
+        assertThat(failureAtCallback).containsExactly(0.0);
+        assertThat(consumed("successfulMsgs")).isEqualTo(1);
+        assertThat(consumed("failedMsgs")).isEqualTo(1);
     }
 
     @Test

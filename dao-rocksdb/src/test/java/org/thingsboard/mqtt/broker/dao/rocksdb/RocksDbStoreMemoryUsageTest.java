@@ -59,7 +59,7 @@ class RocksDbStoreMemoryUsageTest {
     }
 
     @Test
-    void afterTheDataIsInSstFilesAndReadTheBlockCacheIsUsed() {
+    void afterTheDataIsInSstFilesTheirReadersAreCounted() {
         store = newStore();
         store.open();
         putKeys();
@@ -73,8 +73,7 @@ class RocksDbStoreMemoryUsageTest {
 
         StoreMemoryUsage usage = store.memoryUsage();
 
-        assertThat(usage.blockCacheUsage()).isPositive();
-        assertThat(usage.tableReadersMem()).isNotNegative();
+        assertThat(usage.tableReadersMem()).isPositive();
     }
 
     @Test

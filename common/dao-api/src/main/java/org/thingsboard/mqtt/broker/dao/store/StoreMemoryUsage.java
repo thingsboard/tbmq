@@ -16,12 +16,13 @@
 package org.thingsboard.mqtt.broker.dao.store;
 
 /**
- * The memory the store holds, in bytes, as RocksDB reports it.
+ * The memory the store holds, in bytes, as RocksDB reports it. The figures overlap and must not be summed: the
+ * block cache also holds the write-buffer (memtable) reservation and the cached index and filter blocks.
  *
- * @param blockCacheUsage       the bytes in the block cache
+ * @param blockCacheUsage       the bytes in the block cache, including the memtable reservation and the cached index and filter blocks
  * @param blockCachePinnedUsage the bytes of the block cache that are pinned and cannot be evicted
  * @param memtablesSize         the size of all memtables, active and immutable
- * @param tableReadersMem       the estimated memory of the readers of the open SST files (index and filter blocks)
+ * @param tableReadersMem       the estimated memory of the readers of the open SST files, without the index and filter blocks held in the block cache
  */
 public record StoreMemoryUsage(long blockCacheUsage, long blockCachePinnedUsage, long memtablesSize, long tableReadersMem) {
 

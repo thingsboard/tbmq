@@ -123,12 +123,12 @@ public abstract class AbstractTotalThroughputQuotaIntegrationTest extends Abstra
 
     /**
      * Publishes the consumer has finished processing, off the monotonic Micrometer counter behind
-     * {@code incomingPublishMsg.consumed}. A pack is only logged once every one of its callbacks has resolved, so
-     * this moving is proof that a publish has been charged for its whole fan-out AND persisted - the observable
-     * that lets the suites wait on the event rather than guess at a duration.
+     * {@code incomingPublishMsg.consumed}. In the cluster, a pack is only logged once every one of its callbacks has
+     * resolved, so this moving is proof that a publish has been charged for its whole fan-out AND persisted - the
+     * observable that lets the suites wait on the event rather than guess at a duration.
      * <p>
-     * Lite's dispatch stage reports the same counter when the publish's own callback resolves, which happens only
-     * once the publish was charged for its whole fan-out and every copy was handed off.
+     * Lite's dispatch stage counts a publish after its callback resolved, which happens only once the publish was
+     * charged for its whole fan-out and every copy was handed off.
      */
     protected double publishesProcessed() {
         return meterRegistry.find(StatsType.PUBLISH_MSG_CONSUMER.getPrintName())
