@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Keeps the committed api/openapi-lite.json, the REST API of the single-node edition, in sync.
- * Regenerate with: mvn test -pl lite-tests -Dtest=LiteOpenApiSpecTest -Dtbmq.openapi.update=true
+ * Regenerate with: mvn test -pl lite-tests -am -Dtest=LiteOpenApiSpecTest -Dsurefire.failIfNoSpecifiedTests=false -Dtbmq.openapi.update=true
  * <p>
  * It is not a {@code *ControllerTest}, so {@code LiteControllerTestSuite} does not pick it up; surefire runs it by its
  * {@code *Test} name.
@@ -48,7 +48,7 @@ public class LiteOpenApiSpecTest extends AbstractOpenApiSpecTest {
 
     @Override
     protected String regenerateHint() {
-        return "mvn test -pl lite-tests -Dtest=LiteOpenApiSpecTest -D" + UPDATE_PROPERTY + "=true";
+        return "mvn test -pl lite-tests -am -Dtest=LiteOpenApiSpecTest -Dsurefire.failIfNoSpecifiedTests=false -D" + UPDATE_PROPERTY + "=true";
     }
 
     @Test
