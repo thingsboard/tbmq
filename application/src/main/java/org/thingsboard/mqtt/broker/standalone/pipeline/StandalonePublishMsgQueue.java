@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 
 /**
  * The queue of the dispatch stage, partitioned by topic: the {@link StandalonePublishMsgQueuePublisher} puts the
@@ -56,8 +57,8 @@ public class StandalonePublishMsgQueue {
         statsFactory.createGauge(DISPATCH_QUEUED_GAUGE, workers, PartitionedWorkers::queued);
     }
 
-    void start(Consumer<List<PendingPublish>> dispatcher) {
-        workers.start(dispatcher);
+    void start(IntFunction<Consumer<List<PendingPublish>>> dispatcherForPartition) {
+        workers.startPerPartition(dispatcherForPartition);
     }
 
     public PartitionedWorkers<?> workers() {
