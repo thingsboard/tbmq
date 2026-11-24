@@ -141,6 +141,23 @@ public class MqttPropertiesUtilTest {
     }
 
     @Test
+    public void getMsgExpiryResult_zeroInterval_neverExpiresOnRetainedAndDeviceAndApplicationPaths() {
+        long createdTime = 1_000L;
+        long muchLater = createdTime + 365L * 24 * 3600 * 1000;
+        MsgExpiryResult expected = new MsgExpiryResult(true, false, 0);
+
+        MqttProperties props = new MqttProperties();
+        props.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, 0));
+        assertEquals(expected, MqttPropertiesUtil.getMsgExpiryResult(props, createdTime, muchLater));          // retained, DEVICE
+        assertEquals(expected, MqttPropertiesUtil.getMsgExpiryResult(retainedMsg(0, createdTime), muchLater));  // retained
+
+        TbQueueMsgHeaders headers = new DefaultTbQueueMsgHeaders();                                             // APPLICATION
+        headers.put(BrokerConstants.MESSAGE_EXPIRY_INTERVAL, BytesUtil.integerToBytes(0));
+        headers.put(BrokerConstants.CREATED_TIME, BytesUtil.longToBytes(createdTime));
+        assertEquals(expected, MqttPropertiesUtil.getMsgExpiryResult(headers, muchLater));
+    }
+
+    @Test
     public void getMsgExpiryResult_createdTimeAheadOfNow_staysAtTheReceivedInterval() {
         // createdTime stamped by a node whose clock is 1.5 s ahead: the message counts as not having waited
         assertEquals(new MsgExpiryResult(true, false, 10), MqttPropertiesUtil.getMsgExpiryResult(10, 2_500L, 1_000L));

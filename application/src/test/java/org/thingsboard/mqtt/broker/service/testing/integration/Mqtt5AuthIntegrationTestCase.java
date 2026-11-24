@@ -32,9 +32,14 @@ import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAck;
 import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAckReasonCode;
 import com.hivemq.client.mqtt.mqtt5.message.disconnect.Mqtt5Disconnect;
 import com.hivemq.client.mqtt.mqtt5.message.disconnect.Mqtt5DisconnectReasonCode;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.awaitility.Awaitility;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
@@ -48,10 +53,13 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
+import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramTestClient;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramTestClient.Mechanism;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
@@ -69,6 +77,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SCRAM_ONLY_AUTH_ENABLED_MSG;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -86,10 +96,14 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
     @Autowired
     private MqttClientCredentialsService credentialsService;
 
+    @Autowired
+    private UnauthorizedClientService unauthorizedClientService;
+
     private MqttClientCredentials clientCredentials;
 
     @Before
     public void beforeTest() throws Exception {
+        super.beforeTest();
         clientCredentials = saveCredentials();
         enabledScramProvider();
     }
@@ -99,6 +113,8 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
         if (clientCredentials != null) {
             credentialsService.deleteCredentials(clientCredentials.getId());
         }
+        // SCRAM-only refuses non-SCRAM clients; don't leave it on for test classes that skip the provider reset
+        mqttAuthProviderManagerService.disableAuthProvider(getMqttAuthProvider(MqttAuthProviderType.SCRAM).getId());
     }
 
     @Test
@@ -393,6 +409,51 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
                 .isInstanceOf(Mqtt5ConnAckException.class)
                 .extracting(e -> ((Mqtt5ConnAckException) e).getMqttMessage().getReasonCode())
                 .isEqualTo(Mqtt5ConnAckReasonCode.NOT_AUTHORIZED);
+    }
+
+    @Test
+    public void givenOnlyScramEnabled_whenMqtt5ClientConnectsWithoutAuthMethod_thenNotAuthorized() {
+        String clientId = "scram_only_mqtt5_no_auth_method";
+        var client = Mqtt5Client.builder()
+                .identifier(clientId)
+                .serverAddress(new InetSocketAddress(LOCALHOST, mqttPort))
+                .buildBlocking();
+
+        Throwable thrown = catchThrowable(client::connect);
+
+        assertThat(thrown)
+                .isInstanceOf(Mqtt5ConnAckException.class)
+                .extracting(e -> ((Mqtt5ConnAckException) e).getMqttMessage().getReasonCode())
+                .isEqualTo(Mqtt5ConnAckReasonCode.NOT_AUTHORIZED);
+        awaitUnauthorizedClientWithScramOnlyReason(clientId);
+    }
+
+    @Test
+    public void givenOnlyScramEnabled_whenMqtt311ClientConnects_thenNotAuthorized() throws Throwable {
+        String clientId = "scram_only_mqtt311_client";
+        var client = new MqttClient(SERVER_URI + mqttPort, clientId);
+        var options = new MqttConnectOptions();
+        options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
+        options.setUserName(TEST_CLIENT_USERNAME);
+        options.setPassword(TEST_CLIENT_PASSWORD.toCharArray());
+
+        Throwable thrown = catchThrowable(() -> client.connect(options));
+
+        assertThat(thrown).isInstanceOf(MqttException.class);
+        assertThat(((MqttException) thrown).getReasonCode())
+                .isEqualTo(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED.byteValue());
+        client.close();
+        awaitUnauthorizedClientWithScramOnlyReason(clientId);
+    }
+
+    private void awaitUnauthorizedClientWithScramOnlyReason(String clientId) {
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .untilAsserted(() -> assertThat(unauthorizedClientService.findUnauthorizedClient(clientId))
+                        .get()
+                        .extracting(UnauthorizedClient::getReason)
+                        .isEqualTo(SCRAM_ONLY_AUTH_ENABLED_MSG));
+        unauthorizedClientService.deleteUnauthorizedClient(clientId);
     }
 
     private ScramTestClient createScramClient(String username, String password) {

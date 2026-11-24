@@ -40,8 +40,11 @@ import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @Slf4j
@@ -141,6 +144,56 @@ public class AppMsgExpiryIntegrationTestCase extends AbstractPubSubIntegrationTe
         log.debug("The result of awaiting is: [{}]", await);
 
         assertFalse(receivedExpirationMsg.get());
+    }
+
+    @Test
+    public void givenAppPersistentClient_whenSendPubMsgWithZeroExpiryInterval_thenReceiveMsg() throws Throwable {
+        // TBMQ never expires a message with a Message Expiry Interval of 0
+        assertMsgWithExpiryIntervalReceivedOnReconnect(0L);
+    }
+
+    @Test
+    public void givenAppPersistentClient_whenSendPubMsgWithMaxUnsignedExpiryInterval_thenReceiveMsg() throws Throwable {
+        // MQTT-5 1.5.3: the interval is unsigned; netty reads 0xFFFFFFFF into an int as -1
+        assertMsgWithExpiryIntervalReceivedOnReconnect(0xFFFFFFFFL);
+    }
+
+    private void assertMsgWithExpiryIntervalReceivedOnReconnect(long messageExpiryInterval) throws Throwable {
+        CountDownLatch receivedResponses = new CountDownLatch(1);
+        AtomicReference<Long> receivedExpiryInterval = new AtomicReference<>();
+
+        persistedClient = new MqttClient(SERVER_URI + mqttPort, APP_MSG_EXPIRY_CLIENT);
+        persistedClient.connect(getOptions(false, MSG_EXPIRY_USER_NAME));
+        IMqttMessageListener[] listeners = {(topic, msg) -> {
+            log.debug("[{}] Received msg with id: {}", topic, msg.getId());
+            receivedExpiryInterval.set(msg.getProperties().getMessageExpiryInterval());
+            receivedResponses.countDown();
+        }};
+        MqttSubscription[] subscriptions = {new MqttSubscription("expiration/topic", 1)};
+        persistedClient.subscribe(subscriptions, listeners);
+        persistedClient.disconnect();
+
+        MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, RandomStringUtils.randomAlphabetic(10));
+        pubClient.connect(getOptions(true, MSG_EXPIRY_USER_NAME));
+
+        MqttProperties properties = new MqttProperties();
+        properties.setMessageExpiryInterval(messageExpiryInterval);
+        MqttMessage mqttMessage = new MqttMessage(BrokerConstants.DUMMY_PAYLOAD, 1, false, properties);
+        pubClient.publish("expiration/topic", mqttMessage);
+        TestUtils.disconnectAndCloseClient(pubClient);
+
+        persistedClient.connect(getOptions(false, MSG_EXPIRY_USER_NAME));
+
+        assertTrue(receivedResponses.await(2, TimeUnit.SECONDS));
+
+        // the interval forwarded to the subscriber is the received one minus the wait, read unsigned
+        Long forwardedInterval = receivedExpiryInterval.get();
+        assertNotNull(forwardedInterval);
+        if (messageExpiryInterval == 0) {
+            assertEquals(0L, forwardedInterval.longValue());
+        } else {
+            assertTrue(forwardedInterval > messageExpiryInterval - 60 && forwardedInterval <= messageExpiryInterval);
+        }
     }
 
 }

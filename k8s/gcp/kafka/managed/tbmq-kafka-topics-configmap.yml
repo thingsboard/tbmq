@@ -1,0 +1,57 @@
+#
+# Copyright © 2016-2026 The Thingsboard Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Kafka topic settings for Google Cloud Managed Service for Apache Kafka.
+# Managed Kafka keeps topic data in tiered storage, which rejects the segment.bytes override that TBMQ sets by default,
+# so every topic below keeps the service default for segment.bytes. Each topic is replicated to three brokers.
+#
+# The values mirror the topic-properties defaults in application/src/main/resources/thingsboard-mqtt-broker.yml and
+# integration/executor/src/main/resources/tbmq-integration-executor.yml, without segment.bytes and with
+# replication.factor 3. When a topic is added there or a default changes, update this file too: a topic missing here
+# falls back to the yml default, which Managed Kafka rejects. The same values are in gcp/kafka/managed/ of
+# tbmq-pe-k8s and in the GCP GKE Helm guide on tbmq.io.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tbmq-kafka-topics-config
+  namespace: thingsboard-mqtt-broker
+  labels:
+    name: tbmq-kafka-topics-config
+data:
+  TB_KAFKA_MSG_ALL_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:2147483648;partitions:16;replication.factor:3"
+  TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
+  TB_KAFKA_APP_PERSISTED_MSG_SHARED_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
+  TB_KAFKA_DEVICE_PERSISTED_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:12;replication.factor:3"
+  TB_KAFKA_RETAINED_MSG_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
+  TB_KAFKA_CLIENT_SESSION_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
+  TB_KAFKA_CLIENT_SUBSCRIPTIONS_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
+  TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:24;replication.factor:3"
+  TB_KAFKA_CLIENT_SESSION_EVENT_RESPONSE_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+  TB_KAFKA_DISCONNECT_CLIENT_COMMAND_RESPONSE_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+  TB_KAFKA_BASIC_DOWNLINK_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:12;replication.factor:3"
+  TB_KAFKA_PERSISTED_DOWNLINK_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:12;replication.factor:3"
+  TB_KAFKA_APPLICATION_REMOVED_EVENT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+  TB_KAFKA_HISTORICAL_DATA_TOTAL_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+  TB_KAFKA_IE_DOWNLINK_HTTP_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+  TB_KAFKA_IE_DOWNLINK_KAFKA_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+  TB_KAFKA_IE_DOWNLINK_MQTT_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+  TB_KAFKA_IE_UPLINK_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:6;replication.factor:3"
+  TB_KAFKA_IE_UPLINK_NOTIF_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+  TB_KAFKA_IE_MSG_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;replication.factor:3"
+  TB_KAFKA_IE_EVENT_MSG_TOPIC_PROPERTIES: "retention.ms:86400000;retention.bytes:104857600;partitions:1;replication.factor:3"
+  TB_KAFKA_INTERNODE_NOTIFICATIONS_TOPIC_PROPERTIES: "retention.ms:604800000;retention.bytes:1048576000;partitions:1;replication.factor:3"
+  TB_KAFKA_BLOCKED_CLIENT_TOPIC_PROPERTIES: "partitions:1;replication.factor:3"
