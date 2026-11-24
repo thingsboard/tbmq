@@ -27,13 +27,14 @@ import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportRequest;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.http.HttpMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.controller.AbstractControllerTest;
 import org.thingsboard.mqtt.broker.dao.client.ClientTypeConstraint;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsDao;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderDao;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 
 import java.util.ArrayList;
@@ -45,7 +46,8 @@ import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Lite refuses the APPLICATION client type when credentials are saved, by the REST API and by the bulk import.
+ * Lite refuses the APPLICATION client type when MQTT client credentials or JWT and HTTP auth providers are saved, by
+ * the REST API and by the bulk import. Data stored before the refusal existed stays usable.
  */
 public class ClientTypeRejectionLiteTest extends AbstractControllerTest {
 
@@ -54,6 +56,8 @@ public class ClientTypeRejectionLiteTest extends AbstractControllerTest {
 
     @Autowired
     private MqttClientCredentialsDao credentialsDao;
+    @Autowired
+    private MqttAuthProviderDao authProviderDao;
 
     private final List<String> names = new ArrayList<>();
 
@@ -75,6 +79,7 @@ public class ClientTypeRejectionLiteTest extends AbstractControllerTest {
                 .andExpect(statusReason(containsString(ClientTypeConstraint.LITE_MESSAGE)));
         assertThat(mqttClientCredentialsService.findCredentialsByName("reject-app")).isNull();
 
+        names.add("reject-dev");
         doPost(CREDENTIALS_URL, basicCredentials("reject-dev", ClientType.DEVICE)).andExpect(status().isOk());
         assertThat(mqttClientCredentialsService.findCredentialsByName("reject-dev")).isNotNull();
     }
@@ -152,6 +157,53 @@ public class ClientTypeRejectionLiteTest extends AbstractControllerTest {
 
         configuration.setDefaultClientType(ClientType.DEVICE);
         doPost(PROVIDER_URL, provider).andExpect(status().isOk());
+    }
+
+    @Test
+    public void givenStoredJwtProviderWithApplicationDefault_whenEnabledAndDisabled_thenOk() throws Exception {
+        MqttAuthProvider original = getMqttAuthProvider(MqttAuthProviderType.JWT);
+        try {
+            MqttAuthProvider stored = copyOf(original);
+            ((JwtMqttAuthProviderConfiguration) stored.getConfiguration()).setDefaultClientType(ClientType.APPLICATION);
+            authProviderDao.save(stored);
+
+            toggleProvider(stored);
+        } finally {
+            authProviderDao.save(original);
+        }
+    }
+
+    @Test
+    public void givenStoredJwtProviderWithClientTypeClaims_whenEnabledAndDisabled_thenOk() throws Exception {
+        MqttAuthProvider original = getMqttAuthProvider(MqttAuthProviderType.JWT);
+        try {
+            MqttAuthProvider stored = copyOf(original);
+            ((JwtMqttAuthProviderConfiguration) stored.getConfiguration()).setClientTypeClaims(Map.of("role", "app"));
+            authProviderDao.save(stored);
+
+            toggleProvider(stored);
+        } finally {
+            authProviderDao.save(original);
+        }
+    }
+
+    @Test
+    public void givenStoredApplicationCredentials_whenDeleted_thenOk() throws Exception {
+        MqttClientCredentials stored = credentialsDao.save(basicCredentials("stored-delete-app", ClientType.APPLICATION));
+        names.add("stored-delete-app");
+
+        doDelete(CREDENTIALS_URL + "/" + stored.getId()).andExpect(status().isOk());
+
+        assertThat(mqttClientCredentialsService.findCredentialsByName("stored-delete-app")).isNull();
+    }
+
+    private void toggleProvider(MqttAuthProvider provider) throws Exception {
+        doPost(PROVIDER_URL + "/" + provider.getId() + "/enable").andExpect(status().isOk());
+        doPost(PROVIDER_URL + "/" + provider.getId() + "/disable").andExpect(status().isOk());
+    }
+
+    private static MqttAuthProvider copyOf(MqttAuthProvider provider) {
+        return JacksonUtil.fromString(JacksonUtil.toString(provider), MqttAuthProvider.class);
     }
 
     private static BulkImportRequest.ColumnMapping column(BulkImportColumnType type) {

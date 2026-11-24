@@ -19,15 +19,15 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 /**
- * The client types an edition accepts in MQTT client credentials. The cluster edition accepts every type; the
- * standalone edition refuses the APPLICATION type.
+ * The client types an edition accepts in MQTT client credentials and in the JWT and HTTP auth provider
+ * configurations. The cluster edition accepts every type; the standalone edition refuses the APPLICATION type.
  */
 public interface ClientTypeConstraint {
 
     String LITE_MESSAGE = "APPLICATION clients are not supported in TBMQ Lite";
 
     /**
-     * @param clientType the client type of the credentials to save; {@code null} passes
+     * @param clientType the client type of the credentials or auth provider configuration to save; {@code null} passes
      * @throws DataValidationException with {@link #LITE_MESSAGE} when the edition refuses the type
      */
     void check(ClientType clientType);
