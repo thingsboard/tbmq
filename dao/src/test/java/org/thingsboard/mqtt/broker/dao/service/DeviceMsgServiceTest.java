@@ -248,7 +248,7 @@ public class DeviceMsgServiceTest extends AbstractServiceTest {
     public void givenNoExpiryInterval_whenSave_thenStoredWithDefaultTtl() throws Exception {
         saveMsgWithExpiryInterval(null);
 
-        assertThat(readMsgTtls()).singleElement().satisfies(ttl -> assertThat(ttl).isBetween(1L, (long) defaultTtl));
+        assertThat(readMsgTtls()).singleElement().satisfies(ttl -> assertThat(ttl).isBetween(defaultTtl - 30L, (long) defaultTtl));
     }
 
     @Test
@@ -257,7 +257,7 @@ public class DeviceMsgServiceTest extends AbstractServiceTest {
 
         List<DevicePublishMsg> persistedMsgs = deviceMsgService.findPersistedMessages(TEST_CLIENT_ID).toCompletableFuture().get(2, TimeUnit.SECONDS);
         assertThat(persistedMsgs).singleElement().satisfies(msg -> assertThat(msg.getMsgExpiryInterval()).isZero());
-        assertThat(readMsgTtls()).singleElement().satisfies(ttl -> assertThat(ttl).isBetween(1L, (long) defaultTtl));
+        assertThat(readMsgTtls()).singleElement().satisfies(ttl -> assertThat(ttl).isBetween(defaultTtl - 30L, (long) defaultTtl));
     }
 
     @Test
@@ -268,21 +268,29 @@ public class DeviceMsgServiceTest extends AbstractServiceTest {
 
         List<DevicePublishMsg> persistedMsgs = deviceMsgService.findPersistedMessages(TEST_CLIENT_ID).toCompletableFuture().get(2, TimeUnit.SECONDS);
         assertThat(persistedMsgs).extracting(DevicePublishMsg::getMsgExpiryInterval).containsExactlyInAnyOrder((int) 2147483648L, -1);
-        assertThat(readMsgTtls()).hasSize(2).allSatisfy(ttl -> assertThat(ttl).isBetween(1L, (long) defaultTtl));
+        assertThat(readMsgTtls()).hasSize(2).allSatisfy(ttl -> assertThat(ttl).isBetween(defaultTtl - 30L, (long) defaultTtl));
     }
 
     @Test
     public void givenExpiryIntervalAboveDefaultTtl_whenSave_thenStoredWithTtlCappedAtDefault() throws Exception {
         saveMsgWithExpiryInterval(defaultTtl + 1000);
 
-        assertThat(readMsgTtls()).singleElement().satisfies(ttl -> assertThat(ttl).isBetween(1L, (long) defaultTtl));
+        assertThat(readMsgTtls()).singleElement().satisfies(ttl -> assertThat(ttl).isBetween(defaultTtl - 30L, (long) defaultTtl));
+    }
+
+    @Test
+    public void givenExpiryIntervalAroundDefaultTtl_whenSave_thenStoredWithTtlOfAtMostDefault() throws Exception {
+        saveMsgWithExpiryInterval(defaultTtl);
+        saveMsgWithExpiryInterval(defaultTtl - 1);
+
+        assertThat(readMsgTtls()).hasSize(2).allSatisfy(ttl -> assertThat(ttl).isBetween(defaultTtl - 30L, (long) defaultTtl));
     }
 
     @Test
     public void givenExpiryIntervalBelowDefaultTtl_whenSave_thenStoredWithThatTtl() throws Exception {
         saveMsgWithExpiryInterval(60);
 
-        assertThat(readMsgTtls()).singleElement().satisfies(ttl -> assertThat(ttl).isBetween(1L, 60L));
+        assertThat(readMsgTtls()).singleElement().satisfies(ttl -> assertThat(ttl).isBetween(30L, 60L));
     }
 
     private void saveMsgWithExpiryInterval(Integer msgExpiryInterval) throws Exception {
