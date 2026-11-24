@@ -15,6 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.standalone.backup;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +37,7 @@ import org.springframework.web.context.request.async.CallableProcessingIntercept
 import org.springframework.web.context.request.async.WebAsyncUtils;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
+import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.controller.BaseController;
 import org.thingsboard.mqtt.broker.dao.store.BackupInProgressException;
 import org.thingsboard.mqtt.broker.dao.store.StoreBackup;
@@ -78,6 +82,14 @@ public class StandaloneBackupController extends BaseController {
     /**
      * @throws BackupInProgressException while another backup runs, mapped to 409
      */
+    @ApiOperation(value = "Download a backup of the store (downloadStoreBackup)",
+            notes = "Streams a consistent backup of the broker store as a gzip-compressed tar archive " +
+                    "(tbmq-lite-backup-<yyyyMMdd-HHmmss>.tar.gz, UTC); the file name is in the 'Content-Disposition' and 'x-filename' response headers. " +
+                    "Only one backup runs at a time: while another one is in progress the request fails with 409. " +
+                    "The archive contains secrets, the signing key of the store and the credential hashes, so keep it as protected as the store itself. " +
+                    "Available to SYS_ADMIN only.",
+            responses = @ApiResponse(responseCode = "200", description = "The backup archive.",
+                    content = @Content(mediaType = "application/gzip", schema = @Schema(type = "string", format = "binary"))))
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping("/backup")
     public ResponseEntity<StreamingResponseBody> downloadBackup(HttpServletRequest request) {
