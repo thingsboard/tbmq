@@ -9360,15 +9360,17 @@
         "tags": [
           "standalone-backup-controller"
         ],
-        "summary": "downloadBackup",
+        "summary": "Download a backup of the store (downloadStoreBackup)",
+        "description": "Streams a consistent backup of the broker store as a gzip-compressed tar archive (tbmq-lite-backup-<yyyyMMdd-HHmmss>.tar.gz, UTC); the file name is in the 'Content-Disposition' and 'x-filename' response headers. Only one backup runs at a time: while another one is in progress the request fails with 409. The archive contains secrets, the signing key of the store and the credential hashes, so keep it as protected as the store itself. Available to SYS_ADMIN only.",
         "operationId": "downloadBackup",
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "The backup archive.",
             "content": {
-              "application/json": {
+              "application/gzip": {
                 "schema": {
-                  "$ref": "#/components/schemas/StreamingResponseBody"
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -15108,7 +15110,6 @@
           }
         ]
       },
-      "StreamingResponseBody": { },
       "StringPair": {
         "type": "object",
         "properties": {
