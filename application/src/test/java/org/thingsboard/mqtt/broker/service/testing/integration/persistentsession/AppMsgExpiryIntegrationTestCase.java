@@ -41,8 +41,11 @@ import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @Slf4j
@@ -159,11 +162,13 @@ public class AppMsgExpiryIntegrationTestCase extends AbstractPubSubIntegrationTe
 
     private void assertMsgWithExpiryIntervalReceivedOnReconnect(long messageExpiryInterval) throws Throwable {
         CountDownLatch receivedResponses = new CountDownLatch(1);
+        AtomicReference<Long> receivedExpiryInterval = new AtomicReference<>();
 
         persistedClient = new MqttClient(SERVER_URI + mqttPort, APP_MSG_EXPIRY_CLIENT);
         persistedClient.connect(getOptions(false, MSG_EXPIRY_USER_NAME));
         IMqttMessageListener[] listeners = {(topic, msg) -> {
             log.debug("[{}] Received msg with id: {}", topic, msg.getId());
+            receivedExpiryInterval.set(msg.getProperties().getMessageExpiryInterval());
             receivedResponses.countDown();
         }};
         MqttSubscription[] subscriptions = {new MqttSubscription("expiration/topic", 1)};
@@ -182,6 +187,15 @@ public class AppMsgExpiryIntegrationTestCase extends AbstractPubSubIntegrationTe
         persistedClient.connect(getOptions(false, MSG_EXPIRY_USER_NAME));
 
         assertTrue(receivedResponses.await(2, TimeUnit.SECONDS));
+
+        // the interval forwarded to the subscriber is the received one minus the wait, read unsigned
+        Long forwardedInterval = receivedExpiryInterval.get();
+        assertNotNull(forwardedInterval);
+        if (messageExpiryInterval == 0) {
+            assertEquals(0L, forwardedInterval.longValue());
+        } else {
+            assertTrue(forwardedInterval > messageExpiryInterval - 60 && forwardedInterval <= messageExpiryInterval);
+        }
     }
 
 }
