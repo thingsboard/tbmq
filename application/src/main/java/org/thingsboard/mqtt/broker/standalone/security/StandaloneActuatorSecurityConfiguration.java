@@ -17,6 +17,8 @@ package org.thingsboard.mqtt.broker.standalone.security;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
+import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -41,24 +43,20 @@ import org.thingsboard.mqtt.broker.common.util.edition.StandaloneComponent;
 @StandaloneComponent
 public class StandaloneActuatorSecurityConfiguration {
 
-    static final String ACTUATOR_PATTERN = "/actuator/**";
-    static final String ACTUATOR_LINKS = "/actuator";
-    static final String HEALTH_PATTERN = "/actuator/health/**";
-
     @Bean
     @Order(Ordered.HIGHEST_PRECEDENCE)
     SecurityFilterChain actuatorFilterChain(HttpSecurity http,
                                             @Value("${standalone.security.metrics-token:}") String metricsToken) throws Exception {
         MetricsTokenAuthorizationManager tokenManager = new MetricsTokenAuthorizationManager(metricsToken);
         if (metricsToken == null || metricsToken.isBlank()) {
-            log.info("No metrics token is set (TBMQ_METRICS_TOKEN): the actuator endpoints other than health are refused");
+            log.info("No metrics token is set (TBMQ_METRICS_TOKEN): every actuator endpoint is refused, except health and the links page");
         }
-        http.securityMatcher(ACTUATOR_PATTERN)
+        http.securityMatcher(EndpointRequest.toAnyEndpoint())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(handling -> handling.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(requests -> requests
-                        .requestMatchers(ACTUATOR_LINKS, HEALTH_PATTERN).permitAll()
+                        .requestMatchers(EndpointRequest.toLinks(), EndpointRequest.to(HealthEndpoint.class)).permitAll()
                         .anyRequest().access(tokenManager));
         return http.build();
     }

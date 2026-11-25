@@ -50,8 +50,8 @@ public class ActuatorSecurityLiteTest extends AbstractActuatorSecurityLiteTest {
         actuator("/actuator/health/liveness", null).andExpect(status().is(not(HttpStatus.UNAUTHORIZED.value())));
         actuator("/actuator/health/readiness", null).andExpect(status().is(not(HttpStatus.UNAUTHORIZED.value())));
         actuator("/actuator", null).andExpect(status().isOk());
-        // not the links page (MVC does not match a trailing slash): refused like any non-health path, never open by accident
-        actuator("/actuator/", null).andExpect(status().isUnauthorized());
+        // the links page with a trailing slash: open as well, while the same slash on an endpoint stays refused (below)
+        actuator("/actuator/", null).andExpect(status().isOk());
     }
 
     @Test

@@ -21,6 +21,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class MetricsTokenAuthorizationManagerTest {
 
@@ -55,11 +56,24 @@ class MetricsTokenAuthorizationManagerTest {
     }
 
     @Test
-    void aMultiByteTokenIsComparedByItsBytes() {
-        MetricsTokenAuthorizationManager manager = new MetricsTokenAuthorizationManager("tokén");
+    void aTokenOutsideVisibleAsciiRefusesTheStartWithoutNamingTheValue() {
+        for (String configured : new String[]{"s3cr\u00e9t", "s3 cret", " s3cret", "s3cret ", "s3\tcret", "s3\u007Fcret"}) {
+            assertThatThrownBy(() -> new MetricsTokenAuthorizationManager(configured))
+                    .as("configured '%s'", configured)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("TBMQ_METRICS_TOKEN")
+                    .satisfies(e -> assertThat(e.getMessage()).doesNotContain(configured.trim()));
+        }
+    }
 
-        assertThat(granted(manager, "Bearer tokén")).isTrue();
-        assertThat(granted(manager, "Bearer token")).isFalse();
+    @Test
+    void everyVisibleAsciiCharacterIsAccepted() {
+        StringBuilder token = new StringBuilder();
+        for (char c = 0x21; c <= 0x7E; c++) {
+            token.append(c);
+        }
+
+        assertThat(granted(new MetricsTokenAuthorizationManager(token.toString()), "Bearer " + token)).isTrue();
     }
 
     @Test
