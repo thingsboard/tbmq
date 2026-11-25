@@ -56,6 +56,7 @@ import org.thingsboard.mqtt.broker.service.security.exception.UserPasswordExpire
 import org.thingsboard.mqtt.broker.service.security.exception.UserPasswordNotValidException;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -122,6 +123,7 @@ public class ThingsboardErrorResponseHandler extends ResponseEntityExceptionHand
                        AccessDeniedException accessDeniedException) throws IOException, ServletException {
         if (!response.isCommitted()) {
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
             response.setStatus(HttpStatus.FORBIDDEN.value());
             JacksonUtil.writeValue(response.getWriter(),
                     ThingsboardErrorResponse.of("You don't have permission to perform this operation!",
@@ -135,6 +137,7 @@ public class ThingsboardErrorResponseHandler extends ResponseEntityExceptionHand
         if (!response.isCommitted()) {
             try {
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
                 if (exception instanceof StoreFullException storeFullException) {
                     handleStoreFullException(storeFullException, response);
@@ -266,6 +269,7 @@ public class ThingsboardErrorResponseHandler extends ResponseEntityExceptionHand
     // TODO: refactor this class to use this method instead of boilerplate JacksonUtil.writeValue(response.getWriter(), ...
     private void writeResponse(ThingsboardErrorResponse errorResponse, HttpServletResponse response) throws IOException {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setStatus(errorResponse.getStatus());
         JacksonUtil.writeValue(response.getWriter(), errorResponse);
     }

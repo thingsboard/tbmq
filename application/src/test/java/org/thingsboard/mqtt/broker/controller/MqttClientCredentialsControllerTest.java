@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.test.web.servlet.MvcResult;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
@@ -46,6 +47,7 @@ import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -503,6 +505,22 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
                     .andExpect(status().isBadRequest())
                     .andExpect(statusReason(org.hamcrest.Matchers.containsString("authRulesDelimiter")));
         }
+    }
+
+    @Test
+    public void givenNonAsciiCredentialsName_whenExportRefused_thenErrorBodyIsUtf8() throws Exception {
+        String name = "ünïcødé ✓";
+        BasicMqttCredentials basicMqttCredentials = newBasicMqttCredentials("nonAsciiClientId", null, null, List.of("a;b"));
+        doPost("/api/mqtt/client/credentials", newBasicMqttClientCredentials(ClientCredentialsType.MQTT_BASIC, basicMqttCredentials, name),
+                MqttClientCredentials.class);
+
+        MvcResult result = doGet("/api/mqtt/client/credentials/export")
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        assertThat(result.getResponse().getContentType()).contains("charset=UTF-8");
+        String body = new String(result.getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
+        assertThat(body).contains("Credentials '" + name + "'");
     }
 
     private void connectAndDisconnect(String username, String password) throws MqttException {
