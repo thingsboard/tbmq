@@ -198,6 +198,8 @@ public class MqttClientCredentialsController extends BaseController {
                     "with the columns NAME, DESCRIPTION, CLIENT_TYPE, CLIENT_ID, USERNAME, PASSWORD, PASSWORD_HASH, SUB_AUTH_RULE_PATTERNS and " +
                     "PUB_AUTH_RULE_PATTERNS. The system WebSocket credentials are not exported. PASSWORD is always empty. " +
                     "PASSWORD_HASH holds the BCrypt hash of the password, so the file holds password hashes: store it like a backup and delete it after use. " +
+                    "With includePasswordHashes=false, credentials that have a password get EXCLUDED in PASSWORD_HASH, which the import keeps on existing credentials " +
+                    "(their password stays unchanged) and refuses, as a row error, on new ones. " +
                     "Line breaks in a description are written as spaces. " +
                     "The patterns of a rule list are joined with the auth rules delimiter. The delimiter must not be a line break, a comma or a double quote. The request fails with 400, naming the credentials, " +
                     "when a pattern contains the delimiter, is empty or has leading or trailing spaces, when the name, client id, username or a pattern has a line break, " +
@@ -213,7 +215,7 @@ public class MqttClientCredentialsController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/mqtt/client/credentials/export")
     public ResponseEntity<StreamingResponseBody> exportCredentials(
-            @Parameter(description = "Write the BCrypt password hashes into the PASSWORD_HASH column; when false the column is empty.")
+            @Parameter(description = "Write the BCrypt password hashes into the PASSWORD_HASH column; when false, credentials that have a password get EXCLUDED there, which the import keeps on existing credentials and refuses on new ones.")
             @RequestParam(defaultValue = "true") boolean includePasswordHashes,
             @Parameter(description = "The single character that joins the patterns of a rule list; it is the auth rules delimiter of the import.")
             @RequestParam(defaultValue = ";") String authRulesDelimiter) {

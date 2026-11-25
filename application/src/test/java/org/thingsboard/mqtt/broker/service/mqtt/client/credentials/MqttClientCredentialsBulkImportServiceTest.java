@@ -135,6 +135,77 @@ class MqttClientCredentialsBulkImportServiceTest {
         verify(tbMqttClientCredentialsService, never()).save(any(), any());
     }
 
+    @Test
+    void theExcludedMarkerKeepsThePasswordOfExistingCredentialsAndAppliesTheRestOfTheRow() throws Exception {
+        MqttClientCredentials existing = existing("existing", HASH);
+        when(credentialsService.findCredentialsByName("existing")).thenReturn(existing);
+        when(tbMqttClientCredentialsService.save(any(), any())).thenAnswer(inv -> inv.getArgument(0));
+
+        BulkImportResult<MqttClientCredentials> result = importCsv("existing,new-id," + BcryptHashFormat.EXCLUDED + "\n",
+                BulkImportColumnType.NAME, BulkImportColumnType.CLIENT_ID, BulkImportColumnType.PASSWORD_HASH);
+
+        assertThat(result.getErrorsList()).isEmpty();
+        assertThat(result.getUpdated().get()).isEqualTo(1);
+        ArgumentCaptor<MqttClientCredentials> saved = ArgumentCaptor.forClass(MqttClientCredentials.class);
+        verify(tbMqttClientCredentialsService).save(saved.capture(), any());
+        BasicMqttCredentials basic = JacksonUtil.fromString(saved.getValue().getCredentialsValue(), BasicMqttCredentials.class);
+        assertThat(basic.getPassword()).isEqualTo(HASH);
+        assertThat(basic.getClientId()).isEqualTo("new-id");
+        verifyNoInteractions(passwordEncoder);
+    }
+
+    @Test
+    void theExcludedMarkerIsARowErrorForNewCredentials() throws Exception {
+        BulkImportResult<MqttClientCredentials> result = importCsv("fresh," + BcryptHashFormat.EXCLUDED + "\n",
+                BulkImportColumnType.NAME, BulkImportColumnType.PASSWORD_HASH);
+
+        assertThat(result.getErrors().get()).isEqualTo(1);
+        assertThat(result.getErrorsList()).containsExactly("Line 1: IllegalArgumentException: ['fresh'] "
+                + "The password hash was left out of the export: set PASSWORD or PASSWORD_HASH for these credentials");
+        verify(tbMqttClientCredentialsService, never()).save(any(), any());
+    }
+
+    @Test
+    void theExcludedMarkerIsARowErrorForExistingCredentialsWithoutAPassword() throws Exception {
+        when(credentialsService.findCredentialsByName("open")).thenReturn(existing("open", null));
+
+        BulkImportResult<MqttClientCredentials> result = importCsv("open," + BcryptHashFormat.EXCLUDED + "\n",
+                BulkImportColumnType.NAME, BulkImportColumnType.PASSWORD_HASH);
+
+        assertThat(result.getErrors().get()).isEqualTo(1);
+        assertThat(result.getErrorsList()).containsExactly("Line 1: IllegalArgumentException: ['open'] "
+                + "The password hash was left out of the export: set PASSWORD or PASSWORD_HASH for these credentials");
+        verify(tbMqttClientCredentialsService, never()).save(any(), any());
+    }
+
+    @Test
+    void theExcludedMarkerNextToAPasswordIsNotBothColumns() throws Exception {
+        BulkImportResult<MqttClientCredentials> result = importCsv("both,plain," + BcryptHashFormat.EXCLUDED + "\n",
+                BulkImportColumnType.NAME, BulkImportColumnType.PASSWORD, BulkImportColumnType.PASSWORD_HASH);
+
+        assertThat(result.getErrorsList()).containsExactly("Line 1: IllegalArgumentException: ['both'] A row may set PASSWORD or PASSWORD_HASH, not both");
+        verify(tbMqttClientCredentialsService, never()).save(any(), any());
+    }
+
+    @Test
+    void anotherNonBcryptValueIsStillABadHash() throws Exception {
+        BulkImportResult<MqttClientCredentials> result = importCsv("bad,excluded\n", BulkImportColumnType.NAME, BulkImportColumnType.PASSWORD_HASH);
+
+        assertThat(result.getErrorsList()).containsExactly("Line 1: IllegalArgumentException: ['bad'] PASSWORD_HASH must be a BCrypt hash with a cost from 4 to 14");
+        verify(tbMqttClientCredentialsService, never()).save(any(), any());
+    }
+
+    private static MqttClientCredentials existing(String name, String password) {
+        MqttClientCredentials existing = new MqttClientCredentials();
+        existing.setId(UUID.randomUUID());
+        existing.setName(name);
+        existing.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
+        BasicMqttCredentials basic = new BasicMqttCredentials();
+        basic.setPassword(password);
+        existing.setCredentialsValue(JacksonUtil.toString(basic));
+        return existing;
+    }
+
     private BulkImportResult<MqttClientCredentials> importCsv(String csv, BulkImportColumnType... columns) throws Exception {
         BulkImportRequest.Mapping mapping = new BulkImportRequest.Mapping();
         mapping.setColumns(Arrays.stream(columns).map(type -> {

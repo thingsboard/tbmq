@@ -32,9 +32,11 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.controller.AbstractControllerTest;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
+import org.thingsboard.mqtt.broker.service.mqtt.client.credentials.BcryptHashFormat;
 import org.thingsboard.mqtt.broker.util.CsvUtils;
 
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -101,15 +103,58 @@ public class CredentialsCsvRoundTripLiteTest extends AbstractControllerTest {
     }
 
     @Test
-    public void givenHashesSwitchedOff_whenExported_thenHashColumnIsEmpty() throws Exception {
-        MvcResult started = doGet(EXPORT_URL + "?includePasswordHashes=false").andExpect(request().asyncStarted()).andReturn();
+    public void givenHashesSwitchedOff_whenExported_thenHashColumnMarksTheCredentialsWithAPassword() throws Exception {
+        List<List<String>> rows = exportWithoutHashes();
 
-        String body = mockMvc.perform(asyncDispatch(started)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
-
-        assertThat(body).doesNotContain("$2");
-        List<List<String>> rows = CsvUtils.parseCsv(body, ',');
         assertThat(rows).hasSize(goldenRows.size());
-        assertThat(rows.stream().skip(1).map(row -> row.get(6))).containsOnly("");
+        for (int i = 1; i < rows.size(); i++) {
+            String goldenHash = goldenRows.get(i).get(6);
+            assertThat(rows.get(i).get(6)).isEqualTo(goldenHash.isEmpty() ? "" : BcryptHashFormat.EXCLUDED);
+        }
+    }
+
+    @Test
+    public void givenFileWithoutHashes_whenImportedIntoAnEmptyStore_thenCredentialsWithAPasswordAreRowErrorsAndNoneIsCreatedWithoutIt() throws Exception {
+        List<List<String>> rows = exportWithoutHashes();
+        long withPassword = goldenRows.stream().skip(1).filter(row -> !row.get(6).isEmpty()).count();
+        assertThat(withPassword).isPositive();
+        deleteBasicCredentialsOtherThanTheSystemOne();
+
+        JsonNode result = doPostWithResponse(IMPORT_URL, importRequest(toCsv(rows), rows.get(0)), JsonNode.class);
+
+        assertThat(result.get("errors").asLong()).isEqualTo(withPassword);
+        assertThat(result.get("errorsList")).allMatch(e -> e.asText().contains("The password hash was left out of the export"));
+        assertThat(result.get("created").asLong()).isEqualTo(goldenRows.size() - 1 - withPassword);
+        assertThat(mqttClientCredentialsService.findByCredentialsType(ClientCredentialsType.MQTT_BASIC))
+                .filteredOn(c -> !BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME.equals(c.getName()))
+                .hasSize((int) (goldenRows.size() - 1 - withPassword))
+                .allSatisfy(c -> assertThat(JacksonUtil.fromString(c.getCredentialsValue(), BasicMqttCredentials.class).getPassword()).isNull());
+    }
+
+    @Test
+    public void givenFileWithoutHashes_whenImportedOverTheExistingCredentials_thenPasswordsAreKept() throws Exception {
+        List<List<String>> rows = exportWithoutHashes();
+
+        JsonNode result = doPostWithResponse(IMPORT_URL, importRequest(toCsv(rows), rows.get(0)), JsonNode.class);
+
+        assertThat(result.get("errorsList")).isEmpty();
+        assertThat(result.get("updated").asLong()).isEqualTo(goldenRows.size() - 1);
+        MvcResult started = doGet(EXPORT_URL).andExpect(request().asyncStarted()).andReturn();
+        assertThat(mockMvc.perform(asyncDispatch(started)).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray())
+                .isEqualTo(golden);
+    }
+
+    private List<List<String>> exportWithoutHashes() throws Exception {
+        MvcResult started = doGet(EXPORT_URL + "?includePasswordHashes=false").andExpect(request().asyncStarted()).andReturn();
+        String body = mockMvc.perform(asyncDispatch(started)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertThat(body).doesNotContain("$2");
+        return CsvUtils.parseCsv(body, ',');
+    }
+
+    private static String toCsv(List<List<String>> rows) throws Exception {
+        StringWriter out = new StringWriter();
+        CsvUtils.writeCsv(out, rows);
+        return out.toString();
     }
 
     @Test

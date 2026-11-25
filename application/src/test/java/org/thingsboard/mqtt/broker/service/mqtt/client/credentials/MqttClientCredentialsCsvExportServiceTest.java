@@ -161,15 +161,32 @@ class MqttClientCredentialsCsvExportServiceTest {
     }
 
     @Test
-    void leavesTheHashOutWhenSwitchedOff() throws Exception {
+    void marksTheHashOfCredentialsWithAPasswordWhenSwitchedOff() throws Exception {
         when(credentialsService.findByCredentialsType(ClientCredentialsType.MQTT_BASIC)).thenReturn(List.of(
-                credentials("a", null, "a-id", null, HASH, List.of(".*"), List.of(".*"))));
+                credentials("a", null, "a-id", null, HASH, List.of(".*"), List.of(".*")),
+                credentials("b", null, "b-id", null, null, List.of(".*"), List.of(".*")),
+                credentials("c", null, "c-id", null, "", List.of(".*"), List.of(".*"))));
 
-        List<String> row = CsvUtils.parseCsv(export(false, ';'), ',').get(1);
+        List<List<String>> rows = CsvUtils.parseCsv(export(false, ';'), ',');
 
-        assertThat(row.get(5)).isEmpty();
-        assertThat(row.get(6)).isEmpty();
+        assertThat(rows.get(1).get(5)).isEmpty();
+        assertThat(rows.get(1).get(6)).isEqualTo(BcryptHashFormat.EXCLUDED);
+        assertThat(rows.get(2).get(6)).isEmpty();
+        assertThat(rows.get(3).get(6)).isEmpty();
         assertThat(export(false, ';')).doesNotContain(HASH);
+    }
+
+    @Test
+    void doesNotMarkTheHashWhenIncluded() throws Exception {
+        when(credentialsService.findByCredentialsType(ClientCredentialsType.MQTT_BASIC)).thenReturn(List.of(
+                credentials("a", null, "a-id", null, HASH, List.of(".*"), List.of(".*")),
+                credentials("b", null, "b-id", null, null, List.of(".*"), List.of(".*"))));
+
+        List<List<String>> rows = CsvUtils.parseCsv(export(true, ';'), ',');
+
+        assertThat(rows.get(1).get(6)).isEqualTo(HASH);
+        assertThat(rows.get(2).get(6)).isEmpty();
+        assertThat(export(true, ';')).doesNotContain(BcryptHashFormat.EXCLUDED);
     }
 
     @Test
@@ -254,7 +271,7 @@ class MqttClientCredentialsCsvExportServiceTest {
         when(credentialsService.findByCredentialsType(ClientCredentialsType.MQTT_BASIC)).thenReturn(List.of(ok, plain));
         List<List<String>> rows = CsvUtils.parseCsv(export(false, ';'), ',');
         assertThat(rows).hasSize(3);
-        assertThat(rows.stream().skip(1).map(row -> row.get(6))).containsOnly("");
+        assertThat(rows.stream().skip(1).map(row -> row.get(6))).containsOnly(BcryptHashFormat.EXCLUDED);
     }
 
     private void assertRefused(MqttClientCredentials ok, MqttClientCredentials bad, String message) {

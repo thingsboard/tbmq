@@ -23,9 +23,18 @@ import java.util.regex.Pattern;
  */
 public final class BcryptHashFormat {
 
+    /**
+     * The PASSWORD_HASH cell of credentials that have a password when the export leaves the hashes out.
+     */
+    public static final String EXCLUDED = "EXCLUDED";
+
     private static final Pattern BCRYPT_HASH = Pattern.compile("^\\$2[aby]\\$(0[4-9]|1[0-4])\\$[./A-Za-z0-9]{53}$");
 
     private BcryptHashFormat() {
+    }
+
+    public static boolean isExcluded(String hash) {
+        return EXCLUDED.equals(hash);
     }
 
     public static boolean isValid(String hash) {

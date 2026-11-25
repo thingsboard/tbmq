@@ -105,8 +105,9 @@ public class MqttClientCredentialsCsvExportService {
         checkReadableByTheDialog(name, description, "the description");
         checkReadableByTheDialog(name, basic.getClientId(), "the client id");
         checkReadableByTheDialog(name, basic.getUserName(), "the username");
-        String passwordHash = includePasswordHashes ? nullToEmpty(basic.getPassword()) : "";
-        if (!passwordHash.isEmpty() && !BcryptHashFormat.isValid(passwordHash)) {
+        String storedPassword = nullToEmpty(basic.getPassword());
+        String passwordHash = includePasswordHashes || storedPassword.isEmpty() ? storedPassword : BcryptHashFormat.EXCLUDED;
+        if (includePasswordHashes && !passwordHash.isEmpty() && !BcryptHashFormat.isValid(passwordHash)) {
             throw new DataValidationException(String.format("Credentials '%s' have a stored password that is not a BCrypt hash", name));
         }
         PubSubAuthorizationRules rules = basic.getAuthRules();

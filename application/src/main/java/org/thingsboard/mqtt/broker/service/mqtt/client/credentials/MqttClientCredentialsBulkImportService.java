@@ -139,6 +139,7 @@ public class MqttClientCredentialsBulkImportService {
         validatePasswordColumns(fields);
 
         MqttClientCredentials entity = findOrCreateEntity(fields.get(BulkImportColumnType.NAME));
+        boolean excludedHash = BcryptHashFormat.isExcluded(fields.get(BulkImportColumnType.PASSWORD_HASH));
         BasicMqttCredentials basicCredentials;
         if (entity.getId() != null) {
 
@@ -149,11 +150,20 @@ public class MqttClientCredentialsBulkImportService {
             importedEntityInfo.setUpdated(true);
 
             basicCredentials = JacksonUtil.fromString(entity.getCredentialsValue(), BasicMqttCredentials.class);
-            if (StringUtils.isNotEmpty(basicCredentials.getPassword())
+            if (excludedHash) {
+                if (StringUtils.isEmpty(basicCredentials.getPassword())) {
+                    throw excludedHashError(fields.get(BulkImportColumnType.NAME));
+                }
+                // the password stays as it is
+                fields.remove(BulkImportColumnType.PASSWORD_HASH);
+            } else if (StringUtils.isNotEmpty(basicCredentials.getPassword())
                     && (fields.containsKey(BulkImportColumnType.PASSWORD) || fields.containsKey(BulkImportColumnType.PASSWORD_HASH))) {
                 throw new IllegalArgumentException(String.format("['%s'] It is not allowed to change the credentials' password", entity.getName()));
             }
         } else {
+            if (excludedHash) {
+                throw excludedHashError(fields.get(BulkImportColumnType.NAME));
+            }
             entity.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
 
             basicCredentials = new BasicMqttCredentials();
@@ -173,9 +183,16 @@ public class MqttClientCredentialsBulkImportService {
         if (fields.containsKey(BulkImportColumnType.PASSWORD) && fields.containsKey(BulkImportColumnType.PASSWORD_HASH)) {
             throw new IllegalArgumentException(String.format("['%s'] A row may set PASSWORD or PASSWORD_HASH, not both", name));
         }
-        if (fields.containsKey(BulkImportColumnType.PASSWORD_HASH) && !BcryptHashFormat.isValid(fields.get(BulkImportColumnType.PASSWORD_HASH))) {
+        if (fields.containsKey(BulkImportColumnType.PASSWORD_HASH)
+                && !BcryptHashFormat.isExcluded(fields.get(BulkImportColumnType.PASSWORD_HASH))
+                && !BcryptHashFormat.isValid(fields.get(BulkImportColumnType.PASSWORD_HASH))) {
             throw new IllegalArgumentException(String.format("['%s'] PASSWORD_HASH must be a BCrypt hash with a cost from 4 to 14", name));
         }
+    }
+
+    private IllegalArgumentException excludedHashError(String name) {
+        return new IllegalArgumentException(String.format(
+                "['%s'] The password hash was left out of the export: set PASSWORD or PASSWORD_HASH for these credentials", name));
     }
 
     private void setEntityFields(MqttClientCredentials entity,
