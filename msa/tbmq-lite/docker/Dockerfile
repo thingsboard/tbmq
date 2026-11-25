@@ -34,7 +34,7 @@ RUN set -eux; \
     jdeps --ignore-missing-deps --multi-release 25 --print-module-deps tbmq-lite.jar lib/*.jar > /tmp/jdeps.out; \
     modules="$(tail -n 1 /tmp/jdeps.out)"; \
     modules="$modules,jdk.unsupported,jdk.management,jdk.jcmd,jdk.attach"; \
-    if java --list-modules | grep -q '^jdk.crypto.ec@'; then modules="$modules,jdk.crypto.ec"; fi; \
+    if java --list-modules | grep -q '^jdk.crypto.ec[@]'; then modules="$modules,jdk.crypto.ec"; fi; \
     echo "jlink modules: $modules"; \
     jlink --strip-debug --no-header-files --no-man-pages --compress=zip-6 \
       --add-modules "$modules" --output /usr/share/tbmq-lite/jre
@@ -65,6 +65,6 @@ WORKDIR /data
 VOLUME ["/data"]
 EXPOSE 1883 8083 8084
 
-HEALTHCHECK --interval=10s --start-period=60s CMD ["/usr/share/tbmq-lite/healthcheck.sh"]
+HEALTHCHECK --interval=10s --timeout=10s --start-period=60s CMD ["/usr/share/tbmq-lite/healthcheck.sh"]
 
 CMD ["start-tbmq-lite.sh"]
