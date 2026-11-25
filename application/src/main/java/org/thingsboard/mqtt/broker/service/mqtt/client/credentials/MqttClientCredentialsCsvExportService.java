@@ -44,7 +44,9 @@ import java.util.regex.Pattern;
  * The import splits a rule list on the auth rules delimiter and trims every pattern, and the UI import dialog splits
  * the file on line breaks before it reads the CSV. A pattern with the delimiter, a pattern with leading or trailing
  * whitespace and a name with a line break would not come back unchanged, so the export refuses them, naming the
- * credentials. The line breaks of a description are written as spaces.
+ * credentials. The dialog also reads a comma, optional whitespace and a double quote inside a quoted cell as the
+ * start of another cell, so the export refuses those values too. The line breaks of a description are written as
+ * spaces, and a stored password that is not a BCrypt hash is not written into PASSWORD_HASH.
  */
 @Service
 @RequiredArgsConstructor
@@ -61,6 +63,11 @@ public class MqttClientCredentialsCsvExportService {
             BulkImportColumnType.SUB_AUTH_RULE_PATTERNS.name(),
             BulkImportColumnType.PUB_AUTH_RULE_PATTERNS.name());
     private static final Pattern LINE_BREAK = Pattern.compile("\r\n|[\r\n]");
+    /**
+     * A comma, whitespace (as the dialog's JavaScript {@code \s} reads it) and a double quote: the dialog's line
+     * splitter takes the quote for the start of a cell.
+     */
+    private static final Pattern COMMA_BEFORE_QUOTE = Pattern.compile(",[\\s\\p{Z}\u0085\ufeff]*\"");
     private static final String DESCRIPTION_FIELD = "description";
 
     private final MqttClientCredentialsService credentialsService;
@@ -90,23 +97,32 @@ public class MqttClientCredentialsCsvExportService {
     private List<String> toRow(MqttClientCredentials credentials, boolean includePasswordHashes, char delimiter) {
         String name = credentials.getName();
         checkNoLineBreak(name, name, "the name");
+        checkReadableByTheDialog(name, name, "the name");
         BasicMqttCredentials basic = MqttClientCredentialsUtil.getMqttCredentials(credentials, BasicMqttCredentials.class);
         checkNoLineBreak(name, basic.getClientId(), "the client id");
         checkNoLineBreak(name, basic.getUserName(), "the username");
+        String description = description(credentials);
+        checkReadableByTheDialog(name, description, "the description");
+        checkReadableByTheDialog(name, basic.getClientId(), "the client id");
+        checkReadableByTheDialog(name, basic.getUserName(), "the username");
+        String passwordHash = includePasswordHashes ? nullToEmpty(basic.getPassword()) : "";
+        if (!passwordHash.isEmpty() && !BcryptHashFormat.isValid(passwordHash)) {
+            throw new DataValidationException(String.format("Credentials '%s' have a stored password that is not a BCrypt hash", name));
+        }
         PubSubAuthorizationRules rules = basic.getAuthRules();
         return List.of(
                 name,
-                description(credentials),
+                description,
                 credentials.getClientType() == null ? "" : credentials.getClientType().name(),
                 nullToEmpty(basic.getClientId()),
                 nullToEmpty(basic.getUserName()),
                 "",
-                includePasswordHashes ? nullToEmpty(basic.getPassword()) : "",
-                joinPatterns(name, rules == null ? null : rules.getSubAuthRulePatterns(), delimiter),
-                joinPatterns(name, rules == null ? null : rules.getPubAuthRulePatterns(), delimiter));
+                passwordHash,
+                joinPatterns(name, rules == null ? null : rules.getSubAuthRulePatterns(), delimiter, "the subscribe auth rule patterns"),
+                joinPatterns(name, rules == null ? null : rules.getPubAuthRulePatterns(), delimiter, "the publish auth rule patterns"));
     }
 
-    private String joinPatterns(String name, List<String> patterns, char delimiter) {
+    private String joinPatterns(String name, List<String> patterns, char delimiter, String field) {
         if (patterns == null) {
             return "";
         }
@@ -125,7 +141,16 @@ public class MqttClientCredentialsCsvExportService {
                         "Credentials '%s' have an auth rule pattern with leading or trailing spaces, which the import removes", name));
             }
         }
-        return String.join(String.valueOf(delimiter), patterns);
+        String joined = String.join(String.valueOf(delimiter), patterns);
+        checkReadableByTheDialog(name, joined, field);
+        return joined;
+    }
+
+    private static void checkReadableByTheDialog(String credentialsName, String value, String what) {
+        if (value != null && COMMA_BEFORE_QUOTE.matcher(value).find()) {
+            throw new DataValidationException(String.format(
+                    "Credentials '%s' have a comma followed by a double quote in %s, which the import dialog cannot read", credentialsName, what));
+        }
     }
 
     private static void checkNoLineBreak(String credentialsName, String value, String what) {

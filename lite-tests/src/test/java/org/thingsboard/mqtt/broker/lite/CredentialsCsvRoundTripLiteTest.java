@@ -129,7 +129,7 @@ public class CredentialsCsvRoundTripLiteTest extends AbstractControllerTest {
     }
 
     @Test
-    public void exportIsForbiddenWithoutSysadmin() throws Exception {
+    public void exportIsUnauthorizedWithoutALogin() throws Exception {
         logout();
 
         doGet(EXPORT_URL).andExpect(status().isUnauthorized());

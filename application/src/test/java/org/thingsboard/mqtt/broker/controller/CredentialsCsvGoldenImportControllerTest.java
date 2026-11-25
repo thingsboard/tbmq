@@ -23,6 +23,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.web.servlet.MvcResult;
 import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportColumnType;
 import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportRequest;
 import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportResult;
@@ -40,6 +43,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -71,17 +76,7 @@ public class CredentialsCsvGoldenImportControllerTest extends AbstractController
 
     @Test
     public void givenGoldenCsv_whenImported_thenEachClientConnectsWithItsPassword() throws Exception {
-        String golden = readGolden();
-        List<List<String>> rows = CsvUtils.parseCsv(golden, ',');
-        List<List<String>> credentials = rows.subList(1, rows.size());
-        credentials.forEach(row -> importedNames.add(row.get(NAME)));
-
-        BulkImportResult<?> result = JacksonUtil.fromString(
-                doPost("/api/mqtt/client/credentials/bulk_import", importRequest(golden, rows.get(0)))
-                        .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(),
-                BulkImportResult.class);
-        assertThat(result.getErrorsList()).isEmpty();
-        assertThat(result.getCreated().get()).isEqualTo(credentials.size());
+        List<List<String>> credentials = importGolden();
 
         MqttAuthProvider basicProvider = getMqttAuthProvider(MqttAuthProviderType.MQTT_BASIC);
         boolean wasEnabled = basicProvider.isEnabled();
@@ -101,6 +96,39 @@ public class CredentialsCsvGoldenImportControllerTest extends AbstractController
                 mqttAuthProviderManagerService.disableAuthProvider(basicProvider.getId());
             }
         }
+    }
+
+    @Test
+    public void givenGoldenCsv_whenImportedAndExported_thenEveryGoldenLineIsInTheExport() throws Exception {
+        String golden = readGolden();
+        importGolden();
+
+        MvcResult started = doGet("/api/mqtt/client/credentials/export").andExpect(request().asyncStarted()).andReturn();
+        MockHttpServletResponse response = mockMvc.perform(asyncDispatch(started)).andExpect(status().isOk()).andReturn().getResponse();
+
+        assertThat(response.getHeader(HttpHeaders.CONTENT_DISPOSITION)).isEqualTo("attachment; filename=mqtt-client-credentials.csv");
+        assertThat(response.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("no-store");
+        assertThat(response.getContentType()).startsWith("text/csv").containsIgnoringCase("charset=UTF-8");
+        // credentials of other tests may be in the export too, so the lines are looked up, not compared as a whole
+        List<String> exportedLines = List.of(response.getContentAsString(StandardCharsets.UTF_8).split("\r\n"));
+        List<String> goldenLines = List.of(golden.split("\r\n"));
+        assertThat(goldenLines).hasSizeGreaterThan(1);
+        assertThat(exportedLines).containsAll(goldenLines);
+    }
+
+    private List<List<String>> importGolden() throws Exception {
+        String golden = readGolden();
+        List<List<String>> rows = CsvUtils.parseCsv(golden, ',');
+        List<List<String>> credentials = rows.subList(1, rows.size());
+        credentials.forEach(row -> importedNames.add(row.get(NAME)));
+
+        BulkImportResult<?> result = JacksonUtil.fromString(
+                doPost("/api/mqtt/client/credentials/bulk_import", importRequest(golden, rows.get(0)))
+                        .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(),
+                BulkImportResult.class);
+        assertThat(result.getErrorsList()).isEmpty();
+        assertThat(result.getCreated().get()).isEqualTo(credentials.size());
+        return credentials;
     }
 
     static String readGolden() throws IOException {

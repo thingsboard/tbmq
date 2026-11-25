@@ -208,6 +208,55 @@ class MqttClientCredentialsCsvExportServiceTest {
         assertThat(rows.get(1).get(7)).isEqualTo("a;b");
     }
 
+    @Test
+    void refusesValuesWithACommaFollowedByADoubleQuote() {
+        MqttClientCredentials ok = credentials("ok", null, "ok-id", null, null, List.of(".*"), List.of(".*"));
+        String sentence = "Credentials '%s' have a comma followed by a double quote in %s, which the import dialog cannot read";
+
+        assertRefused(ok, credentials("desc", "He said, \"hello\"", "d-id", null, null, List.of(".*"), List.of(".*")),
+                sentence.formatted("desc", "the description"));
+        assertRefused(ok, credentials("desc-list", "x,\"y\",z", "d-id", null, null, List.of(".*"), List.of(".*")),
+                sentence.formatted("desc-list", "the description"));
+        assertRefused(ok, credentials("desc-space", "a,   \"b", "d-id", null, null, List.of(".*"), List.of(".*")),
+                sentence.formatted("desc-space", "the description"));
+        assertRefused(ok, credentials("desc-tab", "a,\t\"b", "d-id", null, null, List.of(".*"), List.of(".*")),
+                sentence.formatted("desc-tab", "the description"));
+        assertRefused(ok, credentials("a, \"b\"", null, "n-id", null, null, List.of(".*"), List.of(".*")),
+                sentence.formatted("a, \"b\"", "the name"));
+        assertRefused(ok, credentials("id", null, "a,\"b", null, null, List.of(".*"), List.of(".*")),
+                sentence.formatted("id", "the client id"));
+        assertRefused(ok, credentials("user", null, "u-id", "a, \"b", null, List.of(".*"), List.of(".*")),
+                sentence.formatted("user", "the username"));
+        assertRefused(ok, credentials("sub", null, "s-id", null, null, List.of("a,\"b"), List.of(".*")),
+                sentence.formatted("sub", "the subscribe auth rule patterns"));
+        assertRefused(ok, credentials("pub", null, "p-id", null, null, List.of(".*"), List.of("a/#", "b,\"c")),
+                sentence.formatted("pub", "the publish auth rule patterns"));
+    }
+
+    @Test
+    void exportsValuesTheDialogReadsBack() throws Exception {
+        String description = "say \"hi\"";
+        when(credentialsService.findByCredentialsType(ClientCredentialsType.MQTT_BASIC)).thenReturn(List.of(
+                credentials("quoted \"name\"", description, "a,b", "x\" ,y", null, List.of("a, b"), List.of("\"quoted\""))));
+
+        List<String> row = CsvUtils.parseCsv(export(true, ';'), ',').get(1);
+
+        assertThat(row).containsExactly("quoted \"name\"", description, "DEVICE", "a,b", "x\" ,y", "", "", "a, b", "\"quoted\"");
+    }
+
+    @Test
+    void refusesAStoredPasswordThatIsNotABcryptHashOnlyWhenHashesAreIncluded() throws Exception {
+        MqttClientCredentials ok = credentials("ok", null, "ok-id", null, HASH, List.of(".*"), List.of(".*"));
+        MqttClientCredentials plain = credentials("plain", null, "p-id", null, "not-a-hash", List.of(".*"), List.of(".*"));
+
+        assertRefused(ok, plain, "Credentials 'plain' have a stored password that is not a BCrypt hash");
+
+        when(credentialsService.findByCredentialsType(ClientCredentialsType.MQTT_BASIC)).thenReturn(List.of(ok, plain));
+        List<List<String>> rows = CsvUtils.parseCsv(export(false, ';'), ',');
+        assertThat(rows).hasSize(3);
+        assertThat(rows.stream().skip(1).map(row -> row.get(6))).containsOnly("");
+    }
+
     private void assertRefused(MqttClientCredentials ok, MqttClientCredentials bad, String message) {
         when(credentialsService.findByCredentialsType(ClientCredentialsType.MQTT_BASIC)).thenReturn(List.of(ok, bad));
         StringWriter out = new StringWriter();
