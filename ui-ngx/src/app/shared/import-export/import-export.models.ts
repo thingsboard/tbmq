@@ -33,6 +33,7 @@ export enum ImportEntityColumnType {
   clientId = 'CLIENT_ID',
   username = 'USERNAME',
   password = 'PASSWORD',
+  passwordHash = 'PASSWORD_HASH',
   subAuthRulePatterns = 'SUB_AUTH_RULE_PATTERNS',
   pubAuthRulePatterns = 'PUB_AUTH_RULE_PATTERNS',
   unknown = 'UNKNOWN',
@@ -46,11 +47,17 @@ export const importEntityColumnTypeTranslations = new Map<ImportEntityColumnType
     [ImportEntityColumnType.clientId, 'import.column-type.client-id'],
     [ImportEntityColumnType.username, 'import.column-type.username'],
     [ImportEntityColumnType.password, 'import.column-type.password'],
+    [ImportEntityColumnType.passwordHash, 'import.column-type.password-hash'],
     [ImportEntityColumnType.subAuthRulePatterns, 'import.column-type.sub-auth-rule-patterns'],
     [ImportEntityColumnType.pubAuthRulePatterns, 'import.column-type.pub-auth-rule-patterns'],
     [ImportEntityColumnType.unknown, 'import.column-type.not-assigned'],
   ]
 );
+
+export function columnTypeForHeader(header: string, allowed: ImportEntityColumnType[]): ImportEntityColumnType | undefined {
+  const headerColumnName = header.toUpperCase();
+  return allowed.find(column => column === headerColumnName);
+}
 
 export interface CsvColumnParam {
   type: ImportEntityColumnType;

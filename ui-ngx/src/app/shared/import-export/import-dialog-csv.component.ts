@@ -34,7 +34,8 @@ import {
   CSVDelimiter,
   CsvToJsonConfig,
   CsvToJsonResult,
-  ImportEntityColumnType
+  ImportEntityColumnType,
+  columnTypeForHeader
 } from '@shared/import-export/import-export.models';
 import { ImportExportService } from '@shared/import-export/import-export.service';
 import { TableColumnsAssignmentComponent } from '@shared/import-export/table-columns-assignment.component';
@@ -248,8 +249,7 @@ export class ImportDialogCsvComponent extends DialogComponent<ImportDialogCsvCom
       let columnParam: CsvColumnParam;
       let findEntityColumnType: ImportEntityColumnType;
       if (isHeader) {
-        const headerColumnName = this.parseData.headers[i].toUpperCase();
-        findEntityColumnType = this.allowAssignColumn.find(column => column === headerColumnName);
+        findEntityColumnType = columnTypeForHeader(this.parseData.headers[i], this.allowAssignColumn);
       } else {
         findEntityColumnType = this.getDefaultColumnType(i);
       }

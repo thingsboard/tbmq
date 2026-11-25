@@ -123,6 +123,7 @@ export class TableColumnsAssignmentComponent implements OnInit, ControlValueAcce
           { value: ImportEntityColumnType.clientId },
           { value: ImportEntityColumnType.username },
           { value: ImportEntityColumnType.password },
+          { value: ImportEntityColumnType.passwordHash },
           { value: ImportEntityColumnType.subAuthRulePatterns },
           { value: ImportEntityColumnType.pubAuthRulePatterns },
         );
@@ -161,6 +162,7 @@ export class TableColumnsAssignmentComponent implements OnInit, ControlValueAcce
       const isSelectClientId = this.columns.findIndex((column) => column.type === ImportEntityColumnType.clientId) > -1;
       const isSelectUsername = this.columns.findIndex((column) => column.type === ImportEntityColumnType.username) > -1;
       const isSelectPassword = this.columns.findIndex((column) => column.type === ImportEntityColumnType.password) > -1;
+      const isSelectPasswordHash = this.columns.findIndex((column) => column.type === ImportEntityColumnType.passwordHash) > -1;
       const isSelectSubAuthRulePatterns = this.columns.findIndex((column) => column.type === ImportEntityColumnType.subAuthRulePatterns) > -1;
       const isSelectPubAuthRulePatterns = this.columns.findIndex((column) => column.type === ImportEntityColumnType.pubAuthRulePatterns) > -1;
 
@@ -171,6 +173,7 @@ export class TableColumnsAssignmentComponent implements OnInit, ControlValueAcce
       this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.clientId).disabled = isSelectClientId;
       this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.username).disabled = isSelectUsername;
       this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.password).disabled = isSelectPassword;
+      this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.passwordHash).disabled = isSelectPasswordHash;
       this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.subAuthRulePatterns).disabled = isSelectSubAuthRulePatterns;
       this.columnTypes.find((columnType) => columnType.value === ImportEntityColumnType.pubAuthRulePatterns).disabled = isSelectPubAuthRulePatterns;
     }
