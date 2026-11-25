@@ -156,7 +156,7 @@ export class GlobalHttpInterceptor implements HttpInterceptor {
 
   private prepareMessageFromData(data) {
     if (typeof data === 'object' && data.constructor === ArrayBuffer) {
-      const msg = String.fromCharCode.apply(null, new Uint8Array(data));
+      const msg = new TextDecoder('utf-8').decode(data);
       try {
         const msgObj = JSON.parse(msg);
         if (msgObj.message) {

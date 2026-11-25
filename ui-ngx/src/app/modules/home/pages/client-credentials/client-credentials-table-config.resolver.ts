@@ -53,6 +53,7 @@ import {
   ChangeBasicPasswordDialogComponent,
   ChangeBasicPasswordDialogData
 } from '@home/pages/client-credentials/change-basic-password-dialog.component';
+import { ExportCredentialsDialogComponent } from '@home/pages/client-credentials/export-credentials-dialog.component';
 import { Injectable } from '@angular/core';
 import { ConfigService } from '@core/http/config.service';
 import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
@@ -141,6 +142,12 @@ export class ClientCredentialsTableConfigResolver {
         icon: 'settings',
         isEnabled: () => true,
         onAction: ($event) => this.router.navigate(['/settings/general'])
+      },
+      {
+        name: this.translate.instant('mqtt-client-credentials.export-csv'),
+        icon: 'file_download',
+        isEnabled: () => true,
+        onAction: ($event) => this.exportCredentials($event)
       }
     )
 
@@ -322,6 +329,16 @@ export class ClientCredentialsTableConfigResolver {
     return (credentialsType === CredentialsType.MQTT_BASIC && !brokerConfig.basicAuthEnabled) ||
            (credentialsType === CredentialsType.X_509 && !brokerConfig.x509AuthEnabled) ||
            (credentialsType === CredentialsType.SCRAM && !brokerConfig.scramAuthEnabled);
+  }
+
+  private exportCredentials($event: Event) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.dialog.open<ExportCredentialsDialogComponent, void, void>(ExportCredentialsDialogComponent, {
+      disableClose: true,
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
+    });
   }
 
   private importCredentials($event: Event) {

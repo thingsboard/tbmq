@@ -504,6 +504,7 @@
             "pub-auth-rule-patterns": "Publish auth rule patterns",
             "username": "Username",
             "password": "Password",
+            "password-hash": "Password hash",
             "name": "Name",
             "not-assigned": "Not assigned"
         },
@@ -805,6 +806,9 @@
         "delete-client-credentials-text": "Be careful, after the confirmation all selected client credentials will be removed and all related data will become unrecoverable.",
         "file": "Client credentials file",
         "import-basic": "Import Basic credentials",
+        "export-csv": "Export to CSV",
+        "export-csv-include-password-hashes": "Include password hashes",
+        "export-csv-note": "With password hashes the file holds secrets: store it like a backup and delete it after use. Without them, credentials that have a password are marked EXCLUDED: the import keeps their current password or refuses the row. Line breaks in descriptions are written as spaces.",
         "list-of-client-credentials": "{ count, plural, =1 {One Client credentials} other {List of # Client credentials} }",
         "name": "Name",
         "name-required": "Name is required.",

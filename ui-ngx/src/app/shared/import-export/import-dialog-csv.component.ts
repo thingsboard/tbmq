@@ -31,10 +31,12 @@ import {
   ColumnMapping,
   convertCSVToJson,
   CsvColumnParam,
-  CSVDelimiter,
+  CSV_DELIMITERS,
+  DEFAULT_AUTH_RULES_DELIMITER,
   CsvToJsonConfig,
   CsvToJsonResult,
-  ImportEntityColumnType
+  ImportEntityColumnType,
+  columnTypeForHeader
 } from '@shared/import-export/import-export.models';
 import { ImportExportService } from '@shared/import-export/import-export.service';
 import { TableColumnsAssignmentComponent } from '@shared/import-export/table-columns-assignment.component';
@@ -108,19 +110,7 @@ export class ImportDialogCsvComponent extends DialogComponent<ImportDialogCsvCom
   importTitle: string;
   importFileLabel: string;
 
-  delimiters: { key: CSVDelimiter; value: string }[] = [{
-    key: ',',
-    value: ','
-  }, {
-    key: ';',
-    value: ';'
-  }, {
-    key: '|',
-    value: '|'
-  }, {
-    key: '\t',
-    value: 'Tab'
-  }];
+  delimiters = CSV_DELIMITERS;
 
   selectedIndex = 0;
 
@@ -157,7 +147,7 @@ export class ImportDialogCsvComponent extends DialogComponent<ImportDialogCsvCom
     );
     this.importParametersFormGroup = this.fb.group({
       delim: [',', [Validators.required]],
-      authRulesDelim: [';', [Validators.required]],
+      authRulesDelim: [DEFAULT_AUTH_RULES_DELIMITER, [Validators.required]],
       isHeader: [true, []],
     });
     this.columnTypesFormGroup = this.fb.group({
@@ -248,8 +238,7 @@ export class ImportDialogCsvComponent extends DialogComponent<ImportDialogCsvCom
       let columnParam: CsvColumnParam;
       let findEntityColumnType: ImportEntityColumnType;
       if (isHeader) {
-        const headerColumnName = this.parseData.headers[i].toUpperCase();
-        findEntityColumnType = this.allowAssignColumn.find(column => column === headerColumnName);
+        findEntityColumnType = columnTypeForHeader(this.parseData.headers[i], this.allowAssignColumn);
       } else {
         findEntityColumnType = this.getDefaultColumnType(i);
       }

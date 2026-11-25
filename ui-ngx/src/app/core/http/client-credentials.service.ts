@@ -16,11 +16,12 @@
 
 import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
 import { ClientCredentialsInfo, ClientCredentials, ClientCredentialsQuery } from '@shared/models/credentials.model';
+import { ResourcesService } from '@core/services/resources.service';
 import { BulkImportRequest, BulkImportResult } from '@shared/import-export/import-export.models';
 
 @Injectable({
@@ -29,7 +30,8 @@ import { BulkImportRequest, BulkImportResult } from '@shared/import-export/impor
 export class ClientCredentialsService {
 
   constructor(
-    private http: HttpClient
+    private http: HttpClient,
+    private resourcesService: ResourcesService
   ) {
   }
 
@@ -69,5 +71,11 @@ export class ClientCredentialsService {
 
   public bulkImportCredentials(entitiesData: BulkImportRequest, config?: RequestConfig): Observable<BulkImportResult> {
     return this.http.post<BulkImportResult>('/api/mqtt/client/credentials/bulk_import', entitiesData, defaultHttpOptionsFromConfig(config));
+  }
+
+  public exportCredentialsCsv(includePasswordHashes: boolean, authRulesDelimiter: string): Observable<void> {
+    return this.resourcesService.downloadResource(
+      `/api/mqtt/client/credentials/export?includePasswordHashes=${includePasswordHashes}&authRulesDelimiter=${encodeURIComponent(authRulesDelimiter)}`)
+      .pipe(map(() => undefined));
   }
 }
