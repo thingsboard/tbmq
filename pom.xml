@@ -46,7 +46,7 @@
         <httpcore5.version>5.4.3</httpcore5.version> <!-- to fix CVE-2026-54399, CVE-2026-54428. TODO: remove when fixed in spring-boot-dependencies -->
         <httpclient5.version>5.6.4</httpclient5.version> <!-- kept in lockstep with httpcore5 5.4.3. TODO: remove when fixed in spring-boot-dependencies -->
         <mockito.version>5.18.0</mockito.version>
-        <guava.version>33.1.0-jre</guava.version>
+        <guava.version>33.7.2-jre</guava.version> <!-- to fix CVE-2026-102554 -->
         <commons-lang3.version>3.18.0
         </commons-lang3.version> <!-- to fix CVE-2025-48924. TODO: remove when fixed in spring-boot-dependencies -->
         <commons-csv.version>1.10.0</commons-csv.version>
@@ -59,7 +59,10 @@
         <dbunit.version>2.7.3</dbunit.version>
         <spring-test-dbunit.version>1.3.0</spring-test-dbunit.version>
         <kafka.version>3.9.2</kafka.version> <!-- to fix CVE-2026-35554 -->
-        <lz4.version>1.11.2</lz4.version> <!-- transitive via kafka-clients, to fix CVE-2026-59949. TODO: remove when fixed in kafka-clients -->
+        <lz4.version>1.11.4</lz4.version> <!-- transitive via kafka-clients, to fix CVE-2026-59949, CVE-2026-106450, CVE-2026-106451. TODO: remove when fixed in kafka-clients -->
+        <snappy-java.version>1.1.10.9</snappy-java.version> <!-- transitive via kafka-clients, to fix CVE-2026-108106, CVE-2026-116590, CVE-2026-93451. TODO: remove when fixed in kafka-clients -->
+        <org-json.version>20260719</org-json.version> <!-- transitive via jedis, to fix CVE-2026-59171. TODO: remove when fixed in jedis -->
+        <freemarker.version>2.3.35</freemarker.version> <!-- to fix CVE-2026-84939. TODO: remove when fixed in spring-boot-dependencies -->
         <testcontainers.version>1.21.4</testcontainers.version>
         <testcontainers.wiremock.version>1.0-alpha-13</testcontainers.wiremock.version>
         <winsw.version>2.0.1</winsw.version>
@@ -871,6 +874,27 @@
                 <version>${lz4.version}</version>
             </dependency>
             <!-- End of LZ4 version override -->
+            <!-- Temporary snappy-java version override (pulled in by kafka-clients) -->
+            <dependency>
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>${snappy-java.version}</version>
+            </dependency>
+            <!-- End of snappy-java version override -->
+            <!-- Temporary org.json version override (pulled in by jedis) -->
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>${org-json.version}</version>
+            </dependency>
+            <!-- End of org.json version override -->
+            <!-- Temporary FreeMarker version override -->
+            <dependency>
+                <groupId>org.freemarker</groupId>
+                <artifactId>freemarker</artifactId>
+                <version>${freemarker.version}</version>
+            </dependency>
+            <!-- End of FreeMarker version override -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
