@@ -18,7 +18,8 @@
 # Builds the image from the current directory for linux/amd64 and linux/arm64 and pushes it to the registry as one
 # multi-arch manifest. The version tag is always pushed; latest only for a plain release (x.y.z), never for a
 # pre-release such as 2.5.0-beta or 2.5.0-rc1.
-# DRY_RUN=1 prints the command instead of running it, so that nothing is built or pushed.
+# DRY_RUN=1 prints the command instead of running it, so that nothing is built or pushed. Unset or empty DRY_RUN pushes
+# for real; any other value is refused, so that a mistyped DRY_RUN=true cannot turn into a push.
 usage() {
   echo "Usage: [DRY_RUN=1] $0 <repository/name> <version>" >&2
   echo "  e.g. $0 thingsboard/tbmq-lite 2.5.0-beta" >&2
@@ -26,6 +27,17 @@ usage() {
 }
 
 [ "$#" -eq 2 ] && [ -n "$1" ] && [ -n "$2" ] || usage
+case "$1$2" in
+  *[[:space:]]*) usage ;;
+esac
+
+case "${DRY_RUN:-}" in
+  "" | 1) ;;
+  *)
+    echo "Error: DRY_RUN must be unset, empty or 1, got '$DRY_RUN'; nothing was run" >&2
+    exit 1
+    ;;
+esac
 
 image=$1
 version=$2

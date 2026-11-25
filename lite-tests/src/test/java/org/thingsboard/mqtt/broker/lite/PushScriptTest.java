@@ -92,7 +92,7 @@ public class PushScriptTest {
 
     @Test
     public void versionsThatAreNotPlainReleasesNeverTagLatest() throws Exception {
-        for (String version : new String[]{"2.5", "2.5.0.1", "v2.5.0", "2.5.0-", "2.5.0PE", "2.5.0\n"}) {
+        for (String version : new String[]{"2.5", "2.5.0.1", "v2.5.0", "2.5.0-", "2.5.0PE"}) {
             Result result = run(true, REPO, version);
 
             assertEquals(version + ": " + result.stderr, 0, result.exit);
@@ -133,6 +133,47 @@ public class PushScriptTest {
         assertTrue(lines.toString(), lines.contains(REPO + ":2.5.0-beta"));
         assertFalse(lines.toString(), lines.toString().contains(":latest"));
         assertEquals(".", lines.get(lines.size() - 1));
+    }
+
+    @Test
+    public void unknownDryRunValueIsRefusedWithoutCallingDocker() throws Exception {
+        for (String value : new String[]{"true", "0", "yes", "11"}) {
+            Path bin = tmp.newFolder().toPath();
+            Path marker = tmp.getRoot().toPath().resolve("docker-called-" + bin.getFileName());
+            Path fakeDocker = bin.resolve("docker");
+            Files.write(fakeDocker, ("#!/bin/sh\ntouch '" + marker + "'\n").getBytes(StandardCharsets.UTF_8));
+            assertTrue(fakeDocker.toFile().setExecutable(true));
+
+            Result result = runWithDryRun(value, bin.toString(), REPO, "2.5.0");
+
+            assertEquals(value + ": " + result.stdout, 1, result.exit);
+            assertTrue(value + ": " + result.stderr, result.stderr.contains("DRY_RUN"));
+            assertTrue(value + ": " + result.stderr, result.stderr.contains("unset, empty or 1"));
+            assertTrue(value + ": nothing may be printed as a command: " + result.stdout, result.stdout.isEmpty());
+            assertFalse(value + ": docker was invoked", Files.exists(marker));
+        }
+    }
+
+    @Test
+    public void emptyDryRunIsARealRun() throws Exception {
+        Path bin = tmp.newFolder("bin").toPath();
+        Path marker = tmp.getRoot().toPath().resolve("docker-called");
+        Path fakeDocker = bin.resolve("docker");
+        Files.write(fakeDocker, ("#!/bin/sh\ntouch '" + marker + "'\n").getBytes(StandardCharsets.UTF_8));
+        assertTrue(fakeDocker.toFile().setExecutable(true));
+
+        Result result = runWithDryRun("", bin.toString(), REPO, "2.5.0-beta");
+
+        assertEquals(result.stderr, 0, result.exit);
+        assertTrue("docker was not invoked", Files.exists(marker));
+    }
+
+    @Test
+    public void whitespaceInRepositoryOrVersionFailsWithUsage() throws Exception {
+        for (String bad : new String[]{"2.5.0 beta", "2.5.0\n", "2.5.0\t", " 2.5.0"}) {
+            assertUsageFailure(run(true, REPO, bad));
+            assertUsageFailure(run(true, bad, "2.5.0"));
+        }
     }
 
     @Test
@@ -194,6 +235,10 @@ public class PushScriptTest {
     }
 
     private Result runWithPath(boolean dryRun, String extraPath, String... args) throws Exception {
+        return runWithDryRun(dryRun ? "1" : null, extraPath, args);
+    }
+
+    private Result runWithDryRun(String dryRun, String extraPath, String... args) throws Exception {
         List<String> command = new ArrayList<>();
         command.add("bash");
         command.add(script.toString());
@@ -202,8 +247,8 @@ public class PushScriptTest {
         }
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.environment().remove("DRY_RUN");
-        if (dryRun) {
-            pb.environment().put("DRY_RUN", "1");
+        if (dryRun != null) {
+            pb.environment().put("DRY_RUN", dryRun);
         }
         if (extraPath != null) {
             pb.environment().put("PATH", extraPath + File.pathSeparator + pb.environment().get("PATH"));
