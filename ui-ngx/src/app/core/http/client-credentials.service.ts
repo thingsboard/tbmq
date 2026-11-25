@@ -73,8 +73,9 @@ export class ClientCredentialsService {
     return this.http.post<BulkImportResult>('/api/mqtt/client/credentials/bulk_import', entitiesData, defaultHttpOptionsFromConfig(config));
   }
 
-  public exportCredentialsCsv(includePasswordHashes: boolean): Observable<void> {
-    return this.resourcesService.downloadResource(`/api/mqtt/client/credentials/export?includePasswordHashes=${includePasswordHashes}`)
+  public exportCredentialsCsv(includePasswordHashes: boolean, authRulesDelimiter: string): Observable<void> {
+    return this.resourcesService.downloadResource(
+      `/api/mqtt/client/credentials/export?includePasswordHashes=${includePasswordHashes}&authRulesDelimiter=${encodeURIComponent(authRulesDelimiter)}`)
       .pipe(map(() => undefined));
   }
 }

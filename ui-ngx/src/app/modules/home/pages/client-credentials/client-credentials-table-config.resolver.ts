@@ -335,7 +335,7 @@ export class ClientCredentialsTableConfigResolver {
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<ExportCredentialsDialogComponent, void, boolean>(ExportCredentialsDialogComponent, {
+    this.dialog.open<ExportCredentialsDialogComponent, void, void>(ExportCredentialsDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
     });

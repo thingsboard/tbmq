@@ -26,6 +26,15 @@ export interface CsvToJsonResult {
 
 export type CSVDelimiter = ',' | ';' | '|' | '\t';
 
+export const CSV_DELIMITERS: { key: CSVDelimiter; value: string }[] = [
+  {key: ',', value: ','},
+  {key: ';', value: ';'},
+  {key: '|', value: '|'},
+  {key: '\t', value: 'Tab'}
+];
+
+export const DEFAULT_AUTH_RULES_DELIMITER: CSVDelimiter = ';';
+
 export enum ImportEntityColumnType {
   name = 'NAME',
   description = 'DESCRIPTION',

@@ -19,7 +19,7 @@ import { MatDialogActions, MatDialogClose, MatDialogContent, MatDialogRef } from
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { AsyncPipe } from '@angular/common';
 import { MatToolbar } from '@angular/material/toolbar';
@@ -27,7 +27,10 @@ import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatCheckbox } from '@angular/material/checkbox';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatOption, MatSelect } from '@angular/material/select';
 import { DialogComponent } from '@shared/components/dialog.component';
+import { CSV_DELIMITERS, DEFAULT_AUTH_RULES_DELIMITER } from '@shared/import-export/import-export.models';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 
 @Component({
@@ -35,22 +38,25 @@ import { ClientCredentialsService } from '@core/http/client-credentials.service'
   templateUrl: './export-credentials-dialog.component.html',
   styles: [':host { display: block; width: 480px; max-width: 100%; }'],
   imports: [FormsModule, ReactiveFormsModule, TranslateModule, AsyncPipe, MatToolbar, MatIconButton, MatIcon, MatProgressBar,
-    MatDialogClose, MatDialogContent, MatDialogActions, MatButton, MatCheckbox]
+    MatDialogClose, MatDialogContent, MatDialogActions, MatButton, MatCheckbox, MatFormField, MatLabel, MatSelect, MatOption]
 })
-export class ExportCredentialsDialogComponent extends DialogComponent<ExportCredentialsDialogComponent, boolean> {
+export class ExportCredentialsDialogComponent extends DialogComponent<ExportCredentialsDialogComponent, void> {
 
   exportFormGroup: UntypedFormGroup;
+
+  delimiters = CSV_DELIMITERS;
 
   exporting = false;
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
-              public dialogRef: MatDialogRef<ExportCredentialsDialogComponent, boolean>,
+              public dialogRef: MatDialogRef<ExportCredentialsDialogComponent, void>,
               private fb: UntypedFormBuilder,
               private clientCredentialsService: ClientCredentialsService) {
     super(store, router, dialogRef);
     this.exportFormGroup = this.fb.group({
-      includePasswordHashes: [true]
+      includePasswordHashes: [true],
+      authRulesDelim: [DEFAULT_AUTH_RULES_DELIMITER, [Validators.required]]
     });
   }
 
@@ -59,8 +65,9 @@ export class ExportCredentialsDialogComponent extends DialogComponent<ExportCred
       return;
     }
     this.exporting = true;
-    this.clientCredentialsService.exportCredentialsCsv(this.exportFormGroup.get('includePasswordHashes').value).subscribe({
-      next: () => this.dialogRef.close(true),
+    this.clientCredentialsService.exportCredentialsCsv(
+      this.exportFormGroup.get('includePasswordHashes').value, this.exportFormGroup.get('authRulesDelim').value).subscribe({
+      next: () => this.dialogRef.close(),
       error: () => this.exporting = false
     });
   }
