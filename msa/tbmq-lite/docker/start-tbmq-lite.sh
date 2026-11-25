@@ -122,9 +122,15 @@ user_opts=()
 if [ -n "${JAVA_OPTS:-}" ]; then
   read -r -a user_opts <<< "$JAVA_OPTS"
 fi
+user_collector=false
+for word in ${user_opts[@]+"${user_opts[@]}"}; do
+  if [[ $word == -XX:+Use*GC ]]; then
+    user_collector=true
+  fi
+done
 collector_flag=""
 collector_name="from JAVA_OPTS"
-if [[ " ${user_opts[*]:-} " != *" -XX:+Use"*"GC "* ]]; then
+if [ "$user_collector" = false ]; then
   if [ "$cpus" -lt 2 ] || [ "$memory_mib" -lt "$SERIAL_BELOW_MIB" ]; then
     collector_flag=-XX:+UseSerialGC
     collector_name=Serial

@@ -208,6 +208,27 @@ public class StartScriptTest {
     }
 
     @Test
+    public void optionsThatAreNotACollectorDoNotSuppressTheChoice() throws Exception {
+        Path root = v2(Long.toString(4 * GIB), "400000 100000", "0-7");
+
+        Output out = run(root, "-XX:+UseStringDeduplication -XX:+DisableExplicitGC");
+
+        assertTrue(out.flags.contains("-XX:+UseG1GC"));
+        assertTrue(out.logLine, out.logLine.contains("collector G1"));
+        assertFalse(out.logLine, out.logLine.contains("from JAVA_OPTS"));
+    }
+
+    @Test
+    public void aDisabledCollectorFlagDoesNotCount() throws Exception {
+        Path root = v2(Long.toString(4 * GIB), "400000 100000", "0-7");
+
+        Output out = run(root, "-XX:-UseSerialGC");
+
+        assertTrue(out.flags.contains("-XX:+UseG1GC"));
+        assertFalse(out.logLine, out.logLine.contains("from JAVA_OPTS"));
+    }
+
+    @Test
     public void javaOptsAreSplitIntoWordsAndAppendedLast() throws Exception {
         Path root = v2(Long.toString(4 * GIB), "400000 100000", "0-7");
 
