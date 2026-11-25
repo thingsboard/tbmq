@@ -15,7 +15,7 @@
 ///
 
 import { Component } from '@angular/core';
-import { MatDialogActions, MatDialogClose, MatDialogContent, MatDialogRef } from '@angular/material/dialog';
+import { MatDialogActions, MatDialogContent, MatDialogRef } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
@@ -32,13 +32,14 @@ import { MatOption, MatSelect } from '@angular/material/select';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { CSV_DELIMITERS, DEFAULT_AUTH_RULES_DELIMITER } from '@shared/import-export/import-export.models';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'tb-export-credentials-dialog',
   templateUrl: './export-credentials-dialog.component.html',
   styles: [':host { display: block; width: 480px; max-width: 100%; }'],
   imports: [FormsModule, ReactiveFormsModule, TranslateModule, AsyncPipe, MatToolbar, MatIconButton, MatIcon, MatProgressBar,
-    MatDialogClose, MatDialogContent, MatDialogActions, MatButton, MatCheckbox, MatFormField, MatLabel, MatSelect, MatOption]
+    MatDialogContent, MatDialogActions, MatButton, MatCheckbox, MatFormField, MatLabel, MatSelect, MatOption]
 })
 export class ExportCredentialsDialogComponent extends DialogComponent<ExportCredentialsDialogComponent, void> {
 
@@ -66,9 +67,15 @@ export class ExportCredentialsDialogComponent extends DialogComponent<ExportCred
     }
     this.exporting = true;
     this.clientCredentialsService.exportCredentialsCsv(
-      this.exportFormGroup.get('includePasswordHashes').value, this.exportFormGroup.get('authRulesDelim').value).subscribe({
-      next: () => this.dialogRef.close(),
-      error: () => this.exporting = false
-    });
+      this.exportFormGroup.get('includePasswordHashes').value, this.exportFormGroup.get('authRulesDelim').value)
+      .pipe(takeUntil(this.dialogRef.beforeClosed()))
+      .subscribe({
+        next: () => this.dialogRef.close(),
+        error: () => this.exporting = false
+      });
+  }
+
+  cancel(): void {
+    this.dialogRef.close();
   }
 }
