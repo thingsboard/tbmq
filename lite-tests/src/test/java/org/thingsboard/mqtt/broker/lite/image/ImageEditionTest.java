@@ -15,11 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.lite.image;
 
+import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import org.junit.After;
 import org.junit.Test;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.startupcheck.StartupCheckStrategy;
+import org.testcontainers.containers.wait.strategy.AbstractWaitStrategy;
+import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -37,9 +42,11 @@ public class ImageEditionTest {
 
     private static final Duration NODE_OBSERVATION = Duration.ofSeconds(120);
     private static final long POLL_MILLIS = 2000;
+    private static final String UNRESOLVABLE_KAFKA = "kafka.invalid:9092";
 
     private final List<GenericContainer<?>> containers = new ArrayList<>();
     private final List<String> volumes = new ArrayList<>();
+    private final List<Network> networks = new ArrayList<>();
 
     @After
     public void cleanUp() {
@@ -51,6 +58,7 @@ public class ImageEditionTest {
             }
         });
         volumes.forEach(ImageTestSupport::removeVolume);
+        networks.forEach(Network::close);
     }
 
     @Test
@@ -69,36 +77,83 @@ public class ImageEditionTest {
         assertThat(lite.getLogs()).contains("TBMQ edition: lite");
     }
 
+    /**
+     * The node gets a reachable PostgreSQL and Valkey and a Kafka address that does not resolve, so the first thing that
+     * can stop it is Kafka: it must exit with an error naming the Kafka admin client, not fall back to Lite.
+     */
     @Test
     public void clusterNodeWithoutKafkaFails() throws Exception {
         String image = ImageTestSupport.requiredImage(ImageTestSupport.NODE_IMAGE_PROPERTY);
+        Network network = Network.newNetwork();
+        networks.add(network);
         @SuppressWarnings("resource")
-        GenericContainer<?> node = new GenericContainer<>(image).withExposedPorts(8083);
+        GenericContainer<?> postgres = new GenericContainer<>("postgres:17")
+                .withNetwork(network).withNetworkAliases("postgres")
+                .withEnv("POSTGRES_PASSWORD", "postgres").withEnv("POSTGRES_DB", "thingsboard_mqtt_broker")
+                .waitingFor(Wait.forLogMessage(".*database system is ready to accept connections.*\\n", 2));
+        @SuppressWarnings("resource")
+        GenericContainer<?> valkey = new GenericContainer<>("valkey/valkey:8.0")
+                .withNetwork(network).withNetworkAliases("valkey")
+                .waitingFor(Wait.forLogMessage(".*Ready to accept connections.*\\n", 1));
+        containers.add(postgres);
+        containers.add(valkey);
+        postgres.start();
+        valkey.start();
+
+        // no wait and no startup check: the node is expected to exit, which must not make start() throw
+        @SuppressWarnings("resource")
+        GenericContainer<?> node = new GenericContainer<>(image)
+                .withNetwork(network)
+                .withEnv("SPRING_DATASOURCE_URL", "jdbc:postgresql://postgres:5432/thingsboard_mqtt_broker")
+                .withEnv("REDIS_HOST", "valkey")
+                .withEnv("TB_KAFKA_SERVERS", UNRESOLVABLE_KAFKA)
+                .withExposedPorts(8083)
+                .withStartupCheckStrategy(new StartupCheckStrategy() {
+                    @Override
+                    public StartupStatus checkStartupState(DockerClient dockerClient, String containerId) {
+                        return StartupStatus.SUCCESSFUL;
+                    }
+                })
+                .waitingFor(new AbstractWaitStrategy() {
+                    @Override
+                    protected void waitUntilReady() {
+                    }
+                });
         containers.add(node);
         node.start();
 
         // either the container exits with an error, or it is not healthy for the whole observation time
         long deadline = System.nanoTime() + NODE_OBSERVATION.toNanos();
         boolean exited = false;
-        long exitCode = 0;
+        Long exitCode = null;
         boolean healthy = false;
         while (System.nanoTime() < deadline && !exited && !healthy) {
             InspectContainerResponse.ContainerState state = DockerClientFactory.lazyClient()
                     .inspectContainerCmd(node.getContainerId()).exec().getState();
-            if (!Boolean.TRUE.equals(state.getRunning())) {
-                exited = true;
-                exitCode = state.getExitCodeLong() == null ? 0 : state.getExitCodeLong();
-            } else {
+            if (Boolean.TRUE.equals(state.getRunning())) {
                 healthy = isHealthy(node);
                 Thread.sleep(POLL_MILLIS);
+            } else if (state.getExitCodeLong() != null) {
+                exited = true;
+                exitCode = state.getExitCodeLong();
+            } else {
+                Thread.sleep(POLL_MILLIS); // not started yet
             }
         }
 
+        String log = node.getLogs();
         assertThat(healthy).as("a cluster node without Kafka must not become healthy").isFalse();
-        if (exited) {
-            assertThat(exitCode).as("exit code of the cluster node without Kafka").isNotZero();
-        }
-        assertThat(node.getLogs()).doesNotContain("TBMQ edition: lite");
+        assertThat(exited).as("the cluster node exits instead of waiting for Kafka").isTrue();
+        assertThat(exitCode).as("exit code of the cluster node without Kafka").isNotNull().isNotZero();
+        // the cluster entry point ran, with the Kafka address of this test
+        assertThat(log).contains("Starting ThingsboardMqttBrokerApplication").contains("bootstrap.servers = [" + UNRESOLVABLE_KAFKA + "]");
+        // and Kafka is what stopped it: not PostgreSQL, not Valkey
+        assertThat(log).contains("Failed to instantiate [org.thingsboard.mqtt.broker.queue.kafka.TbKafkaAdmin]")
+                .contains("KafkaException: Failed to create new KafkaAdminClient")
+                .contains("No resolvable bootstrap urls given in bootstrap.servers")
+                .doesNotContain("JDBCConnectionException")
+                .doesNotContain("RedisConnectionFailureException");
+        assertThat(log).doesNotContain("TBMQ edition: lite");
     }
 
     private static boolean isHealthy(GenericContainer<?> node) {
