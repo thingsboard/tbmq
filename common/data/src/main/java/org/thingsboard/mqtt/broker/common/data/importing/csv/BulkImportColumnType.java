@@ -25,6 +25,7 @@ public enum BulkImportColumnType {
     CLIENT_ID,
     USERNAME,
     PASSWORD,
+    PASSWORD_HASH,
     SUB_AUTH_RULE_PATTERNS,
     PUB_AUTH_RULE_PATTERNS;
 

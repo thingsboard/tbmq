@@ -17,10 +17,14 @@ package org.thingsboard.mqtt.broker.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
@@ -28,9 +32,14 @@ import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportColumnType;
+import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportRequest;
+import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportResult;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
@@ -41,7 +50,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Slf4j
@@ -459,6 +471,59 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
 
         Assert.assertEquals(saved.getId(), byNewPath.getId());
         Assert.assertEquals(saved.getId(), byLegacyPath.getId());
+    }
+
+    @Test
+    public void givenImportedHash_whenConnectWithItsPassword_thenConnected() throws Exception {
+        String username = "importedHashUser";
+        String hash = new BCryptPasswordEncoder().encode("pw-1");
+        String response = doPost("/api/mqtt/client/credentials/bulk_import", newHashImportRequest("importedHash", username, hash))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        BulkImportResult<?> result = JacksonUtil.fromString(response, BulkImportResult.class);
+        Assert.assertEquals(1, result.getCreated().get());
+        Assert.assertEquals(0, result.getErrors().get());
+
+        MqttAuthProvider basicProvider = getMqttAuthProvider(MqttAuthProviderType.MQTT_BASIC);
+        boolean wasEnabled = basicProvider.isEnabled();
+        enableBasicProvider();
+        try {
+            connectAndDisconnect(username, "pw-1");
+            assertThrows(MqttException.class, () -> connectAndDisconnect(username, "pw-2"));
+        } finally {
+            if (!wasEnabled) {
+                mqttAuthProviderManagerService.disableAuthProvider(basicProvider.getId());
+            }
+        }
+    }
+
+    private void connectAndDisconnect(String username, String password) throws MqttException {
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, "importedHashClient", null);
+        try {
+            MqttConnectOptions options = new MqttConnectOptions();
+            options.setUserName(username);
+            options.setPassword(password.toCharArray());
+            client.connect(options);
+            assertThat(client.isConnected()).isTrue();
+            client.disconnect();
+        } finally {
+            client.close(true);
+        }
+    }
+
+    private BulkImportRequest newHashImportRequest(String name, String username, String hash) {
+        BulkImportRequest.Mapping mapping = new BulkImportRequest.Mapping();
+        mapping.setColumns(Stream.of(BulkImportColumnType.NAME, BulkImportColumnType.USERNAME, BulkImportColumnType.PASSWORD_HASH).map(type -> {
+            BulkImportRequest.ColumnMapping column = new BulkImportRequest.ColumnMapping();
+            column.setType(type);
+            return column;
+        }).toList());
+        mapping.setDelimiter(',');
+        mapping.setAuthRulesDelimiter(',');
+        mapping.setHeader(false);
+        BulkImportRequest request = new BulkImportRequest();
+        request.setFile(name + "," + username + "," + hash + "\n");
+        request.setMapping(mapping);
+        return request;
     }
 
     private boolean isLite() {

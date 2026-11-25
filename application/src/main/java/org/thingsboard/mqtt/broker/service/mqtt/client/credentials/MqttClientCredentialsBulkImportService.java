@@ -136,6 +136,8 @@ public class MqttClientCredentialsBulkImportService {
                                                                  User currentUser) {
         ImportedEntityInfo<MqttClientCredentials> importedEntityInfo = new ImportedEntityInfo<>();
 
+        validatePasswordColumns(fields);
+
         MqttClientCredentials entity = findOrCreateEntity(fields.get(BulkImportColumnType.NAME));
         BasicMqttCredentials basicCredentials;
         if (entity.getId() != null) {
@@ -147,7 +149,8 @@ public class MqttClientCredentialsBulkImportService {
             importedEntityInfo.setUpdated(true);
 
             basicCredentials = JacksonUtil.fromString(entity.getCredentialsValue(), BasicMqttCredentials.class);
-            if (StringUtils.isNotEmpty(basicCredentials.getPassword()) && fields.containsKey(BulkImportColumnType.PASSWORD)) {
+            if (StringUtils.isNotEmpty(basicCredentials.getPassword())
+                    && (fields.containsKey(BulkImportColumnType.PASSWORD) || fields.containsKey(BulkImportColumnType.PASSWORD_HASH))) {
                 throw new IllegalArgumentException(String.format("['%s'] It is not allowed to change the credentials' password", entity.getName()));
             }
         } else {
@@ -165,6 +168,16 @@ public class MqttClientCredentialsBulkImportService {
         return importedEntityInfo;
     }
 
+    private void validatePasswordColumns(Map<BulkImportColumnType, String> fields) {
+        String name = fields.get(BulkImportColumnType.NAME);
+        if (fields.containsKey(BulkImportColumnType.PASSWORD) && fields.containsKey(BulkImportColumnType.PASSWORD_HASH)) {
+            throw new IllegalArgumentException(String.format("['%s'] A row may set PASSWORD or PASSWORD_HASH, not both", name));
+        }
+        if (fields.containsKey(BulkImportColumnType.PASSWORD_HASH) && !BcryptHashFormat.isValid(fields.get(BulkImportColumnType.PASSWORD_HASH))) {
+            throw new IllegalArgumentException(String.format("['%s'] PASSWORD_HASH must be a BCrypt hash with a cost from 4 to 14", name));
+        }
+    }
+
     private void setEntityFields(MqttClientCredentials entity,
                                  BasicMqttCredentials basic,
                                  Map<BulkImportColumnType, String> fields,
@@ -177,6 +190,7 @@ public class MqttClientCredentialsBulkImportService {
                 case CLIENT_ID -> basic.setClientId(value);
                 case USERNAME -> basic.setUserName(value);
                 case PASSWORD -> basic.setPassword(passwordEncoder.encode(value));
+                case PASSWORD_HASH -> basic.setPassword(value);
                 case SUB_AUTH_RULE_PATTERNS -> overwriteAuthRules(basic, value, true, delimiter);
                 case PUB_AUTH_RULE_PATTERNS -> overwriteAuthRules(basic, value, false, delimiter);
                 case DESCRIPTION -> additionalInfo.set("description", new TextNode(value));
