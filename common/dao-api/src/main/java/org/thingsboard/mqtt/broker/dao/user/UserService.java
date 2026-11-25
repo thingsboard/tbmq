@@ -53,4 +53,12 @@ public interface UserService {
     PageData<User> findUsers(PageLink pageLink);
 
     void onUserLoginSuccessful(UUID userId);
+
+    /**
+     * Marks the user as one who must choose a new password before the first sign-in. The mark is kept by every other
+     * user save, and cleared only by {@link #replaceUserCredentials}.
+     */
+    void markPasswordChangeRequired(UUID userId);
+
+    boolean isPasswordChangeRequired(UUID userId);
 }

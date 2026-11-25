@@ -34,5 +34,11 @@ public interface SystemSecurityService {
 
     void validatePassword(String password, UserCredentials userCredentials) throws DataValidationException;
 
+    /**
+     * For a user marked as one who must change the password: refuses the default password and the current one. Does
+     * nothing for any other user, so the shared password policy is the same as before.
+     */
+    void validateRequiredPasswordChange(String newPassword, UserCredentials userCredentials) throws DataValidationException;
+
     String getBaseUrl(HttpServletRequest httpServletRequest);
 }

@@ -16,16 +16,21 @@
 package org.thingsboard.mqtt.broker.service.security.system;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.service.security.exception.UserPasswordExpiredException;
 
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -61,8 +66,68 @@ class DefaultSystemSecurityServiceTest {
                 .isSameAs(failure);
     }
 
+    @Test
+    void aMarkedUserGetsTheExpiredPasswordFlow() {
+        UserCredentials credentials = enabledCredentials();
+        UserCredentials withToken = new UserCredentials();
+        withToken.setResetToken("reset-token");
+        when(userService.isPasswordChangeRequired(credentials.getUserId())).thenReturn(true);
+        when(userService.requestExpiredPasswordReset(credentials.getId())).thenReturn(withToken);
+
+        assertThatThrownBy(() -> service.validateUserCredentials(credentials, "sysadmin@thingsboard.org", PASSWORD))
+                .isInstanceOfSatisfying(UserPasswordExpiredException.class,
+                        e -> assertThat(e.getResetToken()).isEqualTo("reset-token"));
+        verify(userService).onUserLoginSuccessful(credentials.getUserId());
+    }
+
+    @Test
+    void aMarkedUserWithAWrongPasswordIsRefusedWithoutAResetToken() {
+        UserCredentials credentials = enabledCredentials();
+        when(userService.isPasswordChangeRequired(credentials.getUserId())).thenReturn(true);
+
+        assertThatThrownBy(() -> service.validateUserCredentials(credentials, "sysadmin@thingsboard.org", "wrong"))
+                .isInstanceOf(BadCredentialsException.class);
+        verify(userService, never()).requestExpiredPasswordReset(credentials.getId());
+    }
+
+    @Test
+    void anUnmarkedUserLogsIn() {
+        UserCredentials credentials = enabledCredentials();
+        when(userService.isPasswordChangeRequired(credentials.getUserId())).thenReturn(false);
+
+        assertThatCode(() -> service.validateUserCredentials(credentials, "sysadmin@thingsboard.org", PASSWORD))
+                .doesNotThrowAnyException();
+        verify(userService, never()).requestExpiredPasswordReset(credentials.getId());
+    }
+
+    @Test
+    void aMarkedResetRefusesTheDefaultAndTheCurrentPassword() {
+        UserCredentials credentials = enabledCredentials();
+        when(encoder.matches("Current-pass1", "hash")).thenReturn(true);
+        when(userService.isPasswordChangeRequired(credentials.getUserId())).thenReturn(true);
+
+        assertThatThrownBy(() -> service.validateRequiredPasswordChange("sysadmin", credentials))
+                .isInstanceOf(DataValidationException.class)
+                .hasMessage("Choose a password other than the default and the current one");
+        assertThatThrownBy(() -> service.validateRequiredPasswordChange("Current-pass1", credentials))
+                .isInstanceOf(DataValidationException.class)
+                .hasMessage("Choose a password other than the default and the current one");
+        assertThatCode(() -> service.validateRequiredPasswordChange("N3w-pass", credentials))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void anUnmarkedUserMayChooseTheDefaultPassword() {
+        UserCredentials credentials = enabledCredentials();
+        when(userService.isPasswordChangeRequired(credentials.getUserId())).thenReturn(false);
+
+        assertThatCode(() -> service.validateRequiredPasswordChange("sysadmin", credentials))
+                .doesNotThrowAnyException();
+    }
+
     private UserCredentials enabledCredentials() {
         UserCredentials credentials = new UserCredentials();
+        credentials.setId(UUID.randomUUID());
         credentials.setUserId(UUID.randomUUID());
         credentials.setPassword("hash");
         credentials.setEnabled(true);

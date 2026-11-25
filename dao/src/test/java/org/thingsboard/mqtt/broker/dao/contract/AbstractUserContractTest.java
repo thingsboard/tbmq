@@ -304,6 +304,57 @@ public abstract class AbstractUserContractTest extends AbstractContractTest {
     }
 
     @Test
+    public void theMarkSurvivesAProfileSaveAndClearsOnAPasswordReplace() {
+        User user = saveNewUser();
+        UserCredentials credentials = userService.findUserCredentialsByUserId(user.getId());
+        UserCredentials activated = userService.saveUserCredentials(enabled(credentials, StringUtils.randomAlphanumeric(10)));
+        assertThat(userService.isPasswordChangeRequired(user.getId())).isFalse();
+
+        userService.markPasswordChangeRequired(user.getId());
+        assertThat(userService.isPasswordChangeRequired(user.getId())).isTrue();
+
+        User profile = userService.findUserById(user.getId());
+        profile.setAdditionalInfo(JacksonUtil.newObjectNode());
+        userService.saveUser(profile);
+        assertThat(userService.isPasswordChangeRequired(user.getId())).isTrue();
+
+        profile = userService.findUserById(user.getId());
+        ObjectNode unmark = JacksonUtil.newObjectNode();
+        unmark.put("passwordChangeRequired", false);
+        profile.setAdditionalInfo(unmark);
+        userService.saveUser(profile);
+        assertThat(userService.isPasswordChangeRequired(user.getId())).isTrue();
+
+        // the reset token issued at a refused login is a credentials write, and must not clear the mark
+        userService.saveUserCredentials(userService.findUserCredentialsByUserId(user.getId()));
+        assertThat(userService.isPasswordChangeRequired(user.getId())).isTrue();
+        userService.requestExpiredPasswordReset(activated.getId());
+        assertThat(userService.isPasswordChangeRequired(user.getId())).isTrue();
+
+        UserCredentials current = userService.findUserCredentialsByUserId(user.getId());
+        userService.replaceUserCredentials(enabled(current, StringUtils.randomAlphanumeric(10)));
+        assertThat(userService.isPasswordChangeRequired(user.getId())).isFalse();
+        assertThat(userService.findUserById(user.getId()).getAdditionalInfo().has("passwordChangeRequired")).isFalse();
+        assertThat(userService.findUserById(user.getId()).getAdditionalInfo().has(UserServiceImpl.USER_PASSWORD_HISTORY)).isTrue();
+
+        // a profile save cannot set the mark, on an existing user or on a new one
+        profile = userService.findUserById(user.getId());
+        ObjectNode mark = JacksonUtil.newObjectNode();
+        mark.put("passwordChangeRequired", true);
+        profile.setAdditionalInfo(mark);
+        userService.saveUser(profile);
+        assertThat(userService.isPasswordChangeRequired(user.getId())).isFalse();
+
+        User fresh = new User();
+        fresh.setAuthority(Authority.SYS_ADMIN);
+        fresh.setEmail("user-" + UUID.randomUUID() + "@thingsboard.org");
+        fresh.setAdditionalInfo(mark);
+        User savedFresh = userService.saveUser(fresh);
+        createdUserIds.add(savedFresh.getId());
+        assertThat(userService.isPasswordChangeRequired(savedFresh.getId())).isFalse();
+    }
+
+    @Test
     public void emailsAreUnique() {
         User first = saveNewUser();
         User second = new User();

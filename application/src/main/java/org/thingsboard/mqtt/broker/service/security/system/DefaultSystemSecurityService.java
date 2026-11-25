@@ -62,6 +62,8 @@ import static org.thingsboard.mqtt.broker.common.data.SysAdminSettingType.GENERA
 @RequiredArgsConstructor
 public class DefaultSystemSecurityService implements SystemSecurityService {
 
+    private static final String DEFAULT_PASSWORD = "sysadmin";
+
     private final UserService userService;
     private final BCryptPasswordEncoder encoder;
     private final AdminSettingsService adminSettingsService;
@@ -119,6 +121,11 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
             log.warn("[{}] Failed to save the last login time of the user: {}", userCredentials.getUserId(), e.getMessage());
         }
 
+        if (userService.isPasswordChangeRequired(userCredentials.getUserId())) {
+            UserCredentials withResetToken = userService.requestExpiredPasswordReset(userCredentials.getId());
+            throw new UserPasswordExpiredException("User password must be changed", withResetToken.getResetToken());
+        }
+
         SecuritySettings securitySettings = getSecuritySettings();
         if (isPositiveInteger(securitySettings.getPasswordPolicy().getPasswordExpirationPeriodDays())) {
             if ((userCredentials.getCreatedTime()
@@ -151,6 +158,16 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
                     }
                 }
             }
+        }
+    }
+
+    @Override
+    public void validateRequiredPasswordChange(String newPassword, UserCredentials userCredentials) throws DataValidationException {
+        if (!userService.isPasswordChangeRequired(userCredentials.getUserId())) {
+            return;
+        }
+        if (DEFAULT_PASSWORD.equals(newPassword) || encoder.matches(newPassword, userCredentials.getPassword())) {
+            throw new DataValidationException("Choose a password other than the default and the current one");
         }
     }
 

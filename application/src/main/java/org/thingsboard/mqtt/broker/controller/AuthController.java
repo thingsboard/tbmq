@@ -67,6 +67,7 @@ public class AuthController extends BaseController {
 
         validatePassword(passwordEncoder, changePasswordRequest, userCredentials.getPassword());
         systemSecurityService.validatePassword(changePasswordRequest.getNewPassword(), userCredentials);
+        systemSecurityService.validateRequiredPasswordChange(changePasswordRequest.getNewPassword(), userCredentials);
 
         userCredentials.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
         userCredentials.activateUserCredentials();
@@ -97,6 +98,7 @@ public class AuthController extends BaseController {
         UserCredentials userCredentials = userService.findUserCredentialsByResetToken(resetToken);
         if (userCredentials != null) {
             systemSecurityService.validatePassword(password, userCredentials);
+            systemSecurityService.validateRequiredPasswordChange(password, userCredentials);
             if (passwordEncoder.matches(password, userCredentials.getPassword())) {
                 throw new ThingsboardException("New password should be different from existing!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
             }
