@@ -72,6 +72,7 @@ public class MetricsTokenAuthorizationManager implements AuthorizationManager<Re
      * Spring Security 6.5 still declares {@code check} abstract; it gives the same decision as {@link #authorize}.
      */
     @Override
+    @SuppressWarnings("deprecation")
     public AuthorizationDecision check(Supplier<Authentication> authentication, RequestAuthorizationContext context) {
         return decide(context);
     }
