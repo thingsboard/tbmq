@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -34,6 +35,8 @@ import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
+import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
+import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -357,6 +360,7 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
 
     @Test
     public void getMqttClientCredentialsV2WithParametersTest() throws Exception {
+        Assume.assumeFalse("Lite refuses APPLICATION credentials", isLite());
         for (int i = 0; i < 3; i++) {
             BasicMqttCredentials basicMqttCredentials = newBasicMqttCredentials(
                     "clientId" + i,
@@ -449,6 +453,10 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
 
         Assert.assertEquals(saved.getId(), byNewPath.getId());
         Assert.assertEquals(saved.getId(), byLegacyPath.getId());
+    }
+
+    private boolean isLite() {
+        return TbmqEditionResolver.resolve(getClass().getClassLoader()) == TbmqEdition.LITE;
     }
 
     private MqttClientCredentials newBasicMqttClientCredentials(ClientCredentialsType credentialsType, BasicMqttCredentials basicMqttCredentials) {

@@ -27,6 +27,7 @@ import org.eclipse.paho.mqttv5.common.MqttSubscription;
 import org.eclipse.paho.mqttv5.common.packet.UserProperty;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,6 +39,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
+import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
@@ -87,8 +90,10 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
 
     @Before
     public void beforeTest() {
-        saveCredentials(TestUtils.createApplicationClientCredentials(PUB_CLIENT_ID_APP, null));
-        saveCredentials(TestUtils.createApplicationClientCredentials(SUB_CLIENT_ID_APP, null));
+        if (!isLite()) {
+            saveCredentials(TestUtils.createApplicationClientCredentials(PUB_CLIENT_ID_APP, null));
+            saveCredentials(TestUtils.createApplicationClientCredentials(SUB_CLIENT_ID_APP, null));
+        }
         saveCredentials(TestUtils.createDeviceClientCredentials(PUB_CLIENT_ID_DEV, null));
         saveCredentials(TestUtils.createDeviceClientCredentials(SUB_CLIENT_ID_DEV, null));
         saveCredentials(TestUtils.createDeviceClientCredentials(PUB_CLIENT_ID_DEV_CLEAN, null));
@@ -103,6 +108,10 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         asyncClients.forEach(this::disconnectAndClose);
         clearSession(persistedSubClientId);
         credentials.forEach(c -> credentialsService.deleteCredentials(c.getId()));
+    }
+
+    private boolean isLite() {
+        return TbmqEditionResolver.resolve(getClass().getClassLoader()) == TbmqEdition.LITE;
     }
 
     private void saveCredentials(MqttClientCredentials credentials) {
@@ -193,6 +202,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
 
     @Test
     public void testUserPropertiesAppPersistedSession() throws Throwable {
+        Assume.assumeFalse("Lite refuses APPLICATION credentials", isLite());
         processTest(SUB_CLIENT_ID_APP, PUB_CLIENT_ID_APP, false, 2);
     }
 

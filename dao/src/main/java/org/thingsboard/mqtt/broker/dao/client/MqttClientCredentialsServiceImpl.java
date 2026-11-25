@@ -61,6 +61,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     private final MqttClientCredentialsDao mqttClientCredentialsDao;
     private final TbCacheOps cacheOps;
+    private final ClientTypeConstraint clientTypeConstraint;
 
     @Override
     public MqttClientCredentials saveCredentials(MqttClientCredentials mqttClientCredentials) {
@@ -391,6 +392,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                     if (StringUtils.isEmpty(mqttClientCredentials.getCredentialsId())) {
                         throw new DataValidationException("MQTT Client credentials id should be specified!");
                     }
+                    clientTypeConstraint.check(mqttClientCredentials.getClientType());
                 }
             };
 

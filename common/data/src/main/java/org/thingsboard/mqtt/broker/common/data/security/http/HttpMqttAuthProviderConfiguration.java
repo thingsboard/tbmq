@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.Map;
+import java.util.Set;
 
 @Data
 @Builder
@@ -79,6 +80,11 @@ public class HttpMqttAuthProviderConfiguration implements MqttAuthProviderConfig
             throw new DataValidationException("INTEGRATION client type is not supported!");
         }
         AuthRulesUtil.validateAndCompileAuthRules(authRules);
+    }
+
+    @Override
+    public Set<ClientType> configuredClientTypes() {
+        return Set.of(defaultClientType == null ? ClientType.DEVICE : defaultClientType);
     }
 
     public static HttpMqttAuthProviderConfiguration defaultConfiguration() {

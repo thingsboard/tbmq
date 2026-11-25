@@ -49,12 +49,14 @@ import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.edition.ClusterComponent;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
 import org.thingsboard.mqtt.broker.controller.NodeDrainController;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsDao;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.event.EventService;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
+import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.drain.NodeDrainService;
 import org.thingsboard.mqtt.broker.service.mqtt.auth.MqttAuthProviderManagerService;
@@ -93,6 +95,8 @@ public class LiteSmokeTest {
     private ClientSessionCache clientSessionCache;
     @Autowired
     private MqttClientCredentialsService credentialsService;
+    @Autowired
+    private MqttClientCredentialsDao credentialsDao;
     @Autowired
     private MqttAuthProviderService authProviderService;
     @Autowired
@@ -224,7 +228,8 @@ public class LiteSmokeTest {
     @Test
     public void anApplicationCredentialConnectsAsDevice() throws Exception {
         String clientId = "smoke-app";
-        MqttClientCredentials credentials = credentialsService.saveCredentials(applicationCredentials(clientId, "smoke-app-user"));
+        // written through the DAO, as an older store would hold it: the service refuses APPLICATION credentials
+        MqttClientCredentials credentials = credentialsDao.save(applicationCredentials(clientId, "smoke-app-user"));
         MqttAuthProvider basicProvider = authProviderService.getAuthProviderByType(MqttAuthProviderType.MQTT_BASIC).orElseThrow();
         boolean basicWasEnabled = basicProvider.isEnabled();
         if (!basicWasEnabled) {
@@ -274,6 +279,7 @@ public class LiteSmokeTest {
         credentials.setName("smoke-" + clientId);
         credentials.setClientType(ClientType.APPLICATION);
         credentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
+        credentials.setCredentialsId(ProtocolUtil.mixedCredentialsId(username, clientId));
         credentials.setCredentialsValue(JacksonUtil.toString(BasicMqttCredentials.newInstance(clientId, username, null, List.of(".*"))));
         return credentials;
     }

@@ -34,6 +34,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
+import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
@@ -68,8 +70,15 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
     public void beforeTest() throws Exception {
         genericCredentials = saveCredentials(TestUtils.createDeviceClientCredentials(null, GENERIC_USER_NAME));
         devCredentials = saveCredentials(TestUtils.createDeviceClientCredentials(DEV_CLIENT_ID, null));
-        appCredentials = saveCredentials(TestUtils.createApplicationClientCredentials(APP_CLIENT_ID, null));
+        // Lite has no APPLICATION clients: the same persisted client is a DEVICE there
+        appCredentials = saveCredentials(isLite()
+                ? TestUtils.createDeviceClientCredentials(APP_CLIENT_ID, null)
+                : TestUtils.createApplicationClientCredentials(APP_CLIENT_ID, null));
         enableBasicProvider();
+    }
+
+    private boolean isLite() {
+        return TbmqEditionResolver.resolve(getClass().getClassLoader()) == TbmqEdition.LITE;
     }
 
     private MqttClientCredentials saveCredentials(MqttClientCredentials credentials) {

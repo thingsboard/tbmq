@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration.AuthStrategy;
 import org.thingsboard.mqtt.broker.common.util.MqttAuthProviderUtil;
+import org.thingsboard.mqtt.broker.dao.client.ClientTypeConstraint;
 import org.thingsboard.mqtt.broker.dao.exception.EntityConstraintViolationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
@@ -43,6 +44,7 @@ import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink
 public class MqttAuthProviderServiceImpl implements MqttAuthProviderService {
 
     private final MqttAuthProviderDao mqttAuthProviderDao;
+    private final ClientTypeConstraint clientTypeConstraint;
 
     @Override
     public MqttAuthProvider saveAuthProvider(MqttAuthProvider authProvider) {
@@ -157,6 +159,7 @@ public class MqttAuthProviderServiceImpl implements MqttAuthProviderService {
                         throw new DataValidationException("MQTT auth provider configuration should be specified!");
                     }
                     authProvider.getConfiguration().validate();
+                    authProvider.getConfiguration().configuredClientTypes().forEach(clientTypeConstraint::check);
                 }
             };
 

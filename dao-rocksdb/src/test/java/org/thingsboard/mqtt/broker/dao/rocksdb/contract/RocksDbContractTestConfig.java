@@ -28,8 +28,10 @@ import org.springframework.util.FileSystemUtils;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
+import org.thingsboard.mqtt.broker.dao.client.ClientTypeConstraint;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreMemoryBudget;
 import org.thingsboard.mqtt.broker.dao.rocksdb.StoreProperties;
+import org.thingsboard.mqtt.broker.dao.rocksdb.client.DeviceOnlyClientTypeConstraint;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -42,14 +44,15 @@ import java.nio.file.Path;
  * subclasses add the services under test to it.
  * <p>
  * The scan registers the store, the entity store and the other beans of the module. It leaves out the properties and the
- * memory budget, which this class defines with the temporary directory and a fixed budget, and the device message
- * queue, which needs the broker's device settings and has no contract case.
+ * memory budget, which this class defines with the temporary directory and a fixed budget, the device message
+ * queue, which needs the broker's device settings and has no contract case, and the edition's client type constraint:
+ * the shared credentials contract saves APPLICATION credentials on both backends, so this context allows every type.
  */
 @Configuration
 @ComponentScan(basePackages = "org.thingsboard.mqtt.broker.dao.rocksdb",
         excludeFilters = {
                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
-                        classes = {StoreProperties.class, StoreMemoryBudget.class}),
+                        classes = {StoreProperties.class, StoreMemoryBudget.class, DeviceOnlyClientTypeConstraint.class}),
                 @ComponentScan.Filter(type = FilterType.REGEX,
                         pattern = "org\\.thingsboard\\.mqtt\\.broker\\.dao\\.rocksdb\\.devicemsg\\..*"),
                 // the nested configurations of the subclasses belong to their own context only
@@ -86,6 +89,12 @@ public class RocksDbContractTestConfig {
                 CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE,
                 CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE,
                 CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE);
+    }
+
+    @Bean
+    public ClientTypeConstraint clientTypeConstraint() {
+        return clientType -> {
+        };
     }
 
     @Bean
