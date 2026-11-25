@@ -32,6 +32,8 @@ import java.util.Set;
 public class SubscriptionChangedEventMsg extends AbstractTimedMsg implements TbActorMsg {
 
     private final Set<TopicSubscription> topicSubscriptions;
+    private final long offset;
+    private final boolean localWriteCompleted;
 
     @Override
     public MsgType getMsgType() {

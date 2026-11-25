@@ -166,13 +166,22 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     }
 
     @Override
-    public void processSubscriptionsChanged(String clientId, Set<TopicSubscription> topicSubscriptions) {
+    public void processSubscriptionsChanged(String clientId, Set<TopicSubscription> topicSubscriptions, long offset) {
+        sendSubscriptionUpdate(clientId, new SubscriptionChangedEventMsg(topicSubscriptions, offset, false));
+    }
+
+    @Override
+    public void processSubscriptionWriteCompleted(String clientId) {
+        sendSubscriptionUpdate(clientId, new SubscriptionChangedEventMsg(Set.of(), -1, true));
+    }
+
+    private void sendSubscriptionUpdate(String clientId, SubscriptionChangedEventMsg update) {
         TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
             // TODO: get ClientInfo and check if clientId is generated
             clientActorRef = createRootActor(clientId, true);
         }
-        clientActorRef.tellWithHighPriority(new SubscriptionChangedEventMsg(topicSubscriptions));
+        clientActorRef.tellWithHighPriority(update);
     }
 
     @Override

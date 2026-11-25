@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
@@ -54,7 +53,7 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
     private long ackTimeoutMs;
 
     @Override
-    public void persistClientSubscriptionsAsync(String clientId, Set<TopicSubscription> clientSubscriptions, BasicCallback callback) {
+    public void persistClientSubscriptionsAsync(String clientId, Set<TopicSubscription> clientSubscriptions, SubscriptionWriteCallback callback) {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Persisting client subscriptions asynchronously - {}", clientId, clientSubscriptions);
         }
@@ -63,7 +62,7 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
                 if (callback != null) {
-                    callback.onSuccess();
+                    callback.onSuccess(metadata.offset());
                 }
             }
 
