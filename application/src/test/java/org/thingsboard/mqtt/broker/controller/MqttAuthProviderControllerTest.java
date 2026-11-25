@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -33,11 +32,13 @@ import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderC
 import org.thingsboard.mqtt.broker.common.util.MqttAuthProviderUtil;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
+import org.thingsboard.mqtt.broker.dao.client.ClientTypeConstraint;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Slf4j
@@ -75,7 +76,6 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
 
     @Test
     public void updateDefaultJwtMqttAuthProviderTest() throws Exception {
-        Assume.assumeFalse("Lite refuses APPLICATION providers", isLite());
         MqttAuthProvider mqttAuthProvider = getMqttAuthProvider(MqttAuthProviderType.JWT);
         assertThat(mqttAuthProvider.isEnabled()).isFalse();
         assertThat(mqttAuthProvider.getConfiguration()).isInstanceOf(JwtMqttAuthProviderConfiguration.class);
@@ -86,6 +86,17 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
         configuration.setDefaultClientType(ClientType.APPLICATION);
         mqttAuthProvider.setEnabled(true);
         mqttAuthProvider.setConfiguration(configuration);
+
+        if (isLite()) {
+            // TBMQ Lite has no APPLICATION clients: the save is refused and the stored provider stays as it was
+            doPost("/api/mqtt/auth/provider", mqttAuthProvider).andExpect(status().isBadRequest())
+                    .andExpect(statusReason(containsString(ClientTypeConstraint.LITE_MESSAGE)));
+            MqttAuthProvider storedMqttAuthProvider = getMqttAuthProvider(MqttAuthProviderType.JWT);
+            assertThat(storedMqttAuthProvider.isEnabled()).isFalse();
+            JwtMqttAuthProviderConfiguration storedConfiguration = (JwtMqttAuthProviderConfiguration) storedMqttAuthProvider.getConfiguration();
+            assertThat(storedConfiguration.getDefaultClientType()).isEqualTo(ClientType.DEVICE);
+            return;
+        }
 
         MqttAuthProvider savedMqttAuthProvider = doPost("/api/mqtt/auth/provider", mqttAuthProvider, MqttAuthProvider.class);
 

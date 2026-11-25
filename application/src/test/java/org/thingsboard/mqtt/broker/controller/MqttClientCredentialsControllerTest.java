@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -360,7 +359,6 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
 
     @Test
     public void getMqttClientCredentialsV2WithParametersTest() throws Exception {
-        Assume.assumeFalse("Lite refuses APPLICATION credentials", isLite());
         for (int i = 0; i < 3; i++) {
             BasicMqttCredentials basicMqttCredentials = newBasicMqttCredentials(
                     "clientId" + i,
@@ -379,7 +377,15 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
         SslMqttCredentials sslMqttCredentials = newSslMqttCredentials(
                 "commonName" + 3);
         MqttClientCredentials mqttClientCredentials = newSslMqttClientCredentials(sslMqttCredentials, "ssl_app_name" + 3, ClientType.APPLICATION);
-        doPost("/api/mqtt/client/credentials", mqttClientCredentials, MqttClientCredentials.class);
+        // TBMQ Lite has no APPLICATION clients and refuses the credentials, so it holds no APPLICATION row to find
+        int applicationX509Count;
+        if (isLite()) {
+            doPost("/api/mqtt/client/credentials", mqttClientCredentials).andExpect(status().isBadRequest());
+            applicationX509Count = 0;
+        } else {
+            doPost("/api/mqtt/client/credentials", mqttClientCredentials, MqttClientCredentials.class);
+            applicationX509Count = 1;
+        }
 
         PageLink pageLink = new PageLink(10);
         PageData<ShortMqttClientCredentials> pageData = doGetTypedWithPageLink("/api/v2/mqtt/client/credentials?clientTypeList=APPLICATION&credentialsTypeList=MQTT_BASIC&",
@@ -391,7 +397,7 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
         pageData = doGetTypedWithPageLink("/api/v2/mqtt/client/credentials?clientTypeList=APPLICATION&credentialsTypeList=X_509&",
                 new TypeReference<>() {
                 }, pageLink);
-        Assert.assertEquals(1, pageData.getData().size());
+        Assert.assertEquals(applicationX509Count, pageData.getData().size());
 
         pageLink = new PageLink(10);
         pageData = doGetTypedWithPageLink("/api/v2/mqtt/client/credentials?clientTypeList=DEVICE&credentialsTypeList=X_509&",
@@ -409,7 +415,7 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
         pageData = doGetTypedWithPageLink("/api/v2/mqtt/client/credentials?credentialsTypeList=X_509&",
                 new TypeReference<>() {
                 }, pageLink);
-        Assert.assertEquals(4, pageData.getData().size());
+        Assert.assertEquals(3 + applicationX509Count, pageData.getData().size());
     }
 
     @Test
