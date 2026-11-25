@@ -43,7 +43,7 @@ import java.util.function.Supplier;
  * <li>{@value #PROPERTY_SOURCE_NAME}, first in the list: {@code service.id}, which the user chooses through
  * {@code standalone.service-id}. A value is either a constant or a {@code Function<Environment, Object>} evaluated on
  * every lookup, so that key applies whether it is loaded before or after this source.</li>
- * <li>{@value #BELOW_YML_SOURCE_NAME}: the shortened shutdown waits and the health details. It sits just before the
+ * <li>{@value #YML_OVERRIDES_SOURCE_NAME}: the shortened shutdown waits and the health details. It is inserted just before the
  * source of {@code thingsboard-mqtt-broker.yml}, so that command-line arguments, system properties, environment
  * variables and files of {@code spring.config.additional-location} still win, while the 15000 / 1m / 5 and the
  * {@code never} of the file do not. Each value is a placeholder on the key's environment variable, because this source
@@ -53,7 +53,7 @@ import java.util.function.Supplier;
 public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordered {
 
     static final String PROPERTY_SOURCE_NAME = "tbmqLiteDefaults";
-    static final String BELOW_YML_SOURCE_NAME = "tbmqLiteBelowYmlDefaults";
+    static final String YML_OVERRIDES_SOURCE_NAME = "tbmqLiteYmlOverrides";
 
     // the name of the config-data source of the file starts with "Config resource" and holds the resource description
     static final String BROKER_YML_SOURCE_MARKER = "class path resource [thingsboard-mqtt-broker.yml]";
@@ -67,14 +67,14 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
      * Each is set in {@code thingsboard-mqtt-broker.yml} as
      * {@code ${variable:clusterDefault}}; a source above the file hides that placeholder, so the variable is read here.
      */
-    static final List<BelowYmlDefault> BELOW_YML_DEFAULTS = List.of(
-            new BelowYmlDefault("actors.system.disconnect-wait-timeout-ms", "ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS", "15000", "1500"),
-            new BelowYmlDefault("spring.lifecycle.timeout-per-shutdown-phase", "SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE", "1m", "6s"),
-            new BelowYmlDefault("listener.tcp.netty.shutdown_timeout", "TCP_NETTY_SHUTDOWN_TIMEOUT", "5", "1"),
-            new BelowYmlDefault("listener.ssl.netty.shutdown_timeout", "SSL_NETTY_SHUTDOWN_TIMEOUT", "5", "1"),
-            new BelowYmlDefault("listener.ws.netty.shutdown_timeout", "WS_NETTY_SHUTDOWN_TIMEOUT", "5", "1"),
-            new BelowYmlDefault("listener.wss.netty.shutdown_timeout", "WSS_NETTY_SHUTDOWN_TIMEOUT", "5", "1"),
-            new BelowYmlDefault("management.endpoint.health.show-details", "HEALTH_SHOW_DETAILS", "never", "always"));
+    static final List<YmlOverride> YML_OVERRIDES = List.of(
+            new YmlOverride("actors.system.disconnect-wait-timeout-ms", "ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS", "15000", "1500"),
+            new YmlOverride("spring.lifecycle.timeout-per-shutdown-phase", "SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE", "1m", "6s"),
+            new YmlOverride("listener.tcp.netty.shutdown_timeout", "TCP_NETTY_SHUTDOWN_TIMEOUT", "5", "1"),
+            new YmlOverride("listener.ssl.netty.shutdown_timeout", "SSL_NETTY_SHUTDOWN_TIMEOUT", "5", "1"),
+            new YmlOverride("listener.ws.netty.shutdown_timeout", "WS_NETTY_SHUTDOWN_TIMEOUT", "5", "1"),
+            new YmlOverride("listener.wss.netty.shutdown_timeout", "WSS_NETTY_SHUTDOWN_TIMEOUT", "5", "1"),
+            new YmlOverride("management.endpoint.health.show-details", "HEALTH_SHOW_DETAILS", "never", "always"));
 
     private final Log log;
 
@@ -99,9 +99,9 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
         return Map.of("service.id", serviceId);
     }
 
-    static Map<String, Object> belowYmlDefaults(List<BelowYmlDefault> defaults) {
+    static Map<String, Object> ymlOverrides(List<YmlOverride> overrides) {
         Map<String, Object> values = new HashMap<>();
-        for (BelowYmlDefault entry : defaults) {
+        for (YmlOverride entry : overrides) {
             values.put(entry.key(), envOrDefault(entry.variable(), entry.liteValue()));
         }
         return Map.copyOf(values);
@@ -126,7 +126,7 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
         if (edition == TbmqEdition.LITE) {
             MutablePropertySources sources = environment.getPropertySources();
             sources.addFirst(new LazyDefaultsPropertySource(PROPERTY_SOURCE_NAME, environment, defaults()));
-            addBelowYmlDefaults(sources, environment);
+            addYmlOverrides(sources, environment);
             shortenGracefulExecutorShutdown(environment);
         }
     }
@@ -140,11 +140,12 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
     }
 
     /**
-     * Places the defaults just above the config-data source of {@code thingsboard-mqtt-broker.yml}. A default is left out
-     * when the file sets its key to anything but the shipped placeholder (a key the file leaves out keeps the default): an operator who edited the file, for example
-     * the copy in the {@code conf} directory that the packages put on the class path, gets the value they wrote.
+     * Inserts the overrides just before the config-data source of {@code thingsboard-mqtt-broker.yml}, so that they win
+     * over the file. An override is left out when the file sets its key to anything but the shipped placeholder (a key
+     * the file leaves out keeps the override): an operator who edited the file, for example the copy in the
+     * {@code conf} directory that the packages put on the class path, gets the value they wrote.
      */
-    private void addBelowYmlDefaults(MutablePropertySources sources, Environment environment) {
+    private void addYmlOverrides(MutablePropertySources sources, Environment environment) {
         PropertySource<?> yml = null;
         for (PropertySource<?> source : sources) {
             if (source.getName().startsWith("Config resource") && source.getName().contains(BROKER_YML_SOURCE_MARKER)) {
@@ -153,15 +154,16 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
             }
         }
         if (yml == null) {
-            // no config-data source for the file, for example in a unit test: below everything else
-            sources.addLast(new LazyDefaultsPropertySource(BELOW_YML_SOURCE_NAME, environment, belowYmlDefaults(BELOW_YML_DEFAULTS)));
-            log.info("The Lite defaults are not applied: no config source for the class path thingsboard-mqtt-broker.yml "
-                    + "was found, so they rank below every other property source, and the file's cluster values win if it is loaded another way");
+            // no config-data source for the file, for example in a unit test: the overrides go last, below everything else
+            sources.addLast(new LazyDefaultsPropertySource(YML_OVERRIDES_SOURCE_NAME, environment, ymlOverrides(YML_OVERRIDES)));
+            log.info("The Lite shutdown waits and health details may not apply: no config source for the class path "
+                    + "thingsboard-mqtt-broker.yml was found, so they rank below every other property source, and the file's "
+                    + "cluster values win if it is loaded another way");
             return;
         }
-        List<BelowYmlDefault> shipped = new ArrayList<>();
+        List<YmlOverride> shipped = new ArrayList<>();
         List<String> configured = new ArrayList<>();
-        for (BelowYmlDefault entry : BELOW_YML_DEFAULTS) {
+        for (YmlOverride entry : YML_OVERRIDES) {
             Object value = yml.getProperty(entry.key());
             // a key the file does not set at all is not an operator's value either
             if (value == null || entry.shippedValue().equals(value.toString())) {
@@ -170,10 +172,10 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
                 configured.add(entry.key());
             }
         }
-        sources.addBefore(yml.getName(), new LazyDefaultsPropertySource(BELOW_YML_SOURCE_NAME, environment, belowYmlDefaults(shipped)));
+        sources.addBefore(yml.getName(), new LazyDefaultsPropertySource(YML_OVERRIDES_SOURCE_NAME, environment, ymlOverrides(shipped)));
         if (!configured.isEmpty()) {
-            log.info("The Lite defaults are not applied to " + configured + ": thingsboard-mqtt-broker.yml sets them "
-                    + "to values of its own, which apply");
+            log.info("The Lite shutdown waits and health details are not overridden for " + configured
+                    + ": thingsboard-mqtt-broker.yml sets them to values of its own, which apply");
         }
     }
 
@@ -189,7 +191,7 @@ public class LiteEnvironmentDefaults implements EnvironmentPostProcessor, Ordere
      * @param clusterDefault the default in the yml's placeholder, which the cluster edition uses
      * @param liteValue      the value the Lite edition uses when the variable is not set
      */
-    record BelowYmlDefault(String key, String variable, String clusterDefault, String liteValue) {
+    record YmlOverride(String key, String variable, String clusterDefault, String liteValue) {
 
         /**
          * @return the value the shipped yml sets the key to
