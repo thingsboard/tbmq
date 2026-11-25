@@ -16,7 +16,15 @@
 package org.thingsboard.mqtt.broker.controller;
 
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,6 +35,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
@@ -45,9 +55,14 @@ import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.service.entity.credentials.TbMqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.credentials.MqttClientCredentialsBulkImportService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.credentials.MqttClientCredentialsCsvExportService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,8 +71,11 @@ import java.util.UUID;
 @RequestMapping("/api")
 public class MqttClientCredentialsController extends BaseController {
 
+    private static final String EXPORT_FILE_NAME = "mqtt-client-credentials.csv";
+
     private final BCryptPasswordEncoder passwordEncoder;
     private final MqttClientCredentialsBulkImportService bulkImportService;
+    private final MqttClientCredentialsCsvExportService csvExportService;
     private final TbMqttClientCredentialsService tbMqttClientCredentialsService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -173,6 +191,48 @@ public class MqttClientCredentialsController extends BaseController {
     @PostMapping("/mqtt/client/credentials/bulk_import")
     public BulkImportResult<MqttClientCredentials> processMqttClientCredentialsBulkImport(@RequestBody BulkImportRequest request) throws Exception {
         return bulkImportService.processBulkImport(request, getCurrentUser());
+    }
+
+    @ApiOperation(value = "Export MQTT basic credentials to CSV (exportMqttBasicClientCredentials)",
+            notes = "Streams the MQTT_BASIC client credentials as a CSV file the bulk import reads back: one row per credentials, sorted by name, " +
+                    "with the columns NAME, DESCRIPTION, CLIENT_TYPE, CLIENT_ID, USERNAME, PASSWORD, PASSWORD_HASH, SUB_AUTH_RULE_PATTERNS and " +
+                    "PUB_AUTH_RULE_PATTERNS. The system WebSocket credentials are not exported. PASSWORD is always empty. " +
+                    "PASSWORD_HASH holds the BCrypt hash of the password, so the file holds password hashes: store it like a backup and delete it after use. " +
+                    "Line breaks in a description are written as spaces. " +
+                    "The patterns of a rule list are joined with the auth rules delimiter. The request fails with 400, naming the credentials, " +
+                    "when a pattern contains the delimiter or has leading or trailing spaces, or when a name has a line break, " +
+                    "as the import would not read those back unchanged. " +
+                    "Available to SYS_ADMIN only.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "The CSV file (mqtt-client-credentials.csv).",
+                            content = @Content(mediaType = "text/csv", schema = @Schema(type = "string", format = "binary"))),
+                    @ApiResponse(responseCode = "400", description = "The delimiter is not a single character, or credentials would not come back unchanged from the import.",
+                            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ThingsboardErrorResponse.class)))
+            })
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/mqtt/client/credentials/export")
+    public ResponseEntity<StreamingResponseBody> exportCredentials(
+            @Parameter(description = "Write the BCrypt password hashes into the PASSWORD_HASH column; when false the column is empty.")
+            @RequestParam(defaultValue = "true") boolean includePasswordHashes,
+            @Parameter(description = "The single character that joins the patterns of a rule list; it is the auth rules delimiter of the import.")
+            @RequestParam(defaultValue = ";") String authRulesDelimiter) {
+        if (authRulesDelimiter.length() != 1) {
+            throw new IllegalArgumentException("authRulesDelimiter must be a single character");
+        }
+        // checked here, before the response starts, so a refusal is a 400
+        MqttClientCredentialsCsvExportService.Export export = csvExportService.prepare(includePasswordHashes, authRulesDelimiter.charAt(0));
+        StreamingResponseBody body = out -> {
+            Writer writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
+            export.writeTo(writer);
+            writer.flush();
+        };
+        return ResponseEntity.ok()
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + EXPORT_FILE_NAME)
+                // the name the UI's download helper reads
+                .header("x-filename", EXPORT_FILE_NAME)
+                .cacheControl(CacheControl.noStore())
+                .body(body);
     }
 
     private String encodePasswordIfNotEmpty(String password) {

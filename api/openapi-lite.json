@@ -7597,6 +7597,152 @@
         ]
       }
     },
+    "/api/mqtt/client/credentials/export": {
+      "get": {
+        "tags": [
+          "mqtt-client-credentials-controller"
+        ],
+        "summary": "Export MQTT basic credentials to CSV (exportMqttBasicClientCredentials)",
+        "description": "Streams the MQTT_BASIC client credentials as a CSV file the bulk import reads back: one row per credentials, sorted by name, with the columns NAME, DESCRIPTION, CLIENT_TYPE, CLIENT_ID, USERNAME, PASSWORD, PASSWORD_HASH, SUB_AUTH_RULE_PATTERNS and PUB_AUTH_RULE_PATTERNS. The system WebSocket credentials are not exported. PASSWORD is always empty. PASSWORD_HASH holds the BCrypt hash of the password, so the file holds password hashes: store it like a backup and delete it after use. Line breaks in a description are written as spaces. The patterns of a rule list are joined with the auth rules delimiter. The request fails with 400, naming the credentials, when a pattern contains the delimiter or has leading or trailing spaces, or when a name has a line break, as the import would not read those back unchanged. Available to SYS_ADMIN only.",
+        "operationId": "exportCredentials",
+        "parameters": [
+          {
+            "name": "includePasswordHashes",
+            "in": "query",
+            "description": "Write the BCrypt password hashes into the PASSWORD_HASH column; when false the column is empty.",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
+            "name": "authRulesDelimiter",
+            "in": "query",
+            "description": "The single character that joins the patterns of a rule list; it is the auth rules delimiter of the import.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": ";"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The CSV file (mqtt-client-credentials.csv).",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The delimiter is not a single character, or credentials would not come back unchanged from the import.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-401": {
+                    "summary": "Unauthorized",
+                    "value": {
+                      "status": 401,
+                      "message": "Authentication failed",
+                      "errorCode": 10,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-403": {
+                    "summary": "Forbidden",
+                    "value": {
+                      "status": 403,
+                      "message": "You don't have permission to perform this operation!",
+                      "errorCode": 20,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-404": {
+                    "summary": "Not Found",
+                    "value": {
+                      "status": 404,
+                      "message": "Requested item wasn't found!",
+                      "errorCode": 32,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThingsboardErrorResponse"
+                },
+                "examples": {
+                  "error-code-429": {
+                    "summary": "Too Many Requests",
+                    "value": {
+                      "status": 429,
+                      "message": "Too many requests for current admin!",
+                      "errorCode": 33,
+                      "timestamp": "2026-01-01T00:00:00.000+00:00"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HttpLoginForm": [
+              "SYS_ADMIN"
+            ]
+          }
+        ]
+      }
+    },
     "/api/mqtt/client/credentials/info": {
       "get": {
         "tags": [
@@ -13711,6 +13857,7 @@
               "CLIENT_ID",
               "USERNAME",
               "PASSWORD",
+              "PASSWORD_HASH",
               "SUB_AUTH_RULE_PATTERNS",
               "PUB_AUTH_RULE_PATTERNS"
             ]

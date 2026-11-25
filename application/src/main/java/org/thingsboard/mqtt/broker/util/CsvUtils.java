@@ -24,7 +24,9 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.input.CharSequenceReader;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -60,6 +62,17 @@ public class CsvUtils {
             csvPrinter.flush();
         }
         return out.toByteArray();
+    }
+
+    /**
+     * Writes the rows in {@link CSVFormat#DEFAULT}, each ended by CRLF, and flushes {@code out}; the caller closes it.
+     */
+    public static void writeCsv(Writer out, Iterable<List<String>> rows) throws IOException {
+        CSVPrinter csvPrinter = new CSVPrinter(out, CSVFormat.DEFAULT);
+        for (List<String> row : rows) {
+            csvPrinter.printRecord(row);
+        }
+        csvPrinter.flush();
     }
 
 }
