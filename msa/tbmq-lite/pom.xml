@@ -28,15 +28,17 @@
 
     <groupId>org.thingsboard.mqtt-broker.msa</groupId>
     <artifactId>tbmq-lite</artifactId>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
     <name>TBMQ Lite</name>
 
     <!--
-        Skeleton: this module holds no code yet. It only proves, through the Enforcer
-        rule below, that the application can be assembled without the cluster infrastructure.
-        The image is added later.
-        lite-tests takes its classpath from this module, so its dependencies are declared only here.
+        The Lite broker: the application without queue-kafka, cache-redis and the SQL infrastructure, plus dao-rocksdb.
+        The Enforcer rules below keep that classpath free of the cluster and SQL infrastructure.
+        The module's own jar is empty. The runnable broker jar, target/tbmq-lite-<version>-boot.jar, is built only with
+        -Ddockerfile.skip=false (the yarn build on, so that the UI is inside it) and is the input of the image,
+        together with the files of docker/, which are copied to target/ as they are.
+        lite-tests takes its classpath from this module, so the dependencies are declared only here.
     -->
 
     <properties>
@@ -72,6 +74,64 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-docker-lite-files</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <resources>
+                                <!-- the scripts and logback.xml are shipped byte for byte, so only the Dockerfile is filtered -->
+                                <resource>
+                                    <directory>docker</directory>
+                                    <filtering>false</filtering>
+                                    <excludes>
+                                        <exclude>Dockerfile</exclude>
+                                    </excludes>
+                                </resource>
+                                <resource>
+                                    <directory>docker</directory>
+                                    <filtering>true</filtering>
+                                    <includes>
+                                        <include>Dockerfile</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <!--
+                        An execution of its own: the root pom's default one stays skipped here, and it would also run
+                        build-info, whose file for this module would hide the application's.
+                    -->
+                    <execution>
+                        <id>lite-boot-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${dockerfile.skip}</skip>
+                            <mainClass>org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication</mainClass>
+                            <classifier>boot</classifier>
+                            <layout>ZIP</layout>
+                            <!-- a plain jar for java -jar, without the launch script of the installation packages -->
+                            <executable>false</executable>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>

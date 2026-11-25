@@ -46,7 +46,6 @@
             <groupId>org.thingsboard.mqtt-broker.msa</groupId>
             <artifactId>tbmq-lite</artifactId>
             <version>${project.version}</version>
-            <type>pom</type>
         </dependency>
         <dependency>
             <!--
@@ -206,41 +205,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <!--
-                A runnable broker jar on the Lite classpath for the capacity runs: target/lite-tests-<version>-boot.jar.
-                Off by default; the module is never installed or deployed, so the jar is never published.
-            -->
-            <id>lite-runnable</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.springframework.boot</groupId>
-                        <artifactId>spring-boot-maven-plugin</artifactId>
-                        <executions>
-                            <!--
-                                An execution of its own: the root pom's default one, which stays skipped here, also runs
-                                build-info, whose file for lite-tests would hide the application's.
-                            -->
-                            <execution>
-                                <id>lite-runnable</id>
-                                <goals>
-                                    <goal>repackage</goal>
-                                </goals>
-                                <configuration>
-                                    <skip>false</skip>
-                                    <mainClass>org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication</mainClass>
-                                    <classifier>boot</classifier>
-                                    <!-- a plain jar for java -jar, without the launch script of the installation packages -->
-                                    <executable>false</executable>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
