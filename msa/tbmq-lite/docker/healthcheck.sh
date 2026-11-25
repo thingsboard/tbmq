@@ -15,13 +15,14 @@
 # limitations under the License.
 #
 
-# Passes only when the broker answers /actuator/health on 127.0.0.1:8083 with a body that starts with {"status":"UP".
+# Passes only when the broker answers /actuator/health on 127.0.0.1:${HTTP_BIND_PORT:-8083} with a body that starts
+# with {"status":"UP". It needs plain HTTP on that port and the default actuator base path.
 # Uses bash's /dev/tcp (the image has no curl), HTTP/1.0 so that the server closes the connection, and a time limit on
 # the whole exchange (connect included) so that a hung broker fails the check instead of hanging it.
 if [ -z "${TBMQ_HEALTHCHECK_BOUNDED:-}" ]; then
   TBMQ_HEALTHCHECK_BOUNDED=1 exec timeout 8 bash "$0"
 fi
-exec 3<>/dev/tcp/127.0.0.1/8083 || exit 1
+exec 3<>/dev/tcp/127.0.0.1/${HTTP_BIND_PORT:-8083} || exit 1
 printf 'GET /actuator/health HTTP/1.0\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n' >&3 || exit 1
 IFS= read -r -t 5 -d '' response <&3
 body=${response#*$'\r\n\r\n'}

@@ -39,6 +39,11 @@
         -Ddockerfile.skip=false (the yarn build on, so that the UI is inside it) and is the input of the image,
         together with the files of docker/, which are copied to target/ as they are.
         lite-tests takes its classpath from this module, so the dependencies are declared only here.
+
+        Build the image with -am and the yarn build on (no -P '!yarn-build'):
+            mvn -o -pl msa/tbmq-lite -am package -DskipTests -Dlicense.skip=true -Ddockerfile.skip=false
+        Without -am the application modules come from the SNAPSHOT jars in ~/.m2, which can be stale, and the image
+        silently ships old code. LiteImageSmokeTest must be green on that exact image before it is pushed.
     -->
 
     <properties>
@@ -184,6 +189,9 @@
                 The inherited profile pushes the image for amd64 and arm64 and tags latest unconditionally. Here both of its
                 executions are switched off and docker/push-multiarch.sh runs instead: the version tag always, latest only
                 for a plain release version, so that a pre-release (-beta, -rc1) never moves latest.
+                The push rebuilds the image from the same target/ boot jar, so build it first with -am and the yarn build
+                on (mvn -o -pl msa/tbmq-lite -am package -DskipTests -Dlicense.skip=true -Ddockerfile.skip=false) and run
+                LiteImageSmokeTest on that exact image before pushing.
             -->
             <id>push-docker-amd-arm-images</id>
             <activation>

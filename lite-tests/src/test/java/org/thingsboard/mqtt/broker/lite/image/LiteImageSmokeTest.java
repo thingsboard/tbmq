@@ -98,6 +98,11 @@ public class LiteImageSmokeTest {
 
         // health: open, with component details (the image must not fall back to show-details "never")
         String base = ImageTestSupport.baseUrl(lite);
+        // the UI is bundled: the SPA's index page is served at the root
+        ImageTestSupport.Response ui = ImageTestSupport.get(base + "/", null);
+        assertThat(ui.status()).as("GET / (the UI)").isEqualTo(200);
+        assertThat(ui.body()).as("the UI index page at /").contains("<tb-root");
+
         ImageTestSupport.Response health = ImageTestSupport.get(base + "/actuator/health", null);
         assertThat(health.status()).isEqualTo(200);
         assertThat(health.json().path("status").asText()).isEqualTo("UP");
@@ -181,6 +186,10 @@ public class LiteImageSmokeTest {
 
         ObjectNode defaultLogin = ImageTestSupport.object().put("username", ImageTestSupport.SYSADMIN).put("password", DEFAULT_PASSWORD);
         assertThat(ImageTestSupport.postJson(base + "/api/auth/login", null, defaultLogin).status()).isEqualTo(401);
+
+        // the password is never logged (the assertion message names neither the log nor the value)
+        boolean leaked = lite.getLogs().contains(ADMIN_PASSWORD_VARIABLE_VALUE);
+        assertThat(leaked).as("the container log contains the TBMQ_ADMIN_PASSWORD value").isFalse();
     }
 
     private String newVolume() {

@@ -122,6 +122,8 @@ public class PushScriptTest {
         Files.write(fakeDocker, ("#!/bin/sh\nprintf '%s\\n' \"$@\" > '" + args + "'\n").getBytes(StandardCharsets.UTF_8));
         assertTrue(fakeDocker.toFile().setExecutable(true));
 
+        assertFakeDockerWins(bin, fakeDocker);
+
         Result result = runWithPath(false, bin.toString(), REPO, "2.5.0-beta");
 
         assertEquals(result.stderr, 0, result.exit);
@@ -161,6 +163,8 @@ public class PushScriptTest {
         Path fakeDocker = bin.resolve("docker");
         Files.write(fakeDocker, ("#!/bin/sh\ntouch '" + marker + "'\n").getBytes(StandardCharsets.UTF_8));
         assertTrue(fakeDocker.toFile().setExecutable(true));
+
+        assertFakeDockerWins(bin, fakeDocker);
 
         Result result = runWithDryRun("", bin.toString(), REPO, "2.5.0-beta");
 
@@ -207,6 +211,21 @@ public class PushScriptTest {
         assertEquals(command, 1, count(command, " -t "));
         assertTrue(command, command.contains(" -t " + REPO + ":" + version + " "));
         assertFalse(command, command.contains("latest"));
+    }
+
+    /**
+     * A real-mode run must never reach the real docker: bash skips a fake it cannot execute (a noexec temp dir), so
+     * check first that the test PATH resolves "docker" to the fake.
+     */
+    private static void assertFakeDockerWins(Path bin, Path fakeDocker) throws Exception {
+        ProcessBuilder pb = new ProcessBuilder("bash", "-c", "command -v docker");
+        pb.environment().put("PATH", bin + File.pathSeparator + pb.environment().get("PATH"));
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
+        String resolved = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
+        assertTrue("docker lookup timed out", process.waitFor(30, TimeUnit.SECONDS));
+        assertEquals("the fake docker is not what the test PATH resolves docker to (is the temp dir noexec?)",
+                fakeDocker.toString(), resolved);
     }
 
     private static void assertBuildCommand(String command) {

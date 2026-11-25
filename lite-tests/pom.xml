@@ -145,8 +145,9 @@
         <profile>
             <!--
                 The tests of the built images, which need Docker and the images: mvn -pl lite-tests -am test
-                -Plite-image-tests -Dtbmq.lite.image=thingsboard/tbmq-lite:2.5.0-SNAPSHOT
-                -Dtbmq.node.image=thingsboard/tbmq-node:2.5.0-SNAPSHOT. Without an image property a test fails and names it.
+                -Plite-image-tests -Dtest='LiteImageSmokeTest,ImageEditionTest' -Dsurefire.failIfNoSpecifiedTests=false
+                -Dtbmq.lite.image=thingsboard/tbmq-lite:2.5.0-SNAPSHOT -Dtbmq.node.image=thingsboard/tbmq-node:2.5.0-SNAPSHOT
+                (without -Dtest, -am also runs every upstream module's suite). Without an image property a test fails and names it.
             -->
             <id>lite-image-tests</id>
             <properties>

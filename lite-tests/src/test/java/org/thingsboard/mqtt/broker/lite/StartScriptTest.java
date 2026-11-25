@@ -241,6 +241,21 @@ public class StartScriptTest {
     }
 
     @Test
+    public void multiLineJavaOptsKeepEveryLine() throws Exception {
+        Path root = v2(Long.toString(4 * GIB), "400000 100000", "0-7");
+
+        Output out = run(root, "-Xss512k\n-XX:+UseZGC\n  -Dfoo=bar\n");
+
+        int size = out.flags.size();
+        assertEquals("-Xss512k", out.flags.get(size - 3));
+        assertEquals("-XX:+UseZGC", out.flags.get(size - 2));
+        assertEquals("-Dfoo=bar", out.flags.get(size - 1));
+        assertFalse(out.flags.contains("-XX:+UseG1GC"));
+        assertFalse(out.flags.contains("-XX:+UseSerialGC"));
+        assertTrue(out.logLine, out.logLine.contains("collector from JAVA_OPTS"));
+    }
+
+    @Test
     public void aJemallocThatDoesNotExistIsSkipped() throws Exception {
         Path root = v2(Long.toString(4 * GIB), "400000 100000", "0-7");
 

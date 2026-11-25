@@ -117,10 +117,11 @@ if [ "$direct_mib" -lt "$MIN_DIRECT_MIB" ]; then
   direct_mib=$MIN_DIRECT_MIB
 fi
 
-# user flags, split into words (no globbing); a collector named in them suppresses the script's choice
+# user flags, split into words on any whitespace including newlines (no globbing); a collector named in them
+# suppresses the script's choice. read -d '' returns non-zero at the end of input, which is expected here.
 user_opts=()
 if [ -n "${JAVA_OPTS:-}" ]; then
-  read -r -a user_opts <<< "$JAVA_OPTS"
+  read -r -d '' -a user_opts <<< "$JAVA_OPTS" || true
 fi
 user_collector=false
 for word in ${user_opts[@]+"${user_opts[@]}"}; do
