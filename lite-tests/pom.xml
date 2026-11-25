@@ -141,6 +141,39 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <!--
+                The tests of the built images, which need Docker and the images: mvn -pl lite-tests -am test
+                -Plite-image-tests -Dtbmq.lite.image=thingsboard/tbmq-lite:2.5.0-SNAPSHOT
+                -Dtbmq.node.image=thingsboard/tbmq-node:2.5.0-SNAPSHOT. Without an image property a test fails and names it.
+            -->
+            <id>lite-image-tests</id>
+            <properties>
+                <tbmq.lite.image></tbmq.lite.image>
+                <tbmq.node.image></tbmq.node.image>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <tbmq.lite.image>${tbmq.lite.image}</tbmq.lite.image>
+                                <tbmq.node.image>${tbmq.node.image}</tbmq.node.image>
+                            </systemPropertyVariables>
+                            <includes combine.self="override">
+                                <include>**/image/**/*Test.java</include>
+                            </includes>
+                            <excludes combine.self="override"/>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>
@@ -159,6 +192,10 @@
                         <include>**/*Test.java</include>
                         <include>**/*TestSuite.java</include>
                     </includes>
+                    <excludes>
+                        <!-- the image tests need a built image: the lite-image-tests profile runs them -->
+                        <exclude>**/image/**</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
