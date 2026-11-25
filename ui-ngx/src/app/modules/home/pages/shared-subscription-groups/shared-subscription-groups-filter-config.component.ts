@@ -39,8 +39,6 @@ import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
-import { ConfigService } from '@core/http/config.service';
-import { allowedClientTypes } from '@core/utils/edition.utils';
 import { SharedSubscriptionFilterConfig, sharedSubscriptionFilterConfigEquals } from '@shared/models/shared-subscription.model';
 import { NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
@@ -84,7 +82,6 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
   readonly propagatedFilter = input(true, {transform: booleanAttribute});
 
   ClientType = ClientType;
-  clientTypes = allowedClientTypes(this.configService.brokerConfig?.capabilities);
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
   cleanStartList = [true, false];
@@ -108,8 +105,7 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
               private translate: TranslateService,
               private overlay: Overlay,
               private nativeElement: ElementRef,
-              private viewContainerRef: ViewContainerRef,
-              private configService: ConfigService) {
+              private viewContainerRef: ViewContainerRef) {
   }
 
   ngOnInit(): void {

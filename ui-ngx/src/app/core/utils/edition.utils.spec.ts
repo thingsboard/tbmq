@@ -21,7 +21,8 @@ import {
   editionProductName,
   filterCredentialsHomeCards,
   isNewerVersion,
-  isNodeIdVisible
+  isNodeIdVisible,
+  stripSnapshotSuffix
 } from './edition.utils';
 
 const card = (key: string, clientTypeList: ClientType[]) =>
@@ -73,6 +74,18 @@ describe('edition.utils', () => {
       'isNewerVersion(%s, %s) = %s', (newest, current, expected) => {
         expect(isNewerVersion(newest, current)).toBe(expected);
       });
+  });
+
+  describe('stripSnapshotSuffix', () => {
+    it.each([
+      ['2.5.0-SNAPSHOT', '2.5.0'],
+      ['2.5.0-snapshot', '2.5.0'],
+      ['2.5.0-beta', '2.5.0-beta'],
+      ['2.4.1PE', '2.4.1PE'],
+      ['2.4.1PE-SNAPSHOT', '2.4.1PE']
+    ])('stripSnapshotSuffix(%s) = %s', (input, expected) => {
+      expect(stripSnapshotSuffix(input)).toBe(expected);
+    });
   });
 
   describe('filterCredentialsHomeCards', () => {

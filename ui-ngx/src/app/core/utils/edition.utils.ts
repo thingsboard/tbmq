@@ -51,6 +51,10 @@ function parseVersion(version: string | null | undefined): ParsedVersion | null 
   };
 }
 
+export function stripSnapshotSuffix(version: string): string {
+  return version.replace(/-SNAPSHOT$/i, '');
+}
+
 export function isNewerVersion(newest: string | null | undefined, current: string | null | undefined): boolean {
   const newestVersion = parseVersion(newest);
   const currentVersion = parseVersion(current);

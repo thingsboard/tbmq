@@ -48,7 +48,12 @@ describe('getGettingStartedSteps', () => {
   });
 
   it('lite edition steps reference no application keys', () => {
-    expect(JSON.stringify(model.getGettingStartedSteps(false, false))).not.toContain('step-2.');
+    const steps = model.getGettingStartedSteps(false, false);
+    expect(JSON.stringify(steps)).not.toContain('step-2.');
+    expect(steps.some(step => step.textKey === 'getting-started.step.step-4.text')).toBe(false);
+    expect(JSON.stringify(steps)).not.toContain('getting-started.step.step-4.text');
+    const subscribe = steps.find(step => step.titleKey === 'getting-started.step.step-4.title');
+    expect(subscribe?.textKey).toBe('getting-started.step.step-4-lite.text');
   });
 
   it('basic auth enabled drops the BASIC_AUTH step in both editions', () => {

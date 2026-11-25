@@ -25,6 +25,7 @@ import {
 } from '@shared/models/getting-started.model';
 import { ConfigService } from '@core/http/config.service';
 import { animatedScroll } from '@core/utils';
+import { stripSnapshotSuffix } from '@core/utils/edition.utils';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -63,7 +64,7 @@ export class GettingStartedComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     this.configService.getSystemVersion().subscribe(currentRelease => {
       if (currentRelease) {
-        this.currentReleaseVersion = currentRelease.version.split('-')[0];
+        this.currentReleaseVersion = stripSnapshotSuffix(currentRelease.version);
         this.cd.detectChanges();
       }
     });

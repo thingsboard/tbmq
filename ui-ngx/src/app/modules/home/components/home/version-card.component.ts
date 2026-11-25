@@ -23,7 +23,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
-import { editionProductName, isNewerVersion } from '@core/utils/edition.utils';
+import { editionProductName, isNewerVersion, stripSnapshotSuffix } from '@core/utils/edition.utils';
 
 @Component({
     selector: 'tb-home-version',
@@ -50,9 +50,9 @@ export class VersionCardComponent implements OnInit {
     this.configService.getSystemVersion().subscribe(
       res => {
         if (res) {
-          this.currentReleaseVersion = res.version.replace(/-SNAPSHOT$/i, '');
+          this.currentReleaseVersion = stripSnapshotSuffix(res.version);
           this.latestReleaseVersion = res.newestVersion;
-          this.updatesAvailable = isNewerVersion(this.latestReleaseVersion, this.currentReleaseVersion);
+          this.updatesAvailable = isNewerVersion(res.newestVersion, res.version);
         }
       });
     }
