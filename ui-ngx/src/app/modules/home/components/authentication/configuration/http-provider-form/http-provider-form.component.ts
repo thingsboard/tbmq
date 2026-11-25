@@ -130,14 +130,17 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
   pubRulesSet = new Set<string>();
   subRulesSet = new Set<string>();
 
+  // TBMQ Lite connects every client as a device, so its example has no clientType.
   readonly expectedResponse = {
     result: "success",
-    clientType: "application",
+    ...(this.clientTypeConfigurable ? {clientType: "application"} : {}),
     authRules: {
       pub: ["telemetry/.*", "alerts/.*"],
       sub: ["commands/.*"]
     }
   };
+  readonly expectedResponseJsonKey = this.clientTypeConfigurable ? 'authentication.expected-response-json' : 'authentication.expected-response-json-lite';
+  readonly expectedResponseInterpretationKey = this.clientTypeConfigurable ? 'authentication.expected-response-interpretation' : 'authentication.expected-response-interpretation-lite';
 
   readonly httpProviderConfigForm = this.fb.group({
     restEndpointUrl: [baseUrl(), [Validators.required, notOnlyWhitespaceValidator]],
@@ -156,7 +159,7 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
   });
 
   private propagateChangePending = false;
-  private changeRegistered = false;
+  private clientTypeResetPending = false;
   private propagateChange = (v: any) => { };
 
   constructor(protected fb: UntypedFormBuilder,
@@ -189,15 +192,10 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
           console.error('Failed to parse requestBody as JSON', e);
         }
       }
-      // The edition has no APPLICATION clients: a stored APPLICATION default is saved back as DEVICE.
-      const resetClientType = !this.clientTypeConfigurable && value.defaultClientType !== ClientType.DEVICE;
-      if (resetClientType) {
-        value = {...value, defaultClientType: ClientType.DEVICE};
-      }
+      // The edition has no APPLICATION clients: a stored APPLICATION default is saved back as DEVICE once the form becomes editable.
+      this.clientTypeResetPending = !this.clientTypeConfigurable && value.defaultClientType !== ClientType.DEVICE;
       this.httpProviderConfigForm.reset(value, {emitEvent: false});
-      if (resetClientType) {
-        this.propagateResetValue();
-      }
+      this.scheduleClientTypeReset();
     } else {
       this.propagateChangePending = true;
     }
@@ -205,7 +203,6 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
 
   registerOnChange(fn: any): void {
     this.propagateChange = fn;
-    this.changeRegistered = true;
     if (this.propagateChangePending) {
       this.propagateChangePending = false;
       setTimeout(() => {
@@ -222,6 +219,7 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
       this.httpProviderConfigForm.disable({emitEvent: false});
     } else {
       this.httpProviderConfigForm.enable({emitEvent: false});
+      this.scheduleClientTypeReset();
     }
   }
 
@@ -231,12 +229,19 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
     };
   }
 
-  private propagateResetValue() {
-    if (this.changeRegistered) {
-      setTimeout(() => this.updateModels(this.httpProviderConfigForm.getRawValue()), 0);
-    } else {
-      this.propagateChangePending = true;
+  private scheduleClientTypeReset() {
+    if (this.clientTypeResetPending) {
+      setTimeout(() => this.applyClientTypeReset(), 0);
     }
+  }
+
+  private applyClientTypeReset() {
+    if (!this.clientTypeResetPending || this.disabled) {
+      return;
+    }
+    this.clientTypeResetPending = false;
+    this.httpProviderConfigForm.patchValue({defaultClientType: ClientType.DEVICE}, {emitEvent: false});
+    this.updateModels(this.httpProviderConfigForm.getRawValue());
   }
 
   private updateModels(value: HttpMqttAuthProviderConfiguration) {
