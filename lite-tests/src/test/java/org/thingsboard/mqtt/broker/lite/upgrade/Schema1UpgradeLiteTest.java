@@ -19,6 +19,7 @@ import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
@@ -39,6 +40,7 @@ import org.thingsboard.mqtt.broker.dao.rocksdb.RocksDbStore;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsDao;
 import org.thingsboard.mqtt.broker.dao.store.StoreSeedState;
 import org.thingsboard.mqtt.broker.dao.user.UserDao;
+import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionDao;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionDao;
 import org.thingsboard.mqtt.broker.lite.spec.RawMqttClient;
@@ -101,6 +103,8 @@ public class Schema1UpgradeLiteTest extends AbstractControllerTest {
     @Autowired
     private StoreSeedState storeSeedState;
     @Autowired
+    private UserService userService;
+    @Autowired
     private AdminSettingsDao adminSettingsDao;
     @Autowired
     private MqttAuthProviderDao mqttAuthProviderDao;
@@ -121,6 +125,31 @@ public class Schema1UpgradeLiteTest extends AbstractControllerTest {
      */
     @Override
     public void beforeTest() {
+    }
+
+    /**
+     * The seeded sysadmin is on the default password and marked to change it, so the base class could not sign in as it.
+     * The mark is cleared first, as the password change would do, keeping the password the shared steps use.
+     */
+    @Override
+    @Before
+    public void setupWebTest() throws Exception {
+        clearPasswordChangeMark();
+        super.setupWebTest();
+    }
+
+    @Override
+    @After
+    public void teardownWebTest() throws Exception {
+        clearPasswordChangeMark();
+        super.teardownWebTest();
+    }
+
+    private void clearPasswordChangeMark() {
+        UUID sysadminId = userService.findUserByEmail(SYS_ADMIN_EMAIL).getId();
+        if (userService.isPasswordChangeRequired(sysadminId)) {
+            userService.replaceUserCredentials(userService.findUserCredentialsByUserId(sysadminId));
+        }
     }
 
     @After

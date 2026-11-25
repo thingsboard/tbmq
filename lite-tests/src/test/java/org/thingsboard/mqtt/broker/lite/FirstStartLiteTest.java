@@ -19,6 +19,8 @@ import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
@@ -34,11 +36,13 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsDao;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderDao;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsDao;
 import org.thingsboard.mqtt.broker.dao.user.UserDao;
+import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionDao;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionDao;
 import org.thingsboard.mqtt.broker.service.security.auth.rest.LoginRequest;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
@@ -51,6 +55,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = "lite.test.system-data.enabled=false")
 public class FirstStartLiteTest extends AbstractControllerTest {
 
+    @Autowired
+    private UserService userService;
     @Autowired
     private AdminSettingsDao adminSettingsDao;
     @Autowired
@@ -69,6 +75,31 @@ public class FirstStartLiteTest extends AbstractControllerTest {
      */
     @Override
     public void beforeTest() {
+    }
+
+    /**
+     * The seeded sysadmin is on the default password and marked to change it, so the base class could not sign in as it.
+     * The mark is cleared first, as the password change would do, keeping the password the shared steps use.
+     */
+    @Override
+    @Before
+    public void setupWebTest() throws Exception {
+        clearPasswordChangeMark();
+        super.setupWebTest();
+    }
+
+    @Override
+    @After
+    public void teardownWebTest() throws Exception {
+        clearPasswordChangeMark();
+        super.teardownWebTest();
+    }
+
+    private void clearPasswordChangeMark() {
+        UUID sysadminId = userService.findUserByEmail(SYS_ADMIN_EMAIL).getId();
+        if (userService.isPasswordChangeRequired(sysadminId)) {
+            userService.replaceUserCredentials(userService.findUserCredentialsByUserId(sysadminId));
+        }
     }
 
     @Test

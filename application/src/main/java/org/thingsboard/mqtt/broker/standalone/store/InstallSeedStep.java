@@ -16,7 +16,9 @@
 package org.thingsboard.mqtt.broker.standalone.store;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -37,8 +39,11 @@ import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.install.DefaultSystemDataLoaderService;
+import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
+import org.thingsboard.mqtt.broker.service.user.AdminServiceImpl;
 
 import java.util.UUID;
 
@@ -46,6 +51,11 @@ import java.util.UUID;
  * Seeds the management defaults of the cluster install into a store that has no seed marker: the admin settings, the
  * auth providers with Basic enabled, the sysadmin, the system WebSocket credentials and the sysadmin's default
  * WebSocket connection, through the same services and the same defaults as {@link DefaultSystemDataLoaderService}.
+ * <p>
+ * The sysadmin gets the password of {@code TBMQ_ADMIN_PASSWORD} ({@code standalone.security.admin-password}) when it is
+ * set, and the default one otherwise. A sysadmin that is left on the default password is marked, so that it must choose
+ * another one before it can sign in. The variable is read only by a seed that has not been finished: a store seeded
+ * before ignores it, and nothing is marked there.
  * <p>
  * Each step skips what the store already holds and the marker is written last, so a seed that stops halfway is
  * finished on the next start without duplicates.
@@ -66,12 +76,17 @@ public class InstallSeedStep implements ManagementDataStep {
     private final MqttClientCredentialsService mqttClientCredentialsService;
     private final WebSocketConnectionService webSocketConnectionService;
     private final WebSocketSubscriptionService webSocketSubscriptionService;
+    private final SystemSecurityService systemSecurityService;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final String adminPassword;
 
     public InstallSeedStep(StoreSeedState seedState, AdminSettingsService adminSettingsService,
                            MqttAuthProviderService mqttAuthProviderService, UserService userService, AdminService adminService,
                            MqttClientCredentialsService mqttClientCredentialsService,
                            WebSocketConnectionService webSocketConnectionService,
-                           WebSocketSubscriptionService webSocketSubscriptionService) {
+                           WebSocketSubscriptionService webSocketSubscriptionService,
+                           SystemSecurityService systemSecurityService, BCryptPasswordEncoder passwordEncoder,
+                           @Value("${standalone.security.admin-password:}") String adminPassword) {
         this.seedState = seedState;
         this.adminSettingsService = adminSettingsService;
         this.mqttAuthProviderService = mqttAuthProviderService;
@@ -80,13 +95,20 @@ public class InstallSeedStep implements ManagementDataStep {
         this.mqttClientCredentialsService = mqttClientCredentialsService;
         this.webSocketConnectionService = webSocketConnectionService;
         this.webSocketSubscriptionService = webSocketSubscriptionService;
+        this.systemSecurityService = systemSecurityService;
+        this.passwordEncoder = passwordEncoder;
+        this.adminPassword = adminPassword;
     }
 
     @Override
     public void apply() {
         if (seedState.isSeeded()) {
+            if (hasAdminPassword()) {
+                log.info("TBMQ_ADMIN_PASSWORD is ignored: the store was set up before");
+            }
             return;
         }
+        validateAdminPassword();
         log.info("Seeding the management defaults into a store that has not been seeded yet");
         seedAdminSettings();
         seedAuthProviders();
@@ -94,6 +116,29 @@ public class InstallSeedStep implements ManagementDataStep {
         MqttClientCredentials systemCredentials = seedSystemWebSocketCredentials();
         seedDefaultWebSocketConnection(sysadmin, systemCredentials);
         seedState.markSeeded();
+    }
+
+    private boolean hasAdminPassword() {
+        return adminPassword != null && !adminPassword.isBlank();
+    }
+
+    /**
+     * Checked before the first write, so that a refused value stops the first start with nothing in the store. The
+     * admin settings are seeded afterwards and hold no security settings, so the password policy is the one of the
+     * security settings that the store has, or else the default one. The value is never put in a message.
+     */
+    private void validateAdminPassword() {
+        if (!hasAdminPassword()) {
+            return;
+        }
+        if (AdminServiceImpl.SYSADMIN_PASSWORD.equals(adminPassword)) {
+            throw new IllegalStateException("TBMQ_ADMIN_PASSWORD must not be the default password");
+        }
+        try {
+            systemSecurityService.validatePasswordByPolicy(adminPassword, systemSecurityService.getSecuritySettings().getPasswordPolicy());
+        } catch (DataValidationException e) {
+            throw new IllegalStateException("TBMQ_ADMIN_PASSWORD does not meet the password policy: " + e.getMessage());
+        }
     }
 
     private void seedAdminSettings() {
@@ -128,7 +173,10 @@ public class InstallSeedStep implements ManagementDataStep {
         try {
             User sysadmin = userService.findUserByEmail(SYSADMIN_EMAIL);
             if (sysadmin == null) {
-                return adminService.createAdmin(AdminDto.fromEmail(SYSADMIN_EMAIL), false);
+                sysadmin = adminService.createAdmin(AdminDto.builder().email(SYSADMIN_EMAIL)
+                        .password(hasAdminPassword() ? adminPassword : null).build(), false);
+                markIfOnDefaultPassword(sysadmin);
+                return sysadmin;
             }
             UserCredentials credentials = userService.findUserCredentialsByUserId(sysadmin.getId());
             if (credentials == null) {
@@ -139,9 +187,26 @@ public class InstallSeedStep implements ManagementDataStep {
                         SYSADMIN_EMAIL);
                 adminService.activateAdminCredentials(credentials);
             }
+            markIfOnDefaultPassword(sysadmin);
             return sysadmin;
         } catch (ThingsboardException | RuntimeException e) {
             throw new IllegalStateException("Failed to seed the sysadmin " + SYSADMIN_EMAIL + ": " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Runs for every sysadmin the seed returns: a new one, one whose credentials were just activated with the default
+     * password, and one that a seed stopped halfway left. The credentials are read again, as the activation saves them.
+     */
+    private void markIfOnDefaultPassword(User sysadmin) {
+        if (userService.isPasswordChangeRequired(sysadmin.getId())) {
+            return;
+        }
+        UserCredentials credentials = userService.findUserCredentialsByUserId(sysadmin.getId());
+        if (credentials != null && !StringUtils.isEmpty(credentials.getPassword())
+                && passwordEncoder.matches(AdminServiceImpl.SYSADMIN_PASSWORD, credentials.getPassword())) {
+            userService.markPasswordChangeRequired(sysadmin.getId());
+            log.info("The sysadmin {} is still on the default password, it must choose another one at the first sign-in", SYSADMIN_EMAIL);
         }
     }
 

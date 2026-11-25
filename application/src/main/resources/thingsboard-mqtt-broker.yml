@@ -1325,6 +1325,12 @@ standalone:
     # from memory to the store in one batch. They are also written on a graceful shutdown, so a broker that is killed
     # loses at most one interval of them. Must be above 0. Defaults to 10 min (600000 ms).
     client-latest-flush-interval-ms: "${STANDALONE_STATS_CLIENT_LATEST_FLUSH_INTERVAL_MS:600000}"
+  security:
+    # Password of the sysadmin (sysadmin@thingsboard.org), read once, at the first start over an empty store. It must meet
+    # the password policy (at least 6 characters by default) and must not be `sysadmin`, otherwise the first start fails.
+    # A store that was set up before ignores it, so it does not change an existing password.
+    # If empty or blank, the sysadmin gets the default password `sysadmin` and must change it at the first sign-in.
+    admin-password: "${TBMQ_ADMIN_PASSWORD:}"
 
 # Statistics parameters
 stats:
