@@ -143,7 +143,6 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
   }
 
   private propagateChangePending = false;
-  private clientTypeResetPending = false;
   private propagateChange = (v: any) => { };
 
   constructor(private fb: UntypedFormBuilder,
@@ -236,20 +235,10 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
   }
 
   private hasForbiddenClientType(value: JwtMqttAuthProviderConfiguration): boolean {
-    return value.defaultClientType !== ClientType.DEVICE || Object.keys(value.clientTypeClaims ?? {}).length > 0;
+    return value.defaultClientType === ClientType.APPLICATION || Object.keys(value.clientTypeClaims ?? {}).length > 0;
   }
 
-  private scheduleClientTypeReset() {
-    if (this.clientTypeResetPending) {
-      setTimeout(() => this.applyClientTypeReset(), 0);
-    }
-  }
-
-  private applyClientTypeReset() {
-    if (!this.clientTypeResetPending || this.disabled) {
-      return;
-    }
-    this.clientTypeResetPending = false;
+  protected resetClientType() {
     this.jwtConfigForm.patchValue({defaultClientType: ClientType.DEVICE, clientTypeClaims: null}, {emitEvent: false});
     this.updateModels(this.jwtConfigForm.getRawValue());
   }

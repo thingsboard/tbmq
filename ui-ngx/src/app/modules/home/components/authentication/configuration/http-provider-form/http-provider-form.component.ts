@@ -159,7 +159,6 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
   });
 
   private propagateChangePending = false;
-  private clientTypeResetPending = false;
   private propagateChange = (v: any) => { };
 
   constructor(protected fb: UntypedFormBuilder,
@@ -193,7 +192,7 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
         }
       }
       // The edition has no APPLICATION clients: a stored APPLICATION default is saved back as DEVICE once the form becomes editable.
-      this.clientTypeResetPending = !this.clientTypeConfigurable && value.defaultClientType !== ClientType.DEVICE;
+      this.clientTypeResetPending = !this.clientTypeConfigurable && value.defaultClientType === ClientType.APPLICATION;
       this.httpProviderConfigForm.reset(value, {emitEvent: false});
       this.scheduleClientTypeReset();
     } else {
@@ -229,17 +228,7 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
     };
   }
 
-  private scheduleClientTypeReset() {
-    if (this.clientTypeResetPending) {
-      setTimeout(() => this.applyClientTypeReset(), 0);
-    }
-  }
-
-  private applyClientTypeReset() {
-    if (!this.clientTypeResetPending || this.disabled) {
-      return;
-    }
-    this.clientTypeResetPending = false;
+  protected resetClientType() {
     this.httpProviderConfigForm.patchValue({defaultClientType: ClientType.DEVICE}, {emitEvent: false});
     this.updateModels(this.httpProviderConfigForm.getRawValue());
   }

@@ -25,6 +25,24 @@ export abstract class MqttAuthenticationProviderForm implements OnDestroy {
 
   protected destroy$ = new Subject<void>();
 
+  // Set by a subclass when the stored value holds a client type the edition does not allow (e.g. APPLICATION in Lite).
+  protected clientTypeResetPending = false;
+
+  // Resets the stored client type once the form is editable, so that view mode never marks the parent form dirty.
+  protected scheduleClientTypeReset() {
+    if (this.clientTypeResetPending) {
+      setTimeout(() => {
+        if (this.clientTypeResetPending && !this.disabled) {
+          this.clientTypeResetPending = false;
+          this.resetClientType();
+        }
+      }, 0);
+    }
+  }
+
+  // Overridden by the forms that carry a client type.
+  protected resetClientType(): void { }
+
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
