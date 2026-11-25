@@ -26,9 +26,11 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MvcResult;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportColumnType;
 import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportRequest;
 import org.thingsboard.mqtt.broker.common.data.importing.csv.BulkImportResult;
+import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
@@ -66,6 +68,10 @@ public class CredentialsCsvGoldenImportControllerTest extends AbstractController
     @Before
     public void login() throws Exception {
         loginSysAdmin();
+        // the store may hold credentials of other tests: the export must hold the golden rows only
+        mqttClientCredentialsService.findByCredentialsType(ClientCredentialsType.MQTT_BASIC).stream()
+                .filter(c -> !BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME.equals(c.getName()))
+                .forEach(c -> mqttClientCredentialsService.deleteCredentials(c.getId()));
     }
 
     @After
@@ -99,7 +105,7 @@ public class CredentialsCsvGoldenImportControllerTest extends AbstractController
     }
 
     @Test
-    public void givenGoldenCsv_whenImportedAndExported_thenEveryGoldenLineIsInTheExport() throws Exception {
+    public void givenGoldenCsv_whenImportedAndExported_thenTheExportIsTheGoldenFile() throws Exception {
         String golden = readGolden();
         importGolden();
 
@@ -109,11 +115,7 @@ public class CredentialsCsvGoldenImportControllerTest extends AbstractController
         assertThat(response.getHeader(HttpHeaders.CONTENT_DISPOSITION)).isEqualTo("attachment; filename=mqtt-client-credentials.csv");
         assertThat(response.getHeader(HttpHeaders.CACHE_CONTROL)).isEqualTo("no-store");
         assertThat(response.getContentType()).startsWith("text/csv").containsIgnoringCase("charset=UTF-8");
-        // credentials of other tests may be in the export too, so the lines are looked up, not compared as a whole
-        List<String> exportedLines = List.of(response.getContentAsString(StandardCharsets.UTF_8).split("\r\n"));
-        List<String> goldenLines = List.of(golden.split("\r\n"));
-        assertThat(goldenLines).hasSizeGreaterThan(1);
-        assertThat(exportedLines).containsAll(goldenLines);
+        assertThat(response.getContentAsByteArray()).isEqualTo(golden.getBytes(StandardCharsets.UTF_8));
     }
 
     private List<List<String>> importGolden() throws Exception {
