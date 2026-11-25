@@ -24,6 +24,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { MatButton } from '@angular/material/button';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { FormsModule } from '@angular/forms';
+import { ConfigService } from '@core/http/config.service';
 import { GettingStartedHomeComponent } from '@home/components/getting-started/getting-started-home.component';
 
 @Component({
@@ -36,7 +37,12 @@ export class GettingStartedGuideDialogComponent extends DialogComponent<GettingS
 
   notShowAgain = false;
 
-  constructor(protected store: Store<AppState>, protected router: Router, public dialogRef: MatDialogRef<GettingStartedGuideDialogComponent>) {
+  isLite = this.configService.brokerConfig?.edition === 'lite';
+
+  constructor(protected store: Store<AppState>,
+              protected router: Router,
+              public dialogRef: MatDialogRef<GettingStartedGuideDialogComponent>,
+              private configService: ConfigService) {
     super(store, router, dialogRef);
   }
 

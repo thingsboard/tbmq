@@ -16,14 +16,16 @@
 
 -->
 <div class="welcome-dialog">
-  <div class="welcome-bg">
-    <div class="welcome-img"></div>
-  </div>
+  @if (!isLite) {
+    <div class="welcome-bg">
+      <div class="welcome-img"></div>
+    </div>
+  }
   <div class="welcome-container">
     <div class="welcome-content">
       <div class="flex flex-col gap-4">
-        <div class="request-feature-title">{{ 'getting-started.guide.getting-started-dialog-title' | translate }}</div>
-        <div class="request-feature-text">{{ 'getting-started.guide.getting-started-dialog-text' | translate }}</div>
+        <div class="request-feature-title">{{ (isLite ? 'getting-started.guide.getting-started-dialog-title-lite' : 'getting-started.guide.getting-started-dialog-title') | translate }}</div>
+        <div class="request-feature-text">{{ (isLite ? 'getting-started.guide.getting-started-dialog-text-lite' : 'getting-started.guide.getting-started-dialog-text') | translate }}</div>
       </div>
       <div class="flex flex-col gap-4">
         <div class="get-started-title">{{ 'getting-started.guide.getting-started-dialog-guide' | translate }}</div>
