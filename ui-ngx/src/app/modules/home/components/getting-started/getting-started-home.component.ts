@@ -25,6 +25,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { ClientType } from '@shared/models/client.model';
+import { isCapabilityEnabled } from '@core/utils/capability.utils';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
@@ -83,7 +84,19 @@ export class GettingStartedHomeComponent implements OnInit {
 
   ngOnInit() {
     const basicAuthEnabled = this.configParams.basicAuthEnabled;
-    this.steps = getGettingStartedSteps(basicAuthEnabled);
+    this.steps = getGettingStartedSteps(basicAuthEnabled, this.applicationClients);
+  }
+
+  private get applicationClients(): boolean {
+    return isCapabilityEnabled(this.configParams.capabilities, 'applicationClients');
+  }
+
+  private get subscriberClientType(): ClientType {
+    return this.applicationClients ? ClientType.APPLICATION : ClientType.DEVICE;
+  }
+
+  private get subscriberUsername(): string {
+    return this.applicationClients ? 'tbmq_app' : 'tbmq_sub';
   }
 
   selectStep(event: any) {
@@ -96,7 +109,7 @@ export class GettingStartedHomeComponent implements OnInit {
 
     switch (stepId) {
       case GettingStartedStepId.SUBSCRIBE:
-        return gettingStartedStepCommands[GettingStartedStepId.SUBSCRIBE](this.randomClientId, mqttHost, mqttPort);
+        return gettingStartedStepCommands[GettingStartedStepId.SUBSCRIBE](this.randomClientId, mqttHost, mqttPort, this.subscriberUsername);
       case GettingStartedStepId.PUBLISH:
         return gettingStartedStepCommands[GettingStartedStepId.PUBLISH](mqttHost, mqttPort);
       default:
@@ -107,6 +120,7 @@ export class GettingStartedHomeComponent implements OnInit {
   handleButtonAction(action: GettingStartedButtonAction) {
     switch (action) {
       case GettingStartedButtonAction.ADD_APP_CREDENTIALS:
+      case GettingStartedButtonAction.ADD_SUBSCRIBER_CREDENTIALS:
         this.addClientCredentials(action);
         break;
       case GettingStartedButtonAction.ADD_DEVICE_CREDENTIALS:
@@ -153,6 +167,20 @@ export class GettingStartedHomeComponent implements OnInit {
           }
         })
       };
+    } else if (stepType === GettingStartedButtonAction.ADD_SUBSCRIBER_CREDENTIALS) {
+      config.demoData = {
+        name: 'TBMQ Subscriber Demo',
+        clientType: ClientType.DEVICE,
+        credentialsType: CredentialsType.MQTT_BASIC,
+        credentialsValue: JSON.stringify({
+          userName: 'tbmq_sub',
+          password: 'tbmq_sub',
+          authRules: {
+            pubAuthRulePatterns: ['.*'],
+            subAuthRulePatterns: ['.*']
+          }
+        })
+      };
     }
     const $entity = this.dialog.open<ClientCredentialsWizardDialogComponent, AddEntityDialogData<ClientCredentials>,
       ClientCredentials>(ClientCredentialsWizardDialogComponent, {
@@ -184,7 +212,7 @@ export class GettingStartedHomeComponent implements OnInit {
     const targetRoute = '/sessions';
     const queryParams = {
       connectedStatusList: [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED],
-      clientTypeList: [ClientType.APPLICATION],
+      clientTypeList: [this.subscriberClientType],
       clientId: this.randomClientId,
       openSession: true
     };

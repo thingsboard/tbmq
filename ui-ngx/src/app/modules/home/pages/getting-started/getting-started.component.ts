@@ -44,6 +44,10 @@ export class GettingStartedComponent implements OnInit, AfterViewInit {
 
   currentReleaseVersion: string;
 
+  infoTextKey = this.configService.brokerConfig?.edition === 'lite'
+    ? 'getting-started.info-text-lite'
+    : 'getting-started.guide.info-text';
+
   guides = gettingStartedGuides;
   docs = gettingStartedDocs;
   actionsDeveloper = gettingStartedActionsDeveloper;
