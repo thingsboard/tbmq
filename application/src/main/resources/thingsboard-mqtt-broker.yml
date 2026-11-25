@@ -1331,6 +1331,10 @@ standalone:
     # A store that was set up before ignores it, so it does not change an existing password.
     # If empty or blank, the sysadmin gets the default password `sysadmin` and must change it at the first sign-in.
     admin-password: "${TBMQ_ADMIN_PASSWORD:}"
+    # Token that protects the actuator endpoints in the standalone edition. A request to every endpoint except health and the
+    # /actuator links page must carry `Authorization: Bearer <token>` (the scheme is case-sensitive), otherwise it gets 401.
+    # If empty or blank, there is no token: info and prometheus are refused whatever METRICS_ENDPOINTS_EXPOSE lists.
+    metrics-token: "${TBMQ_METRICS_TOKEN:}"
 
 # Statistics parameters
 stats:

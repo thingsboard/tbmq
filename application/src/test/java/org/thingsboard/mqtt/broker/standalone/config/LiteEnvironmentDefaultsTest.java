@@ -56,7 +56,7 @@ import static org.mockito.Mockito.verify;
 class LiteEnvironmentDefaultsTest {
 
     private static final String SOURCE_NAME = "tbmqLiteDefaults";
-    private static final String WAITS_SOURCE_NAME = "tbmqLiteShutdownWaits";
+    private static final String WAITS_SOURCE_NAME = "tbmqLiteBelowYmlDefaults";
 
     private static final String GRACEFUL_PROPERTY = ThingsBoardExecutors.GRACEFUL_SHUTDOWN_TIMEOUT_PROPERTY;
     private static final String GRACEFUL_ENV = ThingsBoardExecutors.GRACEFUL_SHUTDOWN_TIMEOUT_ENV;
@@ -395,7 +395,7 @@ class LiteEnvironmentDefaultsTest {
         new LiteEnvironmentDefaults(destination -> log).postProcessEnvironment(new MockEnvironment(), appWithMarker("lite"));
 
         // the waits source goes last, so the file's 15000 / 1m / 5 would win: say so instead of failing silently
-        verify(log, times(1)).info(argThat(message -> message.toString().contains("shutdown waits are not applied")
+        verify(log, times(1)).info(argThat(message -> message.toString().contains("Lite defaults are not applied")
                 && message.toString().contains("thingsboard-mqtt-broker.yml")));
     }
 
@@ -414,8 +414,8 @@ class LiteEnvironmentDefaultsTest {
         PropertySource<?> yml = env.getPropertySources().get(brokerYmlSourceName(env));
 
         // a renamed key or variable would make the wait silently stop applying, or ignore the documented variable
-        assertThat(LiteEnvironmentDefaults.SHUTDOWN_WAITS).hasSize(6);
-        for (LiteEnvironmentDefaults.ShutdownWait wait : LiteEnvironmentDefaults.SHUTDOWN_WAITS) {
+        assertThat(LiteEnvironmentDefaults.BELOW_YML_DEFAULTS).hasSize(7);
+        for (LiteEnvironmentDefaults.BelowYmlDefault wait : LiteEnvironmentDefaults.BELOW_YML_DEFAULTS) {
             assertThat(yml.getProperty(wait.key())).as(wait.key()).hasToString(wait.shippedValue());
         }
     }
@@ -439,6 +439,35 @@ class LiteEnvironmentDefaultsTest {
         verify(log, times(1)).info(argThat(message -> message.toString().contains("actors.system.disconnect-wait-timeout-ms")
                 && message.toString().contains("listener.tcp.netty.shutdown_timeout")
                 && !message.toString().contains("listener.ssl.netty.shutdown_timeout")));
+    }
+
+    @Test
+    void liteShowsHealthDetailsUnlessTheVariableSaysOtherwise() {
+        var lite = new MockEnvironment();
+        new LiteEnvironmentDefaults().postProcessEnvironment(lite, appWithMarker("lite"));
+        assertThat(lite.getProperty("management.endpoint.health.show-details")).isEqualTo("always");
+
+        var never = new MockEnvironment().withProperty("HEALTH_SHOW_DETAILS", "never");
+        new LiteEnvironmentDefaults().postProcessEnvironment(never, appWithMarker("lite"));
+        assertThat(never.getProperty("management.endpoint.health.show-details")).isEqualTo("never");
+
+        var blank = new MockEnvironment().withProperty("HEALTH_SHOW_DETAILS", " ");
+        new LiteEnvironmentDefaults().postProcessEnvironment(blank, appWithMarker("lite"));
+        assertThat(blank.getProperty("management.endpoint.health.show-details")).isEqualTo("always");
+
+        var cluster = new MockEnvironment();
+        new LiteEnvironmentDefaults().postProcessEnvironment(cluster, appWithMarker("cluster"));
+        assertThat(cluster.getProperty("management.endpoint.health.show-details")).isNull();
+    }
+
+    @Test
+    void givenTheShippedBrokerYml_whenLiteStarts_thenHealthDetailsAreAlwaysAndTheClusterDefaultIsNever() {
+        var cluster = environmentWithBrokerYml();
+        assertThat(cluster.getProperty("management.endpoint.health.show-details")).isEqualTo("never");
+
+        var lite = environmentWithBrokerYml();
+        new LiteEnvironmentDefaults().postProcessEnvironment(lite, appWithMarker("lite"));
+        assertThat(lite.getProperty("management.endpoint.health.show-details")).isEqualTo("always");
     }
 
     @Test
