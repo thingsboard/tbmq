@@ -45,6 +45,7 @@ import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 import org.thingsboard.mqtt.broker.service.user.AdminServiceImpl;
 
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
@@ -53,9 +54,10 @@ import java.util.UUID;
  * WebSocket connection, through the same services and the same defaults as {@link DefaultSystemDataLoaderService}.
  * <p>
  * The sysadmin gets the password of {@code TBMQ_ADMIN_PASSWORD} ({@code standalone.security.admin-password}) when it is
- * set, and the default one otherwise. A sysadmin that is left on the default password is marked, so that it must choose
- * another one before it can sign in. The variable is read only by a seed that has not been finished: a store seeded
- * before ignores it, and nothing is marked there.
+ * set, and the default one otherwise, also when a seed that stopped halfway left the sysadmin without a password. A
+ * sysadmin that is left on the default password is marked, so that it must choose another one before it can sign in.
+ * The variable is read only by a seed that has not been finished and only while the sysadmin has no password: a store
+ * seeded before ignores it, and nothing is marked there.
  * <p>
  * Each step skips what the store already holds and the marker is written last, so a seed that stops halfway is
  * finished on the next start without duplicates.
@@ -67,6 +69,7 @@ import java.util.UUID;
 public class InstallSeedStep implements ManagementDataStep {
 
     private static final String SYSADMIN_EMAIL = DefaultSystemDataLoaderService.SYSADMIN_EMAIL;
+    private static final int BCRYPT_MAX_PASSWORD_BYTES = 72;
 
     private final StoreSeedState seedState;
     private final AdminSettingsService adminSettingsService;
@@ -123,7 +126,7 @@ public class InstallSeedStep implements ManagementDataStep {
     }
 
     /**
-     * Checked before the first write, so that a refused value stops the first start with nothing in the store. The
+     * Checked before the first write, so that a refused value stops the first start before anything is written. The
      * admin settings are seeded afterwards and hold no security settings, so the password policy is the one of the
      * security settings that the store has, or else the default one. The value is never put in a message.
      */
@@ -133,6 +136,10 @@ public class InstallSeedStep implements ManagementDataStep {
         }
         if (AdminServiceImpl.SYSADMIN_PASSWORD.equals(adminPassword)) {
             throw new IllegalStateException("TBMQ_ADMIN_PASSWORD must not be the default password");
+        }
+        // the policy counts characters, BCrypt refuses more than 72 bytes
+        if (adminPassword.getBytes(StandardCharsets.UTF_8).length > BCRYPT_MAX_PASSWORD_BYTES) {
+            throw new IllegalStateException("TBMQ_ADMIN_PASSWORD must not be longer than " + BCRYPT_MAX_PASSWORD_BYTES + " bytes in UTF-8");
         }
         try {
             systemSecurityService.validatePasswordByPolicy(adminPassword, systemSecurityService.getSecuritySettings().getPasswordPolicy());
@@ -178,22 +185,33 @@ public class InstallSeedStep implements ManagementDataStep {
                 markIfOnDefaultPassword(sysadmin);
                 return sysadmin;
             }
-            if (hasAdminPassword()) {
-                log.info("TBMQ_ADMIN_PASSWORD is ignored: the sysadmin exists");
-            }
             UserCredentials credentials = userService.findUserCredentialsByUserId(sysadmin.getId());
             if (credentials == null) {
-                log.warn("The sysadmin {} has no credentials, creating them with the default password", SYSADMIN_EMAIL);
-                adminService.activateAdminCredentials(userService.createUserCredentials(sysadmin.getId()));
+                log.warn("The sysadmin {} has no credentials, creating them with {}", SYSADMIN_EMAIL, repairedPasswordName());
+                activate(userService.createUserCredentials(sysadmin.getId()));
             } else if (!credentials.isEnabled() && StringUtils.isEmpty(credentials.getPassword())) {
-                log.warn("The sysadmin {} has inactive credentials without a password, activating them with the default password",
-                        SYSADMIN_EMAIL);
-                adminService.activateAdminCredentials(credentials);
+                log.warn("The sysadmin {} has inactive credentials without a password, activating them with {}",
+                        SYSADMIN_EMAIL, repairedPasswordName());
+                activate(credentials);
+            } else if (hasAdminPassword()) {
+                log.info("TBMQ_ADMIN_PASSWORD is ignored: the sysadmin exists");
             }
             markIfOnDefaultPassword(sysadmin);
             return sysadmin;
         } catch (ThingsboardException | RuntimeException e) {
             throw new IllegalStateException("Failed to seed the sysadmin " + SYSADMIN_EMAIL + ": " + e.getMessage(), e);
+        }
+    }
+
+    private String repairedPasswordName() {
+        return hasAdminPassword() ? "the password of TBMQ_ADMIN_PASSWORD" : "the default password";
+    }
+
+    private void activate(UserCredentials credentials) {
+        if (hasAdminPassword()) {
+            adminService.activateAdminCredentials(credentials, adminPassword);
+        } else {
+            adminService.activateAdminCredentials(credentials);
         }
     }
 

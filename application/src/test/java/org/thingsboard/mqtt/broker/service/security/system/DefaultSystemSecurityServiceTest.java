@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.dao.store.StoreFullException;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.security.exception.UserPasswordExpiredException;
+import org.thingsboard.mqtt.broker.service.user.AdminServiceImpl;
 
 import java.util.UUID;
 
@@ -38,7 +39,7 @@ import static org.mockito.Mockito.when;
 
 class DefaultSystemSecurityServiceTest {
 
-    private static final String PASSWORD = "sysadmin";
+    private static final String PASSWORD = AdminServiceImpl.SYSADMIN_PASSWORD;
 
     private final UserService userService = mock(UserService.class);
     private final BCryptPasswordEncoder encoder = mock(BCryptPasswordEncoder.class);
@@ -106,7 +107,7 @@ class DefaultSystemSecurityServiceTest {
         when(encoder.matches("Current-pass1", "hash")).thenReturn(true);
         when(userService.isPasswordChangeRequired(credentials.getUserId())).thenReturn(true);
 
-        assertThatThrownBy(() -> service.validateRequiredPasswordChange("sysadmin", credentials))
+        assertThatThrownBy(() -> service.validateRequiredPasswordChange(AdminServiceImpl.SYSADMIN_PASSWORD, credentials))
                 .isInstanceOf(DataValidationException.class)
                 .hasMessage("Choose a password other than the default and the current one");
         assertThatThrownBy(() -> service.validateRequiredPasswordChange("Current-pass1", credentials))
@@ -121,7 +122,7 @@ class DefaultSystemSecurityServiceTest {
         UserCredentials credentials = enabledCredentials();
         when(userService.isPasswordChangeRequired(credentials.getUserId())).thenReturn(false);
 
-        assertThatCode(() -> service.validateRequiredPasswordChange("sysadmin", credentials))
+        assertThatCode(() -> service.validateRequiredPasswordChange(AdminServiceImpl.SYSADMIN_PASSWORD, credentials))
                 .doesNotThrowAnyException();
     }
 

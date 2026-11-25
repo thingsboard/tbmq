@@ -55,6 +55,22 @@ class AdminServiceImplTest {
     }
 
     @Test
+    void disabledCredentialsAreActivatedWithTheGivenPassword() {
+        UserCredentials credentials = new UserCredentials();
+        credentials.setId(UUID.randomUUID());
+        credentials.setUserId(UUID.randomUUID());
+        credentials.setEnabled(false);
+        credentials.setActivateToken("token");
+
+        adminService.activateAdminCredentials(credentials, "Str0ng-pass");
+
+        ArgumentCaptor<UserCredentials> saved = ArgumentCaptor.forClass(UserCredentials.class);
+        verify(userService).saveUserCredentials(saved.capture());
+        assertThat(saved.getValue().isEnabled()).isTrue();
+        assertThat(passwordEncoder.matches("Str0ng-pass", saved.getValue().getPassword())).isTrue();
+    }
+
+    @Test
     void enabledCredentialsAreRefused() {
         UserCredentials credentials = new UserCredentials();
         credentials.setUserId(UUID.randomUUID());

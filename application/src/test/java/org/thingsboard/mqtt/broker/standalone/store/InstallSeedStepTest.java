@@ -399,6 +399,67 @@ class InstallSeedStepTest {
     }
 
     @Test
+    void aPasswordOverTheBCryptByteLimitFailsFirstStartNamingTheVariable() {
+        // 40 characters pass the 72-character policy, 80 bytes in UTF-8 do not fit BCrypt
+        String longPassword = "ж".repeat(40);
+
+        assertThatThrownBy(() -> stepWithAdminPassword(longPassword).apply())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("TBMQ_ADMIN_PASSWORD must not be longer than 72 bytes in UTF-8");
+        verifyNoInteractions(adminSettingsService, adminService);
+        verify(seedState, never()).markSeeded();
+    }
+
+    @Test
+    void aSysadminWithoutCredentialsGetsTheVariablesPasswordAndNoMark() throws ThingsboardException {
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(null);
+        UserCredentials created = disabledCredentials(sysadmin.getId());
+        when(userService.createUserCredentials(sysadmin.getId())).thenReturn(created);
+        doAnswer(invocation -> {
+            when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("Str0ng-pass"));
+            return null;
+        }).when(adminService).activateAdminCredentials(created, "Str0ng-pass");
+        when(mqttClientCredentialsService.saveSystemWebSocketCredentials()).thenReturn(systemCredentials);
+
+        stepWithAdminPassword("Str0ng-pass").apply();
+
+        verify(adminService).activateAdminCredentials(created, "Str0ng-pass");
+        verify(adminService, never()).activateAdminCredentials(any());
+        verify(userService, never()).markPasswordChangeRequired(any());
+        verify(seedState).markSeeded();
+    }
+
+    @Test
+    void aSysadminWithDisabledCredentialsAndNoPasswordGetsTheVariablesPasswordAndNoMark() throws ThingsboardException {
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        UserCredentials disabled = disabledCredentials(sysadmin.getId());
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(disabled);
+        doAnswer(invocation -> {
+            when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("Str0ng-pass"));
+            return null;
+        }).when(adminService).activateAdminCredentials(disabled, "Str0ng-pass");
+        when(mqttClientCredentialsService.saveSystemWebSocketCredentials()).thenReturn(systemCredentials);
+        Logger logger = (Logger) LoggerFactory.getLogger(InstallSeedStep.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            stepWithAdminPassword("Str0ng-pass").apply();
+        } finally {
+            logger.detachAppender(appender);
+        }
+
+        verify(adminService).activateAdminCredentials(disabled, "Str0ng-pass");
+        verify(adminService, never()).activateAdminCredentials(any());
+        verify(userService, never()).markPasswordChangeRequired(any());
+        verify(seedState).markSeeded();
+        assertThat(appender.list).extracting(ILoggingEvent::getFormattedMessage)
+                .noneMatch(message -> message.contains("Str0ng-pass"))
+                .noneMatch(message -> message.contains("is ignored"));
+    }
+
+    @Test
     void aSetVariableIsIgnoredWithOneInfoWhenTheSysadminExists() throws ThingsboardException {
         when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
         when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("Str0ng-pass"));

@@ -148,8 +148,12 @@ public class FirstStartLiteTest extends AbstractControllerTest {
         }
     }
 
+    /**
+     * The seeded credentials are enabled and hold the default password. The setup clears the mark first, so this is not
+     * the first sign-in of a fresh store, which {@code ForcedPasswordChangeLiteTest} checks is refused.
+     */
     @Test
-    public void theSeededSysadminCanLogIn() throws Exception {
+    public void theSeededSysadminHoldsTheDefaultPasswordOnceTheMarkIsCleared() throws Exception {
         doPost("/api/auth/login", new LoginRequest("sysadmin@thingsboard.org", "sysadmin")).andExpect(status().isOk());
     }
 

@@ -47,11 +47,16 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public void activateAdminCredentials(UserCredentials userCredentials) {
+        activateAdminCredentials(userCredentials, SYSADMIN_PASSWORD);
+    }
+
+    @Override
+    public void activateAdminCredentials(UserCredentials userCredentials, String password) {
         if (userCredentials.isEnabled() || !StringUtils.isEmpty(userCredentials.getPassword())) {
             throw new IllegalStateException("The credentials of the user " + userCredentials.getUserId()
-                    + " are already active or have a password, refusing to overwrite them with the default password");
+                    + " are already active or have a password, refusing to overwrite them");
         }
-        updateUserCredentials(userCredentials, SYSADMIN_PASSWORD);
+        updateUserCredentials(userCredentials, password);
     }
 
     private User createAdmin(AdminDto adminDto, String sysadminPassword, boolean saveDefaultWsConnection) throws ThingsboardException {

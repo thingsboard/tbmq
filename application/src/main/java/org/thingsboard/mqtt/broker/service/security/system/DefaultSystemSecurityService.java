@@ -48,6 +48,7 @@ import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.security.exception.UserPasswordExpiredException;
+import org.thingsboard.mqtt.broker.service.user.AdminServiceImpl;
 import org.thingsboard.mqtt.broker.util.MiscUtils;
 
 import java.util.ArrayList;
@@ -61,8 +62,6 @@ import static org.thingsboard.mqtt.broker.common.data.SysAdminSettingType.GENERA
 @Service
 @RequiredArgsConstructor
 public class DefaultSystemSecurityService implements SystemSecurityService {
-
-    private static final String DEFAULT_PASSWORD = "sysadmin";
 
     private final UserService userService;
     private final BCryptPasswordEncoder encoder;
@@ -166,7 +165,7 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
         if (!userService.isPasswordChangeRequired(userCredentials.getUserId())) {
             return;
         }
-        if (DEFAULT_PASSWORD.equals(newPassword) || encoder.matches(newPassword, userCredentials.getPassword())) {
+        if (AdminServiceImpl.SYSADMIN_PASSWORD.equals(newPassword) || encoder.matches(newPassword, userCredentials.getPassword())) {
             throw new DataValidationException("Choose a password other than the default and the current one");
         }
     }
