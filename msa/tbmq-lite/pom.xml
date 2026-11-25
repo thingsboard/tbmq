@@ -178,4 +178,53 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <!--
+                The inherited profile pushes the image for amd64 and arm64 and tags latest unconditionally. Here both of its
+                executions are switched off and docker/push-multiarch.sh runs instead: the version tag always, latest only
+                for a plain release version, so that a pre-release (-beta, -rc1) never moves latest.
+            -->
+            <id>push-docker-amd-arm-images</id>
+            <activation>
+                <property>
+                    <name>push-docker-amd-arm-images</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>push-latest-docker-amd-arm-images</id>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>push-version-docker-amd-arm-images</id>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>push-lite-docker-amd-arm-images</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>bash</executable>
+                                    <workingDirectory>${project.build.directory}</workingDirectory>
+                                    <arguments>
+                                        <argument>push-multiarch.sh</argument>
+                                        <argument>${docker.repo}/tbmq-lite</argument>
+                                        <argument>${project.version}</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

@@ -153,6 +153,7 @@
                         <tbmq.openapi-lite.spec.path>${project.basedir}/../api/openapi-lite.json</tbmq.openapi-lite.spec.path>
                         <tbmq.fixtures.schema-1.path>${project.basedir}/../dao-rocksdb/src/test/resources/fixtures/schema-1/db</tbmq.fixtures.schema-1.path>
                         <tbmq.lite.start-script>${project.basedir}/../msa/tbmq-lite/docker/start-tbmq-lite.sh</tbmq.lite.start-script>
+                        <tbmq.lite.push-script>${project.basedir}/../msa/tbmq-lite/docker/push-multiarch.sh</tbmq.lite.push-script>
                     </systemPropertyVariables>
                     <includes>
                         <include>**/*Test.java</include>
