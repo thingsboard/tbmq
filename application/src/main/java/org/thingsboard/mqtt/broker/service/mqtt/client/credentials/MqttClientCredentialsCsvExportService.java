@@ -89,10 +89,10 @@ public class MqttClientCredentialsCsvExportService {
 
     private List<String> toRow(MqttClientCredentials credentials, boolean includePasswordHashes, char delimiter) {
         String name = credentials.getName();
-        if (name.indexOf('\r') >= 0 || name.indexOf('\n') >= 0) {
-            throw new DataValidationException(String.format("Credentials '%s' have a line break in the name", name));
-        }
+        checkNoLineBreak(name, name, "the name");
         BasicMqttCredentials basic = MqttClientCredentialsUtil.getMqttCredentials(credentials, BasicMqttCredentials.class);
+        checkNoLineBreak(name, basic.getClientId(), "the client id");
+        checkNoLineBreak(name, basic.getUserName(), "the username");
         PubSubAuthorizationRules rules = basic.getAuthRules();
         return List.of(
                 name,
@@ -111,9 +111,14 @@ public class MqttClientCredentialsCsvExportService {
             return "";
         }
         for (String pattern : patterns) {
+            checkNoLineBreak(name, pattern, "an auth rule pattern");
             if (pattern.indexOf(delimiter) >= 0) {
                 throw new DataValidationException(String.format(
                         "Credentials '%s' have an auth rule pattern containing '%s': export with another auth rules delimiter", name, delimiter));
+            }
+            if (pattern.isEmpty()) {
+                throw new DataValidationException(String.format(
+                        "Credentials '%s' have an empty auth rule pattern, which the import drops", name));
             }
             if (!pattern.equals(pattern.trim())) {
                 throw new DataValidationException(String.format(
@@ -121,6 +126,12 @@ public class MqttClientCredentialsCsvExportService {
             }
         }
         return String.join(String.valueOf(delimiter), patterns);
+    }
+
+    private static void checkNoLineBreak(String credentialsName, String value, String what) {
+        if (value != null && (value.indexOf('\r') >= 0 || value.indexOf('\n') >= 0)) {
+            throw new DataValidationException(String.format("Credentials '%s' have a line break in %s", credentialsName, what));
+        }
     }
 
     private String description(MqttClientCredentials credentials) {

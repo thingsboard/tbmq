@@ -496,6 +496,15 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
         }
     }
 
+    @Test
+    public void givenUnusableAuthRulesDelimiter_whenExport_thenBadRequest() throws Exception {
+        for (String delimiter : List.of("\n", "\r", ",", "\"", "ab")) {
+            doGet("/api/mqtt/client/credentials/export?authRulesDelimiter={delimiter}", delimiter)
+                    .andExpect(status().isBadRequest())
+                    .andExpect(statusReason(org.hamcrest.Matchers.containsString("authRulesDelimiter")));
+        }
+    }
+
     private void connectAndDisconnect(String username, String password) throws MqttException {
         MqttClient client = new MqttClient(SERVER_URI + mqttPort, "importedHashClient", null);
         try {

@@ -133,6 +133,34 @@ class MqttClientCredentialsCsvExportServiceTest {
     }
 
     @Test
+    void refusesAnEmptyPattern() {
+        MqttClientCredentials ok = credentials("ok", null, "ok-id", null, null, List.of(".*"), List.of(".*"));
+
+        assertRefused(ok, credentials("empty-sub", null, "e-id", null, null, List.of("a/#", ""), List.of(".*")),
+                "Credentials 'empty-sub' have an empty auth rule pattern, which the import drops");
+        assertRefused(ok, credentials("empty-pub", null, "e-id", null, null, List.of(".*"), List.of("")),
+                "Credentials 'empty-pub' have an empty auth rule pattern, which the import drops");
+    }
+
+    @Test
+    void refusesLineBreaksInTheClientIdTheUsernameAndPatterns() {
+        MqttClientCredentials ok = credentials("ok", null, "ok-id", null, null, List.of(".*"), List.of(".*"));
+
+        assertRefused(ok, credentials("id-lf", null, "a\nb", null, null, List.of(".*"), List.of(".*")),
+                "Credentials 'id-lf' have a line break in the client id");
+        assertRefused(ok, credentials("id-cr", null, "a\rb", null, null, List.of(".*"), List.of(".*")),
+                "Credentials 'id-cr' have a line break in the client id");
+        assertRefused(ok, credentials("user-lf", null, null, "a\nb", null, List.of(".*"), List.of(".*")),
+                "Credentials 'user-lf' have a line break in the username");
+        assertRefused(ok, credentials("user-cr", null, null, "a\rb", null, List.of(".*"), List.of(".*")),
+                "Credentials 'user-cr' have a line break in the username");
+        assertRefused(ok, credentials("sub-lf", null, "s-id", null, null, List.of("a\nb"), List.of(".*")),
+                "Credentials 'sub-lf' have a line break in an auth rule pattern");
+        assertRefused(ok, credentials("pub-cr", null, "p-id", null, null, List.of(".*"), List.of("a\rb")),
+                "Credentials 'pub-cr' have a line break in an auth rule pattern");
+    }
+
+    @Test
     void leavesTheHashOutWhenSwitchedOff() throws Exception {
         when(credentialsService.findByCredentialsType(ClientCredentialsType.MQTT_BASIC)).thenReturn(List.of(
                 credentials("a", null, "a-id", null, HASH, List.of(".*"), List.of(".*"))));

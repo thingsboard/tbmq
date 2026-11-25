@@ -36,7 +36,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
@@ -54,8 +53,9 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
-import org.thingsboard.mqtt.broker.service.entity.credentials.TbMqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponse;
+import org.thingsboard.mqtt.broker.service.entity.credentials.TbMqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.credentials.MqttClientCredentialsBulkImportService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.credentials.MqttClientCredentialsCsvExportService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
@@ -193,14 +193,14 @@ public class MqttClientCredentialsController extends BaseController {
         return bulkImportService.processBulkImport(request, getCurrentUser());
     }
 
-    @ApiOperation(value = "Export MQTT basic credentials to CSV (exportMqttBasicClientCredentials)",
+    @ApiOperation(value = "Export MQTT basic credentials to CSV (exportCredentials)",
             notes = "Streams the MQTT_BASIC client credentials as a CSV file the bulk import reads back: one row per credentials, sorted by name, " +
                     "with the columns NAME, DESCRIPTION, CLIENT_TYPE, CLIENT_ID, USERNAME, PASSWORD, PASSWORD_HASH, SUB_AUTH_RULE_PATTERNS and " +
                     "PUB_AUTH_RULE_PATTERNS. The system WebSocket credentials are not exported. PASSWORD is always empty. " +
                     "PASSWORD_HASH holds the BCrypt hash of the password, so the file holds password hashes: store it like a backup and delete it after use. " +
                     "Line breaks in a description are written as spaces. " +
-                    "The patterns of a rule list are joined with the auth rules delimiter. The request fails with 400, naming the credentials, " +
-                    "when a pattern contains the delimiter or has leading or trailing spaces, or when a name has a line break, " +
+                    "The patterns of a rule list are joined with the auth rules delimiter. The delimiter must not be a line break, a comma or a double quote. The request fails with 400, naming the credentials, " +
+                    "when a pattern contains the delimiter, is empty or has leading or trailing spaces, or when the name, client id, username or a pattern has a line break, " +
                     "as the import would not read those back unchanged. " +
                     "Available to SYS_ADMIN only.",
             responses = {
@@ -218,6 +218,9 @@ public class MqttClientCredentialsController extends BaseController {
             @RequestParam(defaultValue = ";") String authRulesDelimiter) {
         if (authRulesDelimiter.length() != 1) {
             throw new IllegalArgumentException("authRulesDelimiter must be a single character");
+        }
+        if ("\r\n,\"".contains(authRulesDelimiter)) {
+            throw new IllegalArgumentException("authRulesDelimiter must not be a line break, a comma or a double quote");
         }
         // checked here, before the response starts, so a refusal is a 400
         MqttClientCredentialsCsvExportService.Export export = csvExportService.prepare(includePasswordHashes, authRulesDelimiter.charAt(0));
