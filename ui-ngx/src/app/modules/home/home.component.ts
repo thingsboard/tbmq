@@ -40,6 +40,7 @@ import { RouterOutlet } from '@angular/router';
 import { GithubBadgeComponent } from '@home/components/github-badge/github-badge.component';
 import { LogoComponent } from '@shared/components/logo.component';
 import { DialogService } from '@core/services/dialog.service';
+import { ConfigService } from '@core/http/config.service';
 
 @Component({
     selector: 'tb-home',
@@ -56,6 +57,9 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
 
   logo = 'assets/mqtt_logo_white.svg';
 
+  // The config is loaded before the home page is rendered; the cluster edition shows no chip.
+  isLite = this.configService.brokerConfig?.edition === 'lite';
+
   readonly sidenav = viewChild<MatSidenav>('sidenav');
   readonly searchInputField = viewChild<ElementRef>('searchInput');
 
@@ -68,6 +72,7 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
     private activeComponentService: ActiveComponentService,
     public breakpointObserver: BreakpointObserver,
     private dialogService: DialogService,
+    private configService: ConfigService,
   ) {
     super(store);
   }

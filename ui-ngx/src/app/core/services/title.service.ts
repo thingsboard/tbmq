@@ -21,6 +21,8 @@ import { TranslateService } from '@ngx-translate/core';
 import { filter } from 'rxjs/operators';
 
 import { environment as env } from '@env/environment';
+import { ConfigService } from '@core/http/config.service';
+import { editionProductName } from '@core/utils/edition.utils';
 
 @Injectable({
   providedIn: 'root'
@@ -28,7 +30,8 @@ import { environment as env } from '@env/environment';
 export class TitleService {
   constructor(
     private translate: TranslateService,
-    private title: Title
+    private title: Title,
+    private configService: ConfigService
   ) {}
 
   setTitle(
@@ -39,17 +42,21 @@ export class TitleService {
     while (lastChild.children.length) {
       lastChild = lastChild.children[0];
     }
-    const { title } = lastChild.data;
+    const { title, module } = lastChild.data;
     const translate = lazyTranslate || this.translate;
+    // Public (login) pages keep the plain product name; the edition is known only after the config is loaded.
+    const appTitle = module !== 'public' && this.configService.brokerConfig
+      ? editionProductName(this.configService.brokerConfig.edition)
+      : env.appTitle;
     if (title) {
       translate
         .get(title)
         .pipe(filter(translatedTitle => translatedTitle !== title))
         .subscribe(translatedTitle =>
-          this.title.setTitle(`${env.appTitle} | ${translatedTitle}`)
+          this.title.setTitle(`${appTitle} | ${translatedTitle}`)
         );
     } else {
-      this.title.setTitle(env.appTitle);
+      this.title.setTitle(appTitle);
     }
   }
 }
