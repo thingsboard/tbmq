@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
         "!.*AppPersistedSessionIntegrationTestCase",
         "!.*AppRequestResponseIntegrationTestCase",
         "!.*AppSharedSubscriptionsIntegrationTestCase",
+        "!.*AppUserPropertiesIntegrationTestCase",
         "!.*TotalThroughputQuotaAppPersistedIntegrationTestCase",
         "!.*TotalThroughputQuotaSharedGroupIntegrationTestCase",
         // needs Kafka: it fails the Kafka producer; its Lite counterpart fails the store instead
