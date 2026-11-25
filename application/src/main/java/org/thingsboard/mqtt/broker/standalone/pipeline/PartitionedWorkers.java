@@ -26,12 +26,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 
 /**
  * A fixed set of worker threads, each with its own queue. Items with the same key always go to the same worker, so
  * their order is kept. A worker takes what is waiting, up to a maximum batch, and hands it to the batch handler.
  * <p>
- * The queues accept items from construction on; the batch handler is given to {@link #start}, so the owner of the
+ * The queues accept items from construction on; the batch handlers are given to {@code start}, so the owner of the
  * queues need not know who handles their items.
  * <p>
  * A handler that throws, even an {@link Error}, is logged and the worker goes on with the next batch; the handler
@@ -54,8 +55,6 @@ public class PartitionedWorkers<T> {
     private volatile boolean accepting = true;
     private volatile boolean stopped;
     private boolean started;
-    // set before the worker threads start, which makes it visible to them
-    private Consumer<List<T>> batchHandler;
 
     /**
      * @param queueCapacity the capacity of each worker's queue; 0 means unbounded
@@ -83,14 +82,27 @@ public class PartitionedWorkers<T> {
      */
     public synchronized void start(Consumer<List<T>> batchHandler) {
         Objects.requireNonNull(batchHandler, "batchHandler");
+        startPerPartition(partition -> batchHandler);
+    }
+
+    /**
+     * Starts the worker threads like {@link #start(Consumer)}, but worker {@code i} hands its items to the handler
+     * built for partition {@code i}, which is built once, here.
+     */
+    public synchronized void startPerPartition(IntFunction<Consumer<List<T>>> handlerForPartition) {
+        Objects.requireNonNull(handlerForPartition, "handlerForPartition");
         if (started) {
             throw new IllegalStateException(threadNamePrefix + " workers are already started");
         }
+        List<Consumer<List<T>>> handlers = new ArrayList<>(queues.size());
+        for (int i = 0; i < queues.size(); i++) {
+            handlers.add(Objects.requireNonNull(handlerForPartition.apply(i), "handler of partition " + i));
+        }
         started = true;
-        this.batchHandler = batchHandler;
         for (int i = 0; i < queues.size(); i++) {
             BlockingQueue<T> queue = queues.get(i);
-            threads.add(Thread.ofPlatform().name(threadNamePrefix + "-" + i).daemon().start(() -> run(queue)));
+            Consumer<List<T>> handler = handlers.get(i);
+            threads.add(Thread.ofPlatform().name(threadNamePrefix + "-" + i).daemon().start(() -> run(queue, handler)));
         }
     }
 
@@ -168,7 +180,7 @@ public class PartitionedWorkers<T> {
         }
     }
 
-    private void run(BlockingQueue<T> queue) {
+    private void run(BlockingQueue<T> queue, Consumer<List<T>> batchHandler) {
         while (!Thread.currentThread().isInterrupted()) {
             List<T> batch = new ArrayList<>();
             try {

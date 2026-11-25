@@ -20,6 +20,9 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.google.protobuf.ByteString;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.stats.DefaultStatsFactory;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.common.util.edition.TbmqEditionResolver;
 import org.thingsboard.mqtt.broker.exception.PipelineClosedException;
@@ -71,6 +75,7 @@ import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -84,7 +89,8 @@ class StandalonePublishStageTest {
 
     private final MsgDispatcherService msgDispatcherService = mock(MsgDispatcherService.class);
     private final TbMessageStatsReportClient statsClient = mock(TbMessageStatsReportClient.class);
-    private final StatsFactory statsFactory = mock(StatsFactory.class);
+    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+    private final StatsFactory statsFactory = spy(new DefaultStatsFactory(meterRegistry));
     private final TbQueueCallback queueCallback = mock(TbQueueCallback.class);
 
     private final Logger consumerLogger = (Logger) LoggerFactory.getLogger(StandalonePublishMsgConsumerService.class);
@@ -143,11 +149,19 @@ class StandalonePublishStageTest {
         assertThat(budget.queuedMessages()).isEqualTo(1);
         assertThat(budget.queuedBytes()).isEqualTo(msg.getValue().getPayload().size());
 
+        assertThat(consumed("totalMsgs")).isEqualTo(1);
+        assertThat(consumed("successfulMsgs")).isZero();
+
         dispatch.callback().onSuccess();
 
         verify(queueCallback).onSuccess(null);
         assertThat(budget.queuedMessages()).isZero();
         assertThat(budget.queuedBytes()).isZero();
+        assertThat(consumed("successfulMsgs")).isEqualTo(1);
+        assertThat(consumed("failedMsgs")).isZero();
+        // recorded by the worker once the dispatcher call returned
+        await().atMost(WAIT_SECONDS, TimeUnit.SECONDS).untilAsserted(() ->
+                assertThat(meterRegistry.get("incomingPublishMsg.consumed.processing.time").timers().stream().mapToLong(Timer::count).sum()).isEqualTo(1));
     }
 
     @Test
@@ -264,6 +278,51 @@ class StandalonePublishStageTest {
             assertThat(event.getLevel()).isEqualTo(Level.ERROR);
             assertThat(event.getThrowableProxy().getMessage()).isEqualTo("dispatch failed");
         });
+        assertThat(consumed("totalMsgs")).isEqualTo(2);
+        assertThat(consumed("failedMsgs")).isEqualTo(1);
+        // counted by the worker once the publish's callback returned, after the mock saw the call
+        await().atMost(WAIT_SECONDS, TimeUnit.SECONDS).untilAsserted(() ->
+                assertThat(consumed("successfulMsgs")).isEqualTo(1));
+    }
+
+    @Test
+    void aPublishIsCountedOnlyAfterItsCallbackRan() throws Exception {
+        List<Double> successAtCallback = new CopyOnWriteArrayList<>();
+        List<Double> failureAtCallback = new CopyOnWriteArrayList<>();
+        doAnswer(inv -> {
+            successAtCallback.add(consumed("successfulMsgs"));
+            return null;
+        }).when(queueCallback).onSuccess(any());
+        doAnswer(inv -> {
+            failureAtCallback.add(consumed("failedMsgs"));
+            return null;
+        }).when(queueCallback).onFailure(any());
+
+        publisher.sendMsg(qos1("t/1"), queueCallback);
+        nextDispatch().callback().onSuccess();
+        publisher.sendMsg(qos1("t/2"), queueCallback);
+        nextDispatch().callback().onFailure(new RuntimeException("failed"));
+
+        assertThat(successAtCallback).containsExactly(0.0);
+        assertThat(failureAtCallback).containsExactly(0.0);
+        assertThat(consumed("successfulMsgs")).isEqualTo(1);
+        assertThat(consumed("failedMsgs")).isEqualTo(1);
+    }
+
+    @Test
+    void aDispatcherThatResolvesThePublishAndThenThrowsCountsItOnce() {
+        doAnswer(inv -> {
+            inv.<PublishMsgCallback>getArgument(1).onSuccess();
+            throw new RuntimeException("late failure");
+        }).when(msgDispatcherService).processPublishMsg(any(), any());
+
+        publisher.sendMsg(qos1("t/1"), queueCallback);
+
+        verify(queueCallback, timeout(TimeUnit.SECONDS.toMillis(WAIT_SECONDS))).onSuccess(null);
+        await().atMost(WAIT_SECONDS, TimeUnit.SECONDS).until(() -> consumerLog.list.size() == 1);
+        assertThat(consumed("totalMsgs")).isEqualTo(1);
+        assertThat(consumed("successfulMsgs")).isEqualTo(1);
+        assertThat(consumed("failedMsgs")).isZero();
     }
 
     @Test
@@ -310,7 +369,7 @@ class StandalonePublishStageTest {
 
     @Test
     void givenDestroyedConsumer_whenSendMsg_thenThePublishFailsAsClosed() {
-        new StandalonePublishMsgConsumerService(queue, msgDispatcherService).destroy();
+        new StandalonePublishMsgConsumerService(queue, msgDispatcherService, statsFactory).destroy();
 
         publisher.sendMsg(qos1("t/1"), queueCallback);
 
@@ -432,8 +491,14 @@ class StandalonePublishStageTest {
     private StandalonePublishMsgQueue startedQueue() {
         StandalonePublishMsgQueue publishMsgQueue = new StandalonePublishMsgQueue(properties, statsFactory);
         publishMsgQueue.init();
-        new StandalonePublishMsgConsumerService(publishMsgQueue, msgDispatcherService).startConsuming();
+        new StandalonePublishMsgConsumerService(publishMsgQueue, msgDispatcherService, statsFactory).startConsuming();
         return publishMsgQueue;
+    }
+
+    // the sum over the dispatch partitions of one counter of incomingPublishMsg.consumed
+    private double consumed(String statsName) {
+        return meterRegistry.find("incomingPublishMsg.consumed").tag("statsName", statsName).counters().stream()
+                .mapToDouble(Counter::count).sum();
     }
 
     private Dispatched nextDispatch() throws InterruptedException {

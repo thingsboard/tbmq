@@ -349,6 +349,35 @@ class PartitionedWorkersTest {
         assertThatThrownBy(() -> new PartitionedWorkers<Item>("t", 1, 0, 1).start(null)).isInstanceOf(NullPointerException.class);
     }
 
+    @Test
+    void givenHandlerPerPartition_whenItemsKeyedToEachPartition_thenEachHandlerSeesOnlyItsPartition() throws Exception {
+        int partitions = 3;
+        List<Integer> built = new CopyOnWriteArrayList<>();
+        Map<Integer, List<String>> seenByPartition = new ConcurrentHashMap<>();
+        workers = new PartitionedWorkers<>("test-handlers", partitions, 0, 8);
+        workers.startPerPartition(partition -> {
+            built.add(partition);
+            return batch -> batch.forEach(item ->
+                    seenByPartition.computeIfAbsent(partition, p -> new CopyOnWriteArrayList<>()).add(item.key()));
+        });
+
+        // submit() routes by the key's hash, so key a probe per partition the same way
+        Map<Integer, String> keyOfPartition = new HashMap<>();
+        for (int i = 0; keyOfPartition.size() < partitions; i++) {
+            keyOfPartition.putIfAbsent(Math.floorMod(("probe-" + i).hashCode(), partitions), "probe-" + i);
+        }
+        for (int round = 0; round < 5; round++) {
+            for (String key : keyOfPartition.values()) {
+                workers.submit(key, new Item(key, round));
+            }
+        }
+        assertThat(workers.drain(TimeUnit.SECONDS.toMillis(WAIT_SECONDS))).isTrue();
+
+        assertThat(built).containsExactlyInAnyOrder(0, 1, 2);
+        keyOfPartition.forEach((partition, key) ->
+                assertThat(seenByPartition.get(partition)).as("items of partition %s", partition).containsOnly(key).hasSize(5));
+    }
+
     private static void awaitLatch(CountDownLatch latch) {
         try {
             latch.await(WAIT_SECONDS, TimeUnit.SECONDS);
