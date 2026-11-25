@@ -280,7 +280,9 @@ class StandalonePublishStageTest {
         });
         assertThat(consumed("totalMsgs")).isEqualTo(2);
         assertThat(consumed("failedMsgs")).isEqualTo(1);
-        assertThat(consumed("successfulMsgs")).isEqualTo(1);
+        // counted by the worker once the publish's callback returned, after the mock saw the call
+        await().atMost(WAIT_SECONDS, TimeUnit.SECONDS).untilAsserted(() ->
+                assertThat(consumed("successfulMsgs")).isEqualTo(1));
     }
 
     @Test
