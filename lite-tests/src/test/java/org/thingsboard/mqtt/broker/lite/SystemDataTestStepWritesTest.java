@@ -27,12 +27,14 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.http.HttpMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderDao;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsDao;
 import org.thingsboard.mqtt.broker.dao.store.StoreSeedState;
 import org.thingsboard.mqtt.broker.dao.user.UserCredentialsDao;
 import org.thingsboard.mqtt.broker.dao.user.UserDao;
+import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionDao;
 import org.thingsboard.mqtt.broker.testsupport.lite.SystemDataTestStep;
 
@@ -132,6 +134,23 @@ class SystemDataTestStepWritesTest {
         ArgumentCaptor<UserCredentials> credentials = ArgumentCaptor.forClass(UserCredentials.class);
         verify(userCredentialsDao).save(credentials.capture());
         assertThat(credentials.getValue().getUserId()).isEqualTo(seededId);
+    }
+
+    @Test
+    void givenAMarkedSysadmin_whenApply_thenTheMarkIsClearedAndTheOtherInfoKept() {
+        UUID sysadminId = UUID.randomUUID();
+        User sysadmin = new User(sysadminId);
+        sysadmin.setAdditionalInfo(JacksonUtil.toJsonNode("{\"passwordChangeRequired\": true, \"other\": 1}"));
+        when(userDao.findByEmail("sysadmin@thingsboard.org")).thenReturn(sysadmin);
+        when(userCredentialsDao.findByUserId(sysadminId)).thenReturn(new UserCredentials());
+
+        step(true).apply();
+
+        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+        verify(userDao).save(saved.capture());
+        assertThat(saved.getValue().getId()).isEqualTo(sysadminId);
+        assertThat(saved.getValue().getAdditionalInfo().has(UserServiceImpl.PASSWORD_CHANGE_REQUIRED)).isFalse();
+        assertThat(saved.getValue().getAdditionalInfo().get("other").asInt()).isEqualTo(1);
     }
 
     @Test

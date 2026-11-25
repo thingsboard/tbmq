@@ -32,4 +32,11 @@ public interface AdminService {
      */
     void activateAdminCredentials(UserCredentials userCredentials);
 
+    /**
+     * Activates the disabled credentials of an existing admin with the given password.
+     *
+     * @throws IllegalStateException if the credentials are enabled or already have a password
+     */
+    void activateAdminCredentials(UserCredentials userCredentials, String password);
+
 }

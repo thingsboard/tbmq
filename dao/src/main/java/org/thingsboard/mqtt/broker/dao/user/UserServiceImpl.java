@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.dao.user;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +54,7 @@ public class UserServiceImpl implements UserService {
 
     public static final String USER_PASSWORD_CHANGED = "isPasswordChanged";
     public static final String USER_PASSWORD_HISTORY = "userPasswordHistory";
+    public static final String PASSWORD_CHANGE_REQUIRED = "passwordChangeRequired";
     private static final String LAST_LOGIN_TS = "lastLoginTs";
 
     private static final int DEFAULT_TOKEN_LENGTH = 30;
@@ -144,9 +146,10 @@ public class UserServiceImpl implements UserService {
         userCredentialsValidator.validate(userCredentials);
         UUID removedId = userCredentials.getId();
         userCredentials.setId(null);
-        // one write, so that a stop cannot leave the user without credentials; the password history is a later write
+        // one write, so that a stop cannot leave the user without credentials; the password history and the end of the
+        // required password change are a later write, one user save: a stop before it leaves the user marked
         UserCredentials result = userCredentialsDao.replace(removedId, userCredentials);
-        updatePasswordHistory(userCredentials);
+        updatePasswordHistory(userCredentials, true);
         return result;
     }
 
@@ -222,20 +225,39 @@ public class UserServiceImpl implements UserService {
         user.setAdditionalInfo(additionalInfo);
     }
 
+    @Override
+    public void markPasswordChangeRequired(UUID userId) {
+        log.trace("Executing markPasswordChangeRequired [{}]", userId);
+        User user = findUserById(userId);
+        if (user == null) {
+            throw new DataValidationException("Can't require a password change of a non-existent user!");
+        }
+        user.setAdditionalInfoField(PASSWORD_CHANGE_REQUIRED, BooleanNode.TRUE);
+        // not saveUser: correctUserAdditionalInfo keeps the stored mark and drops a new one
+        doSaveUser(user, false);
+    }
+
+    @Override
+    public boolean isPasswordChangeRequired(UUID userId) {
+        log.trace("Executing isPasswordChangeRequired [{}]", userId);
+        User user = findUserById(userId);
+        return user != null && user.getAdditionalInfoField(PASSWORD_CHANGE_REQUIRED, JsonNode::asBoolean, false);
+    }
+
     private UserCredentials saveUserCredentialsAndPasswordHistory(UserCredentials userCredentials) {
         UserCredentials result = userCredentialsDao.save(userCredentials);
-        updatePasswordHistory(userCredentials);
+        updatePasswordHistory(userCredentials, false);
         return result;
     }
 
-    private void updatePasswordHistory(UserCredentials userCredentials) {
+    private void updatePasswordHistory(UserCredentials userCredentials, boolean passwordChanged) {
         User user = findUserById(userCredentials.getUserId());
         if (userCredentials.getPassword() != null) {
-            updatePasswordHistory(user, userCredentials);
+            updatePasswordHistory(user, userCredentials, passwordChanged);
         }
     }
 
-    private void updatePasswordHistory(User user, UserCredentials userCredentials) {
+    private void updatePasswordHistory(User user, UserCredentials userCredentials, boolean passwordChanged) {
         JsonNode additionalInfo = user.getAdditionalInfo();
         if (!(additionalInfo instanceof ObjectNode)) {
             additionalInfo = JacksonUtil.newObjectNode();
@@ -258,16 +280,25 @@ public class UserServiceImpl implements UserService {
             ((ObjectNode) additionalInfo).set(USER_PASSWORD_HISTORY, userPasswordHistoryJson);
         }
         user.setAdditionalInfo(additionalInfo);
+        if (passwordChanged) {
+            user.removeAdditionalInfoField(PASSWORD_CHANGE_REQUIRED);
+        }
         doSaveUser(user, false);
     }
 
     private void correctUserAdditionalInfo(User user) {
+        User userFromDb = null;
         if (user.getId() != null) {
             user.removeAdditionalInfoField(USER_PASSWORD_CHANGED);
-            User userFromDb = findUserById(user.getId());
+            userFromDb = findUserById(user.getId());
             if (userFromDb != null) {
                 user.setAdditionalInfoField(USER_PASSWORD_HISTORY, getCurrentUserPasswordHistory(userFromDb));
             }
+        }
+        // a profile save keeps the stored mark and can neither set nor clear it
+        user.removeAdditionalInfoField(PASSWORD_CHANGE_REQUIRED);
+        if (userFromDb != null && userFromDb.getAdditionalInfoField(PASSWORD_CHANGE_REQUIRED, JsonNode::asBoolean, false)) {
+            user.setAdditionalInfoField(PASSWORD_CHANGE_REQUIRED, BooleanNode.TRUE);
         }
     }
 

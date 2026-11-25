@@ -24,6 +24,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.User;
@@ -36,6 +42,8 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
+import org.thingsboard.mqtt.broker.common.data.security.model.UserPasswordPolicy;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
@@ -47,7 +55,9 @@ import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketSubscriptionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.install.DefaultSystemDataLoaderService;
+import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 
 import java.util.List;
@@ -61,6 +71,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -92,6 +103,11 @@ class InstallSeedStepTest {
     @Mock
     private WebSocketSubscriptionService webSocketSubscriptionService;
 
+    @Mock
+    private SystemSecurityService systemSecurityService;
+
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(4);
+
     private InstallSeedStep step;
 
     private final User sysadmin = sysadmin();
@@ -99,9 +115,159 @@ class InstallSeedStepTest {
 
     @BeforeEach
     void setUp() {
-        step = new InstallSeedStep(seedState, adminSettingsService, mqttAuthProviderService, userService, adminService,
-                mqttClientCredentialsService, webSocketConnectionService, webSocketSubscriptionService);
+        step = stepWithAdminPassword("");
         when(mqttAuthProviderService.getAuthProviderByType(any())).thenReturn(Optional.empty());
+        SecuritySettings securitySettings = new SecuritySettings();
+        securitySettings.setPasswordPolicy(new UserPasswordPolicy());
+        securitySettings.getPasswordPolicy().setMinimumLength(6);
+        when(systemSecurityService.getSecuritySettings()).thenReturn(securitySettings);
+    }
+
+    private InstallSeedStep stepWithAdminPassword(String adminPassword) {
+        return new InstallSeedStep(seedState, adminSettingsService, mqttAuthProviderService, userService, adminService,
+                mqttClientCredentialsService, webSocketConnectionService, webSocketSubscriptionService,
+                systemSecurityService, passwordEncoder, adminPassword);
+    }
+
+    @Test
+    void blankVariableCreatesTheDefaultSysadminAndMarksIt() throws ThingsboardException {
+        when(adminService.createAdmin(any(), anyBoolean())).thenReturn(sysadmin);
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("sysadmin"));
+        when(mqttClientCredentialsService.saveSystemWebSocketCredentials()).thenReturn(systemCredentials);
+
+        stepWithAdminPassword("   ").apply();
+
+        verify(adminService).createAdmin(AdminDto.fromEmail(SYSADMIN_EMAIL), false);
+        verify(userService).markPasswordChangeRequired(sysadmin.getId());
+        verify(seedState).markSeeded();
+    }
+
+    @Test
+    void aSetVariableCreatesTheSysadminWithItAndNoMark() throws ThingsboardException {
+        when(adminService.createAdmin(any(), anyBoolean())).thenReturn(sysadmin);
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("Str0ng-pass"));
+        when(mqttClientCredentialsService.saveSystemWebSocketCredentials()).thenReturn(systemCredentials);
+
+        stepWithAdminPassword("Str0ng-pass").apply();
+
+        verify(systemSecurityService).validatePasswordByPolicy(eq("Str0ng-pass"), any(UserPasswordPolicy.class));
+        verify(adminService).createAdmin(AdminDto.builder().email(SYSADMIN_EMAIL).password("Str0ng-pass").build(), false);
+        verify(userService, never()).markPasswordChangeRequired(any());
+        verify(seedState).markSeeded();
+    }
+
+    @Test
+    void theDefaultOrAShortPasswordFailsFirstStartNamingTheVariable() {
+        assertThatThrownBy(() -> stepWithAdminPassword("sysadmin").apply())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("TBMQ_ADMIN_PASSWORD must not be the default password");
+
+        doThrow(new DataValidationException("Password must be 6 or more characters in length."))
+                .when(systemSecurityService).validatePasswordByPolicy(eq("abc"), any(UserPasswordPolicy.class));
+        assertThatThrownBy(() -> stepWithAdminPassword("abc").apply())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("TBMQ_ADMIN_PASSWORD does not meet the password policy: Password must be 6 or more characters in length.")
+                .satisfies(e -> assertThat(e.getMessage()).doesNotContain("abc"));
+
+        // refused before the first write
+        verifyNoInteractions(adminSettingsService, mqttAuthProviderService, userService, adminService,
+                mqttClientCredentialsService, webSocketConnectionService);
+        verify(seedState, never()).markSeeded();
+    }
+
+    @Test
+    void aRerunMarksAnUnmarkedSysadminStillOnTheDefaultPassword() {
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("sysadmin"));
+        when(mqttClientCredentialsService.saveSystemWebSocketCredentials()).thenReturn(systemCredentials);
+
+        step.apply();
+
+        verify(userService).markPasswordChangeRequired(sysadmin.getId());
+        verify(seedState).markSeeded();
+    }
+
+    @Test
+    void aRerunLeavesAMarkedOrChangedSysadminAlone() {
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("Str0ng-pass"));
+        when(mqttClientCredentialsService.saveSystemWebSocketCredentials()).thenReturn(systemCredentials);
+
+        step.apply();
+
+        verify(userService, never()).markPasswordChangeRequired(any());
+
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("sysadmin"));
+        when(userService.isPasswordChangeRequired(sysadmin.getId())).thenReturn(true);
+
+        step.apply();
+
+        verify(userService, never()).markPasswordChangeRequired(any());
+    }
+
+    @Test
+    void aRepairedSysadminOnTheDefaultPasswordIsMarked() throws ThingsboardException {
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        UserCredentials disabled = disabledCredentials(sysadmin.getId());
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(disabled);
+        // the activation saves the credentials with the default password, which the seed reads again
+        doAnswer(invocation -> {
+            when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("sysadmin"));
+            return null;
+        }).when(adminService).activateAdminCredentials(disabled);
+        when(mqttClientCredentialsService.saveSystemWebSocketCredentials()).thenReturn(systemCredentials);
+
+        step.apply();
+
+        verify(adminService).activateAdminCredentials(disabled);
+        verify(userService).markPasswordChangeRequired(sysadmin.getId());
+    }
+
+    @Test
+    void aSeededStoreIgnoresTheVariableAndMarksNothing() {
+        when(seedState.isSeeded()).thenReturn(true);
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("sysadmin"));
+        Logger logger = (Logger) LoggerFactory.getLogger(InstallSeedStep.class);
+        Level level = logger.getLevel();
+        logger.setLevel(Level.INFO);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            stepWithAdminPassword("Str0ng-pass").apply();
+        } finally {
+            logger.detachAppender(appender);
+            logger.setLevel(level);
+        }
+
+        assertThat(appender.list).filteredOn(event -> event.getLevel() == Level.INFO)
+                .extracting(ILoggingEvent::getFormattedMessage)
+                .containsExactly("TBMQ_ADMIN_PASSWORD is ignored: the store was set up before");
+        assertThat(appender.list).extracting(ILoggingEvent::getFormattedMessage)
+                .noneMatch(message -> message.contains("Str0ng-pass"));
+        verify(userService, never()).markPasswordChangeRequired(any());
+        verify(seedState, never()).markSeeded();
+        verifyNoInteractions(adminSettingsService, adminService, mqttClientCredentialsService);
+    }
+
+    @Test
+    void aSeededStoreWithoutTheVariableLogsNothingAboutIt() {
+        when(seedState.isSeeded()).thenReturn(true);
+        Logger logger = (Logger) LoggerFactory.getLogger(InstallSeedStep.class);
+        Level level = logger.getLevel();
+        logger.setLevel(Level.INFO);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            step.apply();
+        } finally {
+            logger.detachAppender(appender);
+            logger.setLevel(level);
+        }
+
+        assertThat(appender.list).isEmpty();
     }
 
     @Test
@@ -208,6 +374,118 @@ class InstallSeedStepTest {
         order.verify(webSocketConnectionService).saveDefaultWebSocketConnection(sysadmin.getId(), systemCredentials.getId());
         order.verify(seedState).markSeeded();
         verify(adminService, never()).createAdmin(any(), anyBoolean());
+    }
+
+    @Test
+    void aSysadminWithoutCredentialsGetsTheDefaultPasswordAndIsMarked() throws ThingsboardException {
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(null);
+        UserCredentials created = disabledCredentials(sysadmin.getId());
+        when(userService.createUserCredentials(sysadmin.getId())).thenReturn(created);
+        // the activation saves the credentials with the default password, which the seed reads again
+        doAnswer(invocation -> {
+            when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("sysadmin"));
+            return null;
+        }).when(adminService).activateAdminCredentials(created);
+        when(mqttClientCredentialsService.saveSystemWebSocketCredentials()).thenReturn(systemCredentials);
+
+        step.apply();
+
+        InOrder order = inOrder(userService, adminService, seedState);
+        order.verify(userService).createUserCredentials(sysadmin.getId());
+        order.verify(adminService).activateAdminCredentials(created);
+        order.verify(userService).markPasswordChangeRequired(sysadmin.getId());
+        order.verify(seedState).markSeeded();
+    }
+
+    @Test
+    void aPasswordOverTheBCryptByteLimitFailsFirstStartNamingTheVariable() {
+        // 40 characters pass the 72-character policy, 80 bytes in UTF-8 do not fit BCrypt
+        String longPassword = "ж".repeat(40);
+
+        assertThatThrownBy(() -> stepWithAdminPassword(longPassword).apply())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("TBMQ_ADMIN_PASSWORD must not be longer than 72 bytes in UTF-8");
+        verifyNoInteractions(adminSettingsService, adminService);
+        verify(seedState, never()).markSeeded();
+    }
+
+    @Test
+    void aSysadminWithoutCredentialsGetsTheVariablesPasswordAndNoMark() throws ThingsboardException {
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(null);
+        UserCredentials created = disabledCredentials(sysadmin.getId());
+        when(userService.createUserCredentials(sysadmin.getId())).thenReturn(created);
+        doAnswer(invocation -> {
+            when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("Str0ng-pass"));
+            return null;
+        }).when(adminService).activateAdminCredentials(created, "Str0ng-pass");
+        when(mqttClientCredentialsService.saveSystemWebSocketCredentials()).thenReturn(systemCredentials);
+
+        stepWithAdminPassword("Str0ng-pass").apply();
+
+        verify(adminService).activateAdminCredentials(created, "Str0ng-pass");
+        verify(adminService, never()).activateAdminCredentials(any());
+        verify(userService, never()).markPasswordChangeRequired(any());
+        verify(seedState).markSeeded();
+    }
+
+    @Test
+    void aSysadminWithDisabledCredentialsAndNoPasswordGetsTheVariablesPasswordAndNoMark() throws ThingsboardException {
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        UserCredentials disabled = disabledCredentials(sysadmin.getId());
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(disabled);
+        doAnswer(invocation -> {
+            when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("Str0ng-pass"));
+            return null;
+        }).when(adminService).activateAdminCredentials(disabled, "Str0ng-pass");
+        when(mqttClientCredentialsService.saveSystemWebSocketCredentials()).thenReturn(systemCredentials);
+        Logger logger = (Logger) LoggerFactory.getLogger(InstallSeedStep.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            stepWithAdminPassword("Str0ng-pass").apply();
+        } finally {
+            logger.detachAppender(appender);
+        }
+
+        verify(adminService).activateAdminCredentials(disabled, "Str0ng-pass");
+        verify(adminService, never()).activateAdminCredentials(any());
+        verify(userService, never()).markPasswordChangeRequired(any());
+        verify(seedState).markSeeded();
+        assertThat(appender.list).extracting(ILoggingEvent::getFormattedMessage)
+                .noneMatch(message -> message.contains("Str0ng-pass"))
+                .noneMatch(message -> message.contains("is ignored"));
+    }
+
+    @Test
+    void aSetVariableIsIgnoredWithOneInfoWhenTheSysadminExists() throws ThingsboardException {
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("Str0ng-pass"));
+        when(mqttClientCredentialsService.saveSystemWebSocketCredentials()).thenReturn(systemCredentials);
+        Logger logger = (Logger) LoggerFactory.getLogger(InstallSeedStep.class);
+        Level level = logger.getLevel();
+        logger.setLevel(Level.INFO);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            stepWithAdminPassword("An0ther-pass").apply();
+        } finally {
+            logger.detachAppender(appender);
+            logger.setLevel(level);
+        }
+
+        assertThat(appender.list).filteredOn(event -> event.getLevel() == Level.INFO)
+                .extracting(ILoggingEvent::getFormattedMessage)
+                .filteredOn(message -> message.contains("TBMQ_ADMIN_PASSWORD"))
+                .containsExactly("TBMQ_ADMIN_PASSWORD is ignored: the sysadmin exists");
+        assertThat(appender.list).extracting(ILoggingEvent::getFormattedMessage)
+                .noneMatch(message -> message.contains("An0ther-pass"));
+        verify(adminService, never()).createAdmin(any(), anyBoolean());
+        verify(userService, never()).markPasswordChangeRequired(any());
+        verify(seedState).markSeeded();
     }
 
     @Test
@@ -390,6 +668,12 @@ class InstallSeedStepTest {
         credentials.setUserId(userId);
         credentials.setEnabled(false);
         credentials.setActivateToken("token");
+        return credentials;
+    }
+
+    private UserCredentials credentialsWithPassword(String password) {
+        UserCredentials credentials = activeCredentials(sysadmin.getId());
+        credentials.setPassword(passwordEncoder.encode(password));
         return credentials;
     }
 

@@ -48,6 +48,7 @@ import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.security.exception.UserPasswordExpiredException;
+import org.thingsboard.mqtt.broker.service.user.AdminServiceImpl;
 import org.thingsboard.mqtt.broker.util.MiscUtils;
 
 import java.util.ArrayList;
@@ -119,6 +120,11 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
             log.warn("[{}] Failed to save the last login time of the user: {}", userCredentials.getUserId(), e.getMessage());
         }
 
+        if (userService.isPasswordChangeRequired(userCredentials.getUserId())) {
+            UserCredentials withResetToken = userService.requestExpiredPasswordReset(userCredentials.getId());
+            throw new UserPasswordExpiredException("User password must be changed", withResetToken.getResetToken());
+        }
+
         SecuritySettings securitySettings = getSecuritySettings();
         if (isPositiveInteger(securitySettings.getPasswordPolicy().getPasswordExpirationPeriodDays())) {
             if ((userCredentials.getCreatedTime()
@@ -151,6 +157,16 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
                     }
                 }
             }
+        }
+    }
+
+    @Override
+    public void validateRequiredPasswordChange(String newPassword, UserCredentials userCredentials) throws DataValidationException {
+        if (!userService.isPasswordChangeRequired(userCredentials.getUserId())) {
+            return;
+        }
+        if (AdminServiceImpl.SYSADMIN_PASSWORD.equals(newPassword) || encoder.matches(newPassword, userCredentials.getPassword())) {
+            throw new DataValidationException("Choose a password other than the default and the current one");
         }
     }
 

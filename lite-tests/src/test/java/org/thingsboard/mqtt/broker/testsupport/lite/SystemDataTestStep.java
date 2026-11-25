@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsDao;
 import org.thingsboard.mqtt.broker.dao.store.StoreSeedState;
 import org.thingsboard.mqtt.broker.dao.user.UserCredentialsDao;
 import org.thingsboard.mqtt.broker.dao.user.UserDao;
+import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionDao;
 import org.thingsboard.mqtt.broker.standalone.store.ManagementDataStep;
 
@@ -57,7 +58,7 @@ import java.util.UUID;
  * the step first removes the seeded rows that the file does not hold, or holds with other values: the sysadmin's default
  * WebSocket connection, the system WebSocket credentials, the five admin settings and the five auth providers; the
  * insert pass then writes the file's settings and providers. The seeded sysadmin is kept: it has the file's email and
- * password, under an id of its own. On a start over a store seeded before, only the insert pass runs.
+ * password, under an id of its own, and the step clears its password change mark. On a start over a store seeded before, only the insert pass runs.
  * <p>
  * With {@code lite.test.system-data.enabled=false} the step does nothing, for the tests that start from the real
  * defaults. The broker of the kill -9 test runs without the test classpath, so {@code LiteBrokerProcess} copies this
@@ -230,6 +231,12 @@ public class SystemDataTestStep implements ManagementDataStep {
             sysadmin.setCreatedTime(SYSTEM_CREATED_TIME);
             sysadmin.setEmail(SYSADMIN_EMAIL);
             sysadmin.setAuthority(Authority.SYS_ADMIN);
+            userDao.save(sysadmin);
+        }
+        // the seeded sysadmin is on the default password and marked to change it, which the shared tests that sign in
+        // with that password must not meet
+        if (sysadmin.getAdditionalInfo() != null && sysadmin.getAdditionalInfo().has(UserServiceImpl.PASSWORD_CHANGE_REQUIRED)) {
+            sysadmin.removeAdditionalInfoField(UserServiceImpl.PASSWORD_CHANGE_REQUIRED);
             userDao.save(sysadmin);
         }
         // the sysadmin of a seeded store has an id of its own
