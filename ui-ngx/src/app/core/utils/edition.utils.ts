@@ -1,0 +1,89 @@
+///
+/// Copyright © 2016-2026 The Thingsboard Authors
+///
+/// Licensed under the Apache License, Version 2.0 (the "License");
+/// you may not use this file except in compliance with the License.
+/// You may obtain a copy of the License at
+///
+///     http://www.apache.org/licenses/LICENSE-2.0
+///
+/// Unless required by applicable law or agreed to in writing, software
+/// distributed under the License is distributed on an "AS IS" BASIS,
+/// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+/// See the License for the specific language governing permissions and
+/// limitations under the License.
+///
+
+import type { EditionCapabilities, TbmqEdition } from '../../shared/models/config.model';
+import { ClientType } from '../../shared/models/client.model';
+import { isCapabilityEnabled } from './capability.utils';
+
+export function allowedClientTypes(capabilities: Partial<EditionCapabilities> | null | undefined): ClientType[] {
+  return isCapabilityEnabled(capabilities, 'applicationClients')
+    ? [ClientType.DEVICE, ClientType.APPLICATION]
+    : [ClientType.DEVICE];
+}
+
+export function isNodeIdVisible(capabilities: Partial<EditionCapabilities> | null | undefined): boolean {
+  return isCapabilityEnabled(capabilities, 'cluster');
+}
+
+export function editionProductName(edition: TbmqEdition | undefined): string {
+  return edition === 'lite' ? 'TBMQ Lite' : 'TBMQ';
+}
+
+interface ParsedVersion {
+  numbers: [number, number, number];
+  preRelease: string | null;
+}
+
+// MAJOR[.MINOR[.PATCH]][EDITION][-PRE], e.g. 2.4.1PE, 2.5.0-beta, 2.5.0-SNAPSHOT
+const VERSION_PATTERN = /^(\d+)(?:\.(\d+))?(?:\.(\d+))?[A-Za-z]*(?:-(.+))?$/;
+
+function parseVersion(version: string | null | undefined): ParsedVersion | null {
+  const match = version ? VERSION_PATTERN.exec(version.trim()) : null;
+  if (!match) {
+    return null;
+  }
+  return {
+    numbers: [Number(match[1]), Number(match[2] ?? 0), Number(match[3] ?? 0)],
+    preRelease: match[4] ?? null
+  };
+}
+
+export function isNewerVersion(newest: string | null | undefined, current: string | null | undefined): boolean {
+  const newestVersion = parseVersion(newest);
+  const currentVersion = parseVersion(current);
+  if (!newestVersion || !currentVersion) {
+    return false;
+  }
+  for (let i = 0; i < 3; i++) {
+    if (newestVersion.numbers[i] !== currentVersion.numbers[i]) {
+      return newestVersion.numbers[i] > currentVersion.numbers[i];
+    }
+  }
+  if (newestVersion.preRelease === currentVersion.preRelease) {
+    return false;
+  }
+  if (newestVersion.preRelease === null) {
+    return true;
+  }
+  if (currentVersion.preRelease === null) {
+    return false;
+  }
+  return newestVersion.preRelease > currentVersion.preRelease;
+}
+
+export function filterCredentialsHomeCards<T extends { key: string; filter: { clientTypeList: ClientType[] } }>(
+  cards: T[], capabilities: Partial<EditionCapabilities> | null | undefined): T[] {
+  if (isCapabilityEnabled(capabilities, 'applicationClients')) {
+    return cards;
+  }
+  const allowed = allowedClientTypes(capabilities);
+  return cards
+    .filter(card => card.key !== 'applicationCredentialsCount')
+    .map(card => ({
+      ...card,
+      filter: { ...card.filter, clientTypeList: card.filter.clientTypeList.filter(type => allowed.includes(type)) }
+    }));
+}
