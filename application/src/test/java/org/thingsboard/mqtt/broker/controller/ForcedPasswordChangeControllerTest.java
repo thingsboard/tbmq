@@ -26,7 +26,10 @@ import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.service.security.auth.rest.LoginRequest;
+import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.ResetPasswordRequest;
+import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
+import org.thingsboard.mqtt.broker.service.security.model.token.JwtTokenFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -45,6 +48,8 @@ public class ForcedPasswordChangeControllerTest extends AbstractControllerTest {
     private UserService userService;
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
+    @Autowired
+    private JwtTokenFactory jwtTokenFactory;
 
     private User user;
 
@@ -63,7 +68,10 @@ public class ForcedPasswordChangeControllerTest extends AbstractControllerTest {
 
     @After
     public void deleteMarkedUser() {
-        userService.deleteUser(user.getId());
+        // @Before may have failed before the user was saved: do not hide that failure behind a NullPointerException
+        if (user != null) {
+            userService.deleteUser(user.getId());
+        }
     }
 
     @Test
@@ -83,6 +91,63 @@ public class ForcedPasswordChangeControllerTest extends AbstractControllerTest {
         assertThat(userService.isPasswordChangeRequired(user.getId())).isFalse();
 
         login(EMAIL, newPassword);
+    }
+
+    @Test
+    public void givenMarkedUserOnTheDefaultPassword_whenChangePasswordWithAToken_thenOnlyAnotherPasswordIsAccepted() throws Exception {
+        signInWithoutLogin();
+
+        doPost("/api/auth/changePassword", changeRequest(DEFAULT_PASSWORD, DEFAULT_PASSWORD))
+                .andExpect(status().isBadRequest());
+        assertThat(userService.isPasswordChangeRequired(user.getId())).isTrue();
+
+        acceptsANewPassword(DEFAULT_PASSWORD);
+    }
+
+    @Test
+    public void givenMarkedUserOnAnotherPassword_whenChangePasswordWithAToken_thenTheCurrentAndTheDefaultAreRefused() throws Exception {
+        String current = "Cur-pass-w0rd";
+        UserCredentials credentials = userService.findUserCredentialsByUserId(user.getId());
+        credentials.setPassword(passwordEncoder.encode(current));
+        userService.replaceUserCredentials(credentials);
+        // a password change ends the required change, so the mark is set again
+        userService.markPasswordChangeRequired(user.getId());
+        signInWithoutLogin();
+
+        doPost("/api/auth/changePassword", changeRequest(current, current)).andExpect(status().isBadRequest());
+        doPost("/api/auth/changePassword", changeRequest(current, DEFAULT_PASSWORD)).andExpect(status().isBadRequest());
+        assertThat(userService.isPasswordChangeRequired(user.getId())).isTrue();
+
+        acceptsANewPassword(current);
+    }
+
+    private void acceptsANewPassword(String currentPassword) throws Exception {
+        String newPassword = "N3w-pass-word";
+        JsonNode tokens = readResponse(doPost("/api/auth/changePassword", changeRequest(currentPassword, newPassword))
+                .andExpect(status().isOk()), JsonNode.class);
+        assertThat(tokens.has("token")).isTrue();
+        assertThat(tokens.has("refreshToken")).isTrue();
+        assertThat(userService.isPasswordChangeRequired(user.getId())).isFalse();
+
+        login(EMAIL, newPassword);
+    }
+
+    /**
+     * The sign-in refuses a marked user, so the access token comes from the factory the sign-in itself uses.
+     */
+    private void signInWithoutLogin() {
+        SecurityUser securityUser = new SecurityUser(user.getId());
+        securityUser.setEmail(EMAIL);
+        securityUser.setAuthority(Authority.SYS_ADMIN);
+        securityUser.setEnabled(true);
+        token = jwtTokenFactory.createAccessJwtToken(securityUser).getToken();
+    }
+
+    private static ChangePasswordRequest changeRequest(String currentPassword, String newPassword) {
+        ChangePasswordRequest request = new ChangePasswordRequest();
+        request.setCurrentPassword(currentPassword);
+        request.setNewPassword(newPassword);
+        return request;
     }
 
     private String refusedLoginResetToken() throws Exception {

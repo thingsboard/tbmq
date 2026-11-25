@@ -178,6 +178,9 @@ public class InstallSeedStep implements ManagementDataStep {
                 markIfOnDefaultPassword(sysadmin);
                 return sysadmin;
             }
+            if (hasAdminPassword()) {
+                log.info("TBMQ_ADMIN_PASSWORD is ignored: the sysadmin exists");
+            }
             UserCredentials credentials = userService.findUserCredentialsByUserId(sysadmin.getId());
             if (credentials == null) {
                 log.warn("The sysadmin {} has no credentials, creating them with the default password", SYSADMIN_EMAIL);

@@ -1326,13 +1326,15 @@ standalone:
     # loses at most one interval of them. Must be above 0. Defaults to 10 min (600000 ms).
     client-latest-flush-interval-ms: "${STANDALONE_STATS_CLIENT_LATEST_FLUSH_INTERVAL_MS:600000}"
   security:
-    # Password of the sysadmin (sysadmin@thingsboard.org), read once, at the first start over an empty store. It must meet
-    # the password policy (at least 6 characters by default) and must not be `sysadmin`, otherwise the first start fails.
-    # A store that was set up before ignores it, so it does not change an existing password.
+    # Password of the sysadmin (sysadmin@thingsboard.org). It is used exactly as set, without trimming. It is read at the
+    # first start over an empty store, and again at the restart after a first start that did not finish; a store that was
+    # set up before ignores it, so it never changes an existing password. It must meet the default password policy
+    # (at least 6 and at most 72 characters) and must not be `sysadmin`, otherwise the first start fails.
     # If empty or blank, the sysadmin gets the default password `sysadmin` and must change it at the first sign-in.
     admin-password: "${TBMQ_ADMIN_PASSWORD:}"
     # Token that protects the actuator endpoints in the standalone edition. A request to every endpoint except health and the
-    # /actuator links page must carry `Authorization: Bearer <token>` (the scheme is case-sensitive), otherwise it gets 401.
+    # actuator links page must carry `Authorization: Bearer <token>` (the scheme is case-sensitive), otherwise it gets 401.
+    # It must consist of visible ASCII characters only (0x21 to 0x7E, so no spaces), otherwise the start fails.
     # If empty or blank, there is no token: info and prometheus are refused whatever METRICS_ENDPOINTS_EXPOSE lists.
     metrics-token: "${TBMQ_METRICS_TOKEN:}"
 

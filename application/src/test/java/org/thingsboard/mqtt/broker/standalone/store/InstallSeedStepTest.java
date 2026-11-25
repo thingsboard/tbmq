@@ -377,6 +377,57 @@ class InstallSeedStepTest {
     }
 
     @Test
+    void aSysadminWithoutCredentialsGetsTheDefaultPasswordAndIsMarked() throws ThingsboardException {
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(null);
+        UserCredentials created = disabledCredentials(sysadmin.getId());
+        when(userService.createUserCredentials(sysadmin.getId())).thenReturn(created);
+        // the activation saves the credentials with the default password, which the seed reads again
+        doAnswer(invocation -> {
+            when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("sysadmin"));
+            return null;
+        }).when(adminService).activateAdminCredentials(created);
+        when(mqttClientCredentialsService.saveSystemWebSocketCredentials()).thenReturn(systemCredentials);
+
+        step.apply();
+
+        InOrder order = inOrder(userService, adminService, seedState);
+        order.verify(userService).createUserCredentials(sysadmin.getId());
+        order.verify(adminService).activateAdminCredentials(created);
+        order.verify(userService).markPasswordChangeRequired(sysadmin.getId());
+        order.verify(seedState).markSeeded();
+    }
+
+    @Test
+    void aSetVariableIsIgnoredWithOneInfoWhenTheSysadminExists() throws ThingsboardException {
+        when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
+        when(userService.findUserCredentialsByUserId(sysadmin.getId())).thenReturn(credentialsWithPassword("Str0ng-pass"));
+        when(mqttClientCredentialsService.saveSystemWebSocketCredentials()).thenReturn(systemCredentials);
+        Logger logger = (Logger) LoggerFactory.getLogger(InstallSeedStep.class);
+        Level level = logger.getLevel();
+        logger.setLevel(Level.INFO);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            stepWithAdminPassword("An0ther-pass").apply();
+        } finally {
+            logger.detachAppender(appender);
+            logger.setLevel(level);
+        }
+
+        assertThat(appender.list).filteredOn(event -> event.getLevel() == Level.INFO)
+                .extracting(ILoggingEvent::getFormattedMessage)
+                .filteredOn(message -> message.contains("TBMQ_ADMIN_PASSWORD"))
+                .containsExactly("TBMQ_ADMIN_PASSWORD is ignored: the sysadmin exists");
+        assertThat(appender.list).extracting(ILoggingEvent::getFormattedMessage)
+                .noneMatch(message -> message.contains("An0ther-pass"));
+        verify(adminService, never()).createAdmin(any(), anyBoolean());
+        verify(userService, never()).markPasswordChangeRequired(any());
+        verify(seedState).markSeeded();
+    }
+
+    @Test
     void aSysadminWithDisabledCredentialsAndNoPasswordIsActivated() throws ThingsboardException {
         when(userService.findUserByEmail(SYSADMIN_EMAIL)).thenReturn(sysadmin);
         UserCredentials disabled = disabledCredentials(sysadmin.getId());
