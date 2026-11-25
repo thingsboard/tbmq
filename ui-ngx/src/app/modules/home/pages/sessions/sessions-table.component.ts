@@ -14,6 +14,7 @@
 /// limitations under the License.
 ///
 
+import { ConfigService } from '@core/http/config.service';
 import { Component, Input, OnInit, input, viewChild } from '@angular/core';
 import { SessionsTableConfig } from '@home/pages/sessions/sessions-table-config';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
@@ -68,7 +69,8 @@ export class SessionsTableComponent implements OnInit {
               private datePipe: DatePipe,
               private dialogService: DialogService,
               private route: ActivatedRoute,
-              private router: Router) {
+              private router: Router,
+              private configService: ConfigService) {
   }
 
   ngOnInit(): void {
@@ -80,7 +82,8 @@ export class SessionsTableComponent implements OnInit {
       this.dialogService,
       this.entityIdValue,
       this.route,
-      this.router
+      this.router,
+      this.configService.brokerConfig?.capabilities
     );
   }
 

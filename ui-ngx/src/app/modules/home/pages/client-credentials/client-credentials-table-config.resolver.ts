@@ -56,6 +56,7 @@ import {
 import { ExportCredentialsDialogComponent } from '@home/pages/client-credentials/export-credentials-dialog.component';
 import { Injectable } from '@angular/core';
 import { ConfigService } from '@core/http/config.service';
+import { allowedClientTypes } from '@core/utils/edition.utils';
 import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
 import { HomeDialogsService } from '@home/dialogs/home-dialogs.service';
 
@@ -96,16 +97,24 @@ export class ClientCredentialsTableConfigResolver {
       new EntityTableColumn<ClientCredentials>('name', 'mqtt-client-credentials.name', '40%',
         (entity) => entity.name),
       new EntityTableColumn<ClientCredentials>('credentialsType', 'mqtt-client-credentials.type', '150px',
-        (entity) => this.translate.instant(credentialsTypeTranslationMap.get(entity.credentialsType))),
-      new EntityTableColumn<ClientCredentials>('clientType', 'mqtt-client.client-type', '150px',
-        (entity) => {
-        const clientType = entity.clientType;
-        const clientTypeTranslation = this.translate.instant(clientTypeTranslationMap.get(clientType));
-        const icon = clientTypeIcon.get(clientType);
-        const color = clientTypeColor.get(clientType);
-        const iconColor = clientTypeValueColor.get(clientType);
-        return cellWithIcon(clientTypeTranslation, icon, color, iconColor, iconColor);
-      }),
+        (entity) => this.translate.instant(credentialsTypeTranslationMap.get(entity.credentialsType)))
+    );
+
+    if (allowedClientTypes(this.configService.brokerConfig?.capabilities).length > 1) {
+      this.config.columns.push(
+        new EntityTableColumn<ClientCredentials>('clientType', 'mqtt-client.client-type', '150px',
+          (entity) => {
+            const clientType = entity.clientType;
+            const clientTypeTranslation = this.translate.instant(clientTypeTranslationMap.get(clientType));
+            const icon = clientTypeIcon.get(clientType);
+            const color = clientTypeColor.get(clientType);
+            const iconColor = clientTypeValueColor.get(clientType);
+            return cellWithIcon(clientTypeTranslation, icon, color, iconColor, iconColor);
+          })
+      );
+    }
+
+    this.config.columns.push(
       new EntityTableColumn<ClientCredentials>('warning', null, '300px',
         (entity) => {
           const credentialsType = entity.credentialsType;

@@ -38,21 +38,23 @@
           }
         </mat-chip-listbox>
       </div>
-      <div class="tb-form-row space-between column-xs">
-        <div class="fixed-title-width" translate>mqtt-client.client-type</div>
-        <mat-chip-listbox multiple formControlName="clientTypeList">
-          @for (value of clientTypes; track value) {
-            <mat-chip-option [value]="value">
-              <span style="display: inline-flex; align-items: center; gap: 4px;">
-                {{ clientTypeTranslationMap.get(value) | translate }}
-                <mat-icon style="height: 20px; width: 20px; font-size: 20px;" class="material-icons mat-icon">
-                  {{ clientTypeIcon.get(value) }}
-                </mat-icon>
-              </span>
-            </mat-chip-option>
-          }
-        </mat-chip-listbox>
-      </div>
+      @if (clientTypeFilterVisible) {
+        <div class="tb-form-row space-between column-xs">
+          <div class="fixed-title-width" translate>mqtt-client.client-type</div>
+          <mat-chip-listbox multiple formControlName="clientTypeList">
+            @for (value of clientTypes; track value) {
+              <mat-chip-option [value]="value">
+                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                  {{ clientTypeTranslationMap.get(value) | translate }}
+                  <mat-icon style="height: 20px; width: 20px; font-size: 20px;" class="material-icons mat-icon">
+                    {{ clientTypeIcon.get(value) }}
+                  </mat-icon>
+                </span>
+              </mat-chip-option>
+            }
+          </mat-chip-listbox>
+        </div>
+      }
       <div class="tb-form-row space-between column-xs">
         <div class="fixed-title-width" translate>mqtt-client-session.clean-start</div>
         <mat-chip-listbox multiple formControlName="cleanStartList">
@@ -90,17 +92,19 @@
           <input matInput type="number" min="0" formControlName="subscriptions">
         </mat-form-field>
       </div>
-      <div class="tb-form-row column-xs">
-        <div class="fixed-title-width" translate>mqtt-client-session.node-id</div>
-        <tb-entity-subtype-list subscriptSizing="dynamic"
-          formControlName="nodeIdList"
-          appearance="outline"
-          [addValueOutOfList]="false"
-          [emptyInputPlaceholder]="'action.select' | translate"
-          [additionalClasses]="['tb-chips', 'flex']"
-          [entityType]="entityType.KAFKA_BROKER">
-        </tb-entity-subtype-list>
-      </div>
+      @if (nodeIdVisible) {
+        <div class="tb-form-row column-xs">
+          <div class="fixed-title-width" translate>mqtt-client-session.node-id</div>
+          <tb-entity-subtype-list subscriptSizing="dynamic"
+            formControlName="nodeIdList"
+            appearance="outline"
+            [addValueOutOfList]="false"
+            [emptyInputPlaceholder]="'action.select' | translate"
+            [additionalClasses]="['tb-chips', 'flex']"
+            [entityType]="entityType.KAFKA_BROKER">
+          </tb-entity-subtype-list>
+        </div>
+      }
     </div>
   }
 }
@@ -141,21 +145,23 @@
         }
       </mat-chip-listbox>
     </div>
-    <div class="tb-form-row space-between column-xs">
-      <div class="fixed-title-width" translate>mqtt-client.client-type</div>
-      <mat-chip-listbox multiple formControlName="clientTypeList">
-        @for (value of clientTypes; track value) {
-          <mat-chip-option [value]="value">
-            <span style="display: inline-flex; align-items: center; gap: 4px;">
-              {{ clientTypeTranslationMap.get(value) | translate }}
-              <mat-icon style="height: 20px; width: 20px; font-size: 20px;" class="material-icons mat-icon">
-                {{ clientTypeIcon.get(value) }}
-              </mat-icon>
-            </span>
-          </mat-chip-option>
-        }
-      </mat-chip-listbox>
-    </div>
+    @if (clientTypeFilterVisible) {
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width" translate>mqtt-client.client-type</div>
+        <mat-chip-listbox multiple formControlName="clientTypeList">
+          @for (value of clientTypes; track value) {
+            <mat-chip-option [value]="value">
+              <span style="display: inline-flex; align-items: center; gap: 4px;">
+                {{ clientTypeTranslationMap.get(value) | translate }}
+                <mat-icon style="height: 20px; width: 20px; font-size: 20px;" class="material-icons mat-icon">
+                  {{ clientTypeIcon.get(value) }}
+                </mat-icon>
+              </span>
+            </mat-chip-option>
+          }
+        </mat-chip-listbox>
+      </div>
+    }
     <div class="tb-form-row space-between column-xs">
       <div class="fixed-title-width" translate>mqtt-client-session.clean-start</div>
       <mat-chip-listbox multiple formControlName="cleanStartList">
@@ -193,16 +199,18 @@
         <input matInput type="number" min="0" formControlName="subscriptions">
       </mat-form-field>
     </div>
-    <div class="tb-form-row column-xs">
-      <div class="fixed-title-width" translate>mqtt-client-session.node-id</div>
-      <tb-entity-subtype-list subscriptSizing="dynamic"
-        formControlName="nodeIdList"
-        appearance="outline"
-        [addValueOutOfList]="false"
-        [emptyInputPlaceholder]="'action.select' | translate"
-        [additionalClasses]="['tb-chips', 'flex']"
-        [entityType]="entityType.KAFKA_BROKER">
-      </tb-entity-subtype-list>
-    </div>
+    @if (nodeIdVisible) {
+      <div class="tb-form-row column-xs">
+        <div class="fixed-title-width" translate>mqtt-client-session.node-id</div>
+        <tb-entity-subtype-list subscriptSizing="dynamic"
+          formControlName="nodeIdList"
+          appearance="outline"
+          [addValueOutOfList]="false"
+          [emptyInputPlaceholder]="'action.select' | translate"
+          [additionalClasses]="['tb-chips', 'flex']"
+          [entityType]="entityType.KAFKA_BROKER">
+        </tb-entity-subtype-list>
+      </div>
+    }
   </div>
 </ng-template>

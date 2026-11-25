@@ -115,10 +115,12 @@
             <legend class="group-title">{{ 'mqtt-client-session.info' | translate }}</legend>
             <div class="session-details flex flex-1 flex-row gap-2.5">
               <div class="hint flex flex-1 flex-col gap-6">
-                <mat-form-field class="mat-block">
-                  <mat-label translate>mqtt-client-session.node</mat-label>
-                  <input matInput formControlName="nodeId">
-                </mat-form-field>
+                @if (nodeIdVisible) {
+                  <mat-form-field class="mat-block">
+                    <mat-label translate>mqtt-client-session.node</mat-label>
+                    <input matInput formControlName="nodeId">
+                  </mat-form-field>
+                }
                 @if (!isConnected()) {
                   <mat-form-field class="mat-block">
                     <mat-label translate>mqtt-client-session.session-expiry-interval</mat-label>

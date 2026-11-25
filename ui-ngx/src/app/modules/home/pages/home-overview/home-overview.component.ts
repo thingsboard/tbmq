@@ -28,6 +28,8 @@ import { ClientCredentialsService } from '@core/http/client-credentials.service'
 import { ClientSessionService } from '@core/http/client-session.service';
 import { SummaryPanelComponent } from '@home/components/home/summary-panel.component';
 import { ConnectionDetailsComponent } from '@home/components/home/connection-details.component';
+import { ConfigService } from '@core/http/config.service';
+import { filterCredentialsHomeCards } from '@core/utils/edition.utils';
 
 @Component({
     selector: 'tb-home-overview',
@@ -42,12 +44,13 @@ export class HomeOverviewComponent extends PageComponent {
   sessions$ = this.clientSessionService.getClientSessionsStats();
   credentials$ = this.clientCredentialsService.getClientCredentialsStatsInfo();
   sessionConfig = SessionsHomeCardConfig;
-  credentialsConfig = CredentialsHomeCardConfig;
+  credentialsConfig = filterCredentialsHomeCards(CredentialsHomeCardConfig, this.configService.brokerConfig?.capabilities);
 
   constructor(
     protected store: Store<AppState>,
     private clientSessionService: ClientSessionService,
     private clientCredentialsService: ClientCredentialsService,
+    private configService: ConfigService,
   ) {
     super(store);
   }

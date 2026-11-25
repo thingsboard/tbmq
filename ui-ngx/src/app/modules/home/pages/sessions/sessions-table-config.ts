@@ -48,6 +48,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { deepClone } from '@core/utils';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { tap } from 'rxjs/operators';
+import { EditionCapabilities } from '@shared/models/config.model';
+import { allowedClientTypes, isNodeIdVisible } from '@core/utils/edition.utils';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
 
 export class SessionsTableConfig extends EntityTableConfig<DetailedClientSessionInfo, TimePageLink> {
@@ -60,7 +62,8 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
               private dialogService: DialogService,
               public entityId: string = null,
               private route: ActivatedRoute,
-              private router: Router) {
+              private router: Router,
+              capabilities?: Partial<EditionCapabilities>) {
     super();
     this.loadDataOnInit = true;
     this.detailsPanelEnabled = false;
@@ -98,19 +101,35 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       ),
       new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '10%',
         undefined, () => undefined, true, () => ({}), () => undefined, false,
-        copyContentActionCell('clientIpAdr', this.translate)),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '100px',
-        (entity) => {
-          const clientType = entity.clientType;
-          const clientTypeTranslation = this.translate.instant(clientTypeTranslationMap.get(clientType));
-          const icon = clientTypeIcon.get(clientType);
-          const color = clientTypeColor.get(clientType);
-          const iconColor = clientTypeValueColor.get(clientType);
-          return cellWithIcon(clientTypeTranslation, icon, color, iconColor, iconColor);
-        }),
+        copyContentActionCell('clientIpAdr', this.translate))
+    );
+
+    if (allowedClientTypes(capabilities).length > 1) {
+      this.columns.push(
+        new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '100px',
+          (entity) => {
+            const clientType = entity.clientType;
+            const clientTypeTranslation = this.translate.instant(clientTypeTranslationMap.get(clientType));
+            const icon = clientTypeIcon.get(clientType);
+            const color = clientTypeColor.get(clientType);
+            const iconColor = clientTypeValueColor.get(clientType);
+            return cellWithIcon(clientTypeTranslation, icon, color, iconColor, iconColor);
+          })
+      );
+    }
+
+    this.columns.push(
       new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '100px',
-        (entity) => entity.subscriptionsCount.toString()),
-      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '100px'),
+        (entity) => entity.subscriptionsCount.toString())
+    );
+
+    if (isNodeIdVisible(capabilities)) {
+      this.columns.push(
+        new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '100px')
+      );
+    }
+
+    this.columns.push(
       new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe, '150px'),
       new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
         entity => checkBoxCell(entity?.cleanStart))

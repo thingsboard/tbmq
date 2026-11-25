@@ -49,25 +49,27 @@
         keyLabel="authentication.claim">
       </tb-key-val-map>
     </section>
-    <section class="security-setting mat-padding">
-      <section class="mb-4 flex flex-row items-center justify-between">
-        <p translate>authentication.client-type-configuration</p>
-        <tb-toggle-select formControlName="defaultClientType">
-          <tb-toggle-option [value]="ClientType.DEVICE">{{ clientTypeTranslationMap.get(ClientType.DEVICE) | translate }}</tb-toggle-option>
-          <tb-toggle-option [value]="ClientType.APPLICATION">{{ clientTypeTranslationMap.get(ClientType.APPLICATION) | translate }}</tb-toggle-option>
-        </tb-toggle-select>
+    @if (clientTypeConfigurable) {
+      <section class="security-setting mat-padding">
+        <section class="mb-4 flex flex-row items-center justify-between">
+          <p translate>authentication.client-type-configuration</p>
+          <tb-toggle-select formControlName="defaultClientType">
+            <tb-toggle-option [value]="ClientType.DEVICE">{{ clientTypeTranslationMap.get(ClientType.DEVICE) | translate }}</tb-toggle-option>
+            <tb-toggle-option [value]="ClientType.APPLICATION">{{ clientTypeTranslationMap.get(ClientType.APPLICATION) | translate }}</tb-toggle-option>
+          </tb-toggle-select>
+        </section>
+        <div class="tb-hint" [innerHtml]="defaultClientTypeHint"></div>
+        <section class="mt-2 flex flex-col gap-4">
+          <tb-key-val-map
+            formControlName="clientTypeClaims"
+            class="security-setting-content"
+            noDataText="authentication.claims-none"
+            addText="authentication.claims-client-type-add"
+            keyLabel="authentication.claim">
+          </tb-key-val-map>
+        </section>
       </section>
-      <div class="tb-hint" [innerHtml]="defaultClientTypeHint"></div>
-      <section class="mt-2 flex flex-col gap-4">
-        <tb-key-val-map
-          formControlName="clientTypeClaims"
-          class="security-setting-content"
-          noDataText="authentication.claims-none"
-          addText="authentication.claims-client-type-add"
-          keyLabel="authentication.claim">
-        </tb-key-val-map>
-      </section>
-    </section>
+    }
     <section class="security-setting mat-padding">
       <p class="mb-3" translate>authentication.authorization</p>
       <section class="security-setting mat-padding">

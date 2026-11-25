@@ -36,6 +36,8 @@ import { TemplatePortal } from '@angular/cdk/portal';
 
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { deepClone, isDefinedAndNotNull } from '@core/utils';
+import { ConfigService } from '@core/http/config.service';
+import { allowedClientTypes, isNodeIdVisible } from '@core/utils/edition.utils';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subject, Subscription } from 'rxjs';
 import {
@@ -95,7 +97,9 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
   connectionStates = [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED];
   connectionStateTranslationMap= connectionStateTranslationMap;
   ClientType = ClientType;
-  clientTypes = [ClientType.APPLICATION, ClientType.DEVICE];
+  clientTypes = allowedClientTypes(this.configService.brokerConfig?.capabilities);
+  clientTypeFilterVisible = this.clientTypes.length > 1;
+  nodeIdVisible = isNodeIdVisible(this.configService.brokerConfig?.capabilities);
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
   cleanStartList = [true, false];
@@ -122,7 +126,8 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
               private translate: TranslateService,
               private overlay: Overlay,
               private nativeElement: ElementRef,
-              private viewContainerRef: ViewContainerRef) {
+              private viewContainerRef: ViewContainerRef,
+              private configService: ConfigService) {
   }
 
   ngOnInit(): void {

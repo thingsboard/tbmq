@@ -28,6 +28,8 @@ import {
   Validators
 } from '@angular/forms';
 import { isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@core/utils';
+import { ConfigService } from '@core/http/config.service';
+import { allowedClientTypes } from '@core/utils/edition.utils';
 import { takeUntil } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
@@ -119,7 +121,7 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
 
   jwtConfigForm: UntypedFormGroup;
 
-  clientTypes = Object.values(ClientType);
+  clientTypeConfigurable = allowedClientTypes(this.configService.brokerConfig?.capabilities).length > 1;
   clientTypeTranslationMap = clientTypeTranslationMap;
   ClientType = ClientType;
 
@@ -141,16 +143,18 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
   }
 
   private propagateChangePending = false;
+  private changeRegistered = false;
   private propagateChange = (v: any) => { };
 
   constructor(private fb: UntypedFormBuilder,
-              private translate: TranslateService) {
+              private translate: TranslateService,
+              private configService: ConfigService) {
     super();
   }
 
   ngOnInit() {
     this.jwtConfigForm = this.fb.group({
-      defaultClientType: [null, [Validators.required]],
+      defaultClientType: [this.clientTypeConfigurable ? null : ClientType.DEVICE, [Validators.required]],
       authClaims: [null, []],
       authRules: this.fb.group({
         pubAuthRulePatterns: [null, []],
@@ -187,6 +191,11 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
   writeValue(value: JwtMqttAuthProviderConfiguration) {
     // TODO fix type check
     if (isDefinedAndNotNull(value) && value.type === MqttAuthProviderType.JWT) {
+      // The edition has no APPLICATION clients: a stored APPLICATION default or client type claims are saved back as DEVICE/none.
+      const resetClientType = !this.clientTypeConfigurable && this.hasForbiddenClientType(value);
+      if (resetClientType) {
+        value = {...value, defaultClientType: ClientType.DEVICE, clientTypeClaims: null};
+      }
       // TODO refactor authRules as separate component
       this.clearRuleSets();
       if (value.authRules) {
@@ -200,6 +209,9 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
       if (!this.disabled) {
         this.onJwtVerifierTypeChange(value.jwtVerifierConfiguration.jwtVerifierType);
       }
+      if (resetClientType) {
+        this.propagateResetValue();
+      }
     } else {
       this.propagateChangePending = true;
     }
@@ -207,6 +219,7 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
 
   registerOnChange(fn: any): void {
     this.propagateChange = fn;
+    this.changeRegistered = true;
     if (this.propagateChangePending) {
       this.propagateChangePending = false;
       setTimeout(() => {
@@ -223,6 +236,18 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
       this.jwtConfigForm.disable({emitEvent: false});
     } else {
       this.jwtConfigForm.enable({emitEvent: false});
+    }
+  }
+
+  private hasForbiddenClientType(value: JwtMqttAuthProviderConfiguration): boolean {
+    return value.defaultClientType !== ClientType.DEVICE || Object.keys(value.clientTypeClaims ?? {}).length > 0;
+  }
+
+  private propagateResetValue() {
+    if (this.changeRegistered) {
+      setTimeout(() => this.updateModels(this.jwtConfigForm.getRawValue()), 0);
+    } else {
+      this.propagateChangePending = true;
     }
   }
 

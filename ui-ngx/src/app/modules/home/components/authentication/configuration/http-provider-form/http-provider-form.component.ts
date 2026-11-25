@@ -27,6 +27,8 @@ import {
 } from '@angular/forms';
 import { baseUrl, isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
+import { ConfigService } from '@core/http/config.service';
+import { allowedClientTypes } from '@core/utils/edition.utils';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -120,7 +122,8 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
   readonly MemoryBufferSizeInKbLimit = 25000;
   readonly ClientType = ClientType;
   readonly clientTypeTranslationMap = clientTypeTranslationMap;
-  readonly clientTypes = Object.values(ClientType);
+  readonly clientTypes = allowedClientTypes(this.configService.brokerConfig?.capabilities);
+  readonly clientTypeConfigurable = this.clientTypes.length > 1;
   readonly authRulePatternsType = AuthRulePatternsType;
   readonly separatorKeysCodes = [ENTER, TAB];
 
@@ -142,7 +145,7 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
     headers: [{'Content-Type': 'application/json'}, Validators.required],
     requestBody: [null, []],
     credentials: [{ type: IntegrationCredentialType.Anonymous }],
-    defaultClientType: [null, [Validators.required]],
+    defaultClientType: [this.clientTypeConfigurable ? null : ClientType.DEVICE, [Validators.required]],
     authRules: this.fb.group({
       pubAuthRulePatterns: [null, []],
       subAuthRulePatterns: [null, []]
@@ -153,11 +156,13 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
   });
 
   private propagateChangePending = false;
+  private changeRegistered = false;
   private propagateChange = (v: any) => { };
 
   constructor(protected fb: UntypedFormBuilder,
               protected store: Store<AppState>,
-              protected translate: TranslateService) {
+              protected translate: TranslateService,
+              private configService: ConfigService) {
     super();
   }
 
@@ -184,7 +189,15 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
           console.error('Failed to parse requestBody as JSON', e);
         }
       }
+      // The edition has no APPLICATION clients: a stored APPLICATION default is saved back as DEVICE.
+      const resetClientType = !this.clientTypeConfigurable && value.defaultClientType !== ClientType.DEVICE;
+      if (resetClientType) {
+        value = {...value, defaultClientType: ClientType.DEVICE};
+      }
       this.httpProviderConfigForm.reset(value, {emitEvent: false});
+      if (resetClientType) {
+        this.propagateResetValue();
+      }
     } else {
       this.propagateChangePending = true;
     }
@@ -192,6 +205,7 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
 
   registerOnChange(fn: any): void {
     this.propagateChange = fn;
+    this.changeRegistered = true;
     if (this.propagateChangePending) {
       this.propagateChangePending = false;
       setTimeout(() => {
@@ -215,6 +229,14 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
     return this.httpProviderConfigForm.valid ? null : {
       basicProviderConfigForm: {valid: false}
     };
+  }
+
+  private propagateResetValue() {
+    if (this.changeRegistered) {
+      setTimeout(() => this.updateModels(this.httpProviderConfigForm.getRawValue()), 0);
+    } else {
+      this.propagateChangePending = true;
+    }
   }
 
   private updateModels(value: HttpMqttAuthProviderConfiguration) {

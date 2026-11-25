@@ -31,6 +31,8 @@ import { FormArray, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveF
 import { ClientSessionService } from '@core/http/client-session.service';
 import { MatFormField, MatLabel, MatHint, MatSuffix } from '@angular/material/form-field';
 import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
+import { ConfigService } from '@core/http/config.service';
+import { allowedClientTypes, isNodeIdVisible } from '@core/utils/edition.utils';
 import { MatToolbar } from '@angular/material/toolbar';
 import { TranslateModule } from '@ngx-translate/core';
 import { HelpComponent } from '@shared/components/help.component';
@@ -70,6 +72,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   entityForm: UntypedFormGroup;
   connectionStateColor = connectionStateColor;
   showAppClientShouldBePersistentWarning: boolean;
+  nodeIdVisible: boolean;
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
   clientCredentials = '';
@@ -90,13 +93,16 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
               public dialogRef: MatDialogRef<SessionsDetailsDialogComponent>,
               private fb: UntypedFormBuilder,
               private clientSessionService: ClientSessionService,
-              private cd: ChangeDetectorRef) {
+              private cd: ChangeDetectorRef,
+              private configService: ConfigService) {
     super(store, router, dialogRef);
   }
 
   ngOnInit(): void {
     this.entity = this.data.session;
-    this.showAppClientShouldBePersistentWarning = this.entity.clientType === ClientType.APPLICATION && this.entity.cleanStart && this.entity.sessionExpiryInterval === 0;
+    const capabilities = this.configService.brokerConfig?.capabilities;
+    this.nodeIdVisible = isNodeIdVisible(capabilities);
+    this.showAppClientShouldBePersistentWarning = allowedClientTypes(capabilities).includes(ClientType.APPLICATION) && this.entity.clientType === ClientType.APPLICATION && this.entity.cleanStart && this.entity.sessionExpiryInterval === 0;
     this.buildForms(this.entity);
   }
 
