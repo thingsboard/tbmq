@@ -40,8 +40,8 @@ try {
     Write-Host "Docker Compose version is: $COMPOSE_VERSION"
 
     # Define TBMQ versions
-    $old_version = "2.4.0"
-    $new_version = "2.4.1"
+    $old_version = "2.4.1"
+    $new_version = "2.4.2"
 
     # Define TBMQ images
     $old_image = "image: `"thingsboard/tbmq:$old_version`""
