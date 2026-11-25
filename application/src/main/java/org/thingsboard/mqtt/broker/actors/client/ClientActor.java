@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorCtx;
 import org.thingsboard.mqtt.broker.actors.TbActorException;
+import org.thingsboard.mqtt.broker.actors.client.messages.CheckSessionMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.EnhancedAuthInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.PubAckResponseMsg;
@@ -124,6 +125,9 @@ public class ClientActor extends ContextAwareActor {
                     case SESSION_INIT_MSG:
                         actorProcessor.onInit(state, (SessionInitMsg) msg);
                         break;
+                    case CHECK_SESSION_MSG:
+                        processCheckSessionMsg((CheckSessionMsg) msg);
+                        break;
                     case STOP_ACTOR_COMMAND_MSG:
                         processActorStop((StopActorCommandMsg) msg);
                         break;
@@ -211,6 +215,13 @@ public class ClientActor extends ContextAwareActor {
                     .msg("Finished msg processing")
                     .kv(StatsConstantNames.MSG_TYPE, msg.getMsgType())
             );
+        }
+    }
+
+    private void processCheckSessionMsg(CheckSessionMsg msg) {
+        if (!msg.getSessionId().equals(state.getCurrentSessionId())
+                || state.getCurrentSessionState() == SessionState.DISCONNECTED) {
+            msg.getOnAbsent().run();
         }
     }
 
