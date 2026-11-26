@@ -24,7 +24,9 @@ import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.common.util.edition.TbmqEdition;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
@@ -34,6 +36,7 @@ import org.thingsboard.mqtt.broker.service.mail.MailService;
 import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService;
 import org.thingsboard.mqtt.broker.service.system.SystemSettingsNotificationService;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
+import org.thingsboard.mqtt.broker.service.user.AdminServiceImpl;
 
 @Slf4j
 @Service
@@ -46,10 +49,22 @@ public class DefaultTbAdminService extends AbstractTbEntityService implements Tb
     private final MailService mailService;
     private final SystemSettingsNotificationService systemSettingsNotificationService;
     private final SystemSecurityService systemSecurityService;
+    private final TbmqEdition tbmqEdition;
 
     @Override
     public User save(AdminDto adminDto, User currentUser) throws ThingsboardException {
-        return adminService.createAdmin(adminDto, true);
+        boolean created = adminDto.getId() == null;
+        User user = adminService.createAdmin(adminDto, true);
+        if (created && tbmqEdition == TbmqEdition.LITE && hasDefaultPassword(adminDto)) {
+            // As for the seeded sysadmin, TBMQ Lite does not let an added admin keep the default password:
+            // the first sign-in must choose another one.
+            userService.markPasswordChangeRequired(user.getId());
+        }
+        return user;
+    }
+
+    private static boolean hasDefaultPassword(AdminDto adminDto) {
+        return StringUtils.isEmpty(adminDto.getPassword()) || AdminServiceImpl.SYSADMIN_PASSWORD.equals(adminDto.getPassword());
     }
 
     @Override

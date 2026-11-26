@@ -79,8 +79,9 @@ export function isNewerVersion(newest: string | null | undefined, current: strin
   return newestVersion.preRelease > currentVersion.preRelease;
 }
 
-// TBMQ Lite never keeps the default password: the server forces its change, and TBMQ_ADMIN_PASSWORD may not be the default.
-// Its sysadmin set from TBMQ_ADMIN_PASSWORD has a single password, which the cluster edition reads as the default one.
+// TBMQ Lite never keeps the default password: the server forces its change at the first sign-in, for the seeded sysadmin
+// and for an admin added with it, and TBMQ_ADMIN_PASSWORD may not be the default. A sysadmin set from TBMQ_ADMIN_PASSWORD
+// has a single password, which the cluster edition's check (one password = the default one) would flag.
 export function isDefaultPasswordNudgeShown(edition: TbmqEdition | undefined, isPasswordChanged: boolean | undefined): boolean {
   return edition !== 'lite' && isPasswordChanged === false;
 }
