@@ -50,6 +50,7 @@ public class StartScriptTest {
     private Path script;
     private Path meminfo;
     private Path configDir;
+    private Path procSelfCgroup;
 
     @Before
     public void setUp() throws IOException {
@@ -59,6 +60,7 @@ public class StartScriptTest {
         assertTrue("start script not found: " + script, Files.isRegularFile(script));
         meminfo = writeMeminfo(64 * GIB);
         configDir = tmp.newFolder("config").toPath();
+        procSelfCgroup = writeProcSelfCgroup("0::/");
     }
 
     @Test
@@ -193,6 +195,105 @@ public class StartScriptTest {
         Output out = run(root, null);
 
         assertTrue(out.logLine, out.logLine.contains("memory 1024 MiB, CPUs 2 (cgroup v1), collector Serial"));
+    }
+
+    @Test
+    public void v2OwnCgroupBelowTheMountRootIsRead() throws Exception {
+        // --cgroupns=host: /sys/fs/cgroup is the host's root, which has no memory.max or cpu.max
+        Path root = tmp.newFolder("cg-v2-host-ns").toPath();
+        write(root.resolve("cgroup.controllers"), "cpuset cpu io memory pids");
+        write(root.resolve("cpuset.cpus.effective"), "0-63");
+        Path own = root.resolve("system.slice/docker-abc.scope");
+        write(own.resolve("memory.max"), "1073741824");
+        write(own.resolve("cpu.max"), "100000 100000");
+        write(own.resolve("cpuset.cpus.effective"), "0-63");
+        procSelfCgroup = writeProcSelfCgroup("0::/system.slice/docker-abc.scope");
+
+        Output out = run(root, null);
+
+        assertEquals("TBMQ Lite: memory 1024 MiB, CPUs 1 (cgroup v2), collector Serial, max direct memory 102 MiB, jemalloc off",
+                out.logLine);
+        assertTrue(out.flags.contains("-XX:MaxDirectMemorySize=102m"));
+    }
+
+    @Test
+    public void v2LimitsOnAParentCgroupAreRead() throws Exception {
+        Path root = tmp.newFolder("cg-v2-parent").toPath();
+        write(root.resolve("cgroup.controllers"), "cpuset cpu io memory pids");
+        Path pod = root.resolve("kubepods/pod1");
+        write(pod.resolve("memory.max"), Long.toString(3 * GIB));
+        write(pod.resolve("cpu.max"), "300000 100000");
+        Path own = pod.resolve("ctr");
+        write(own.resolve("memory.max"), "max");
+        write(own.resolve("cpu.max"), "max 100000");
+        write(own.resolve("cpuset.cpus.effective"), "0-7");
+        procSelfCgroup = writeProcSelfCgroup("0::/kubepods/pod1/ctr");
+
+        Output out = run(root, null);
+
+        assertTrue(out.logLine, out.logLine.contains("memory 3072 MiB, CPUs 3 (cgroup v2), collector G1"));
+    }
+
+    @Test
+    public void v2SmallestLimitInTheChainWins() throws Exception {
+        Path root = tmp.newFolder("cg-v2-chain").toPath();
+        write(root.resolve("cgroup.controllers"), "cpuset cpu io memory pids");
+        Path pod = root.resolve("kubepods/pod1");
+        write(pod.resolve("memory.max"), Long.toString(3 * GIB));
+        write(pod.resolve("cpu.max"), "100000 100000");
+        Path own = pod.resolve("ctr");
+        write(own.resolve("memory.max"), "1073741824");
+        write(own.resolve("cpu.max"), "400000 100000");
+        write(own.resolve("cpuset.cpus.effective"), "0-7");
+        procSelfCgroup = writeProcSelfCgroup("0::/kubepods/pod1/ctr");
+
+        Output out = run(root, null);
+
+        assertTrue(out.logLine, out.logLine.contains("memory 1024 MiB, CPUs 1 (cgroup v2)"));
+    }
+
+    @Test
+    public void v2OwnPathNotVisibleUnderTheMountFallsBackToTheRoot() throws Exception {
+        Path root = v2("2147483648", "200000 100000", "0-7");
+        procSelfCgroup = writeProcSelfCgroup("0::/docker/not-mounted-here");
+
+        Output out = run(root, null);
+
+        assertTrue(out.logLine, out.logLine.contains("memory 2048 MiB, CPUs 2 (cgroup v2), collector G1"));
+    }
+
+    @Test
+    public void v1OwnCgroupBelowTheMountRootIsRead() throws Exception {
+        Path root = tmp.newFolder("cg-v1-nested").toPath();
+        write(root.resolve("memory/memory.limit_in_bytes"), "9223372036854771712");
+        write(root.resolve("memory/docker/abc/memory.limit_in_bytes"), "1073741824");
+        write(root.resolve("cpu/cpu.cfs_quota_us"), "-1");
+        write(root.resolve("cpu/cpu.cfs_period_us"), "100000");
+        write(root.resolve("cpu/docker/abc/cpu.cfs_quota_us"), "100000");
+        write(root.resolve("cpu/docker/abc/cpu.cfs_period_us"), "100000");
+        write(root.resolve("cpuset/cpuset.effective_cpus"), "0-63");
+        write(root.resolve("cpuset/docker/abc/cpuset.effective_cpus"), "0-3");
+        procSelfCgroup = writeProcSelfCgroup(
+                "12:memory:/docker/abc\n4:cpu,cpuacct:/docker/abc\n3:cpuset:/docker/abc\n0::/system.slice/docker.service");
+
+        Output out = run(root, null);
+
+        assertTrue(out.logLine, out.logLine.contains("memory 1024 MiB, CPUs 1 (cgroup v1), collector Serial"));
+    }
+
+    @Test
+    public void v1DockerLayoutWithTheOwnCgroupAsMountRootIsRead() throws Exception {
+        // Docker on cgroup v1: /proc/self/cgroup names /docker/<id>, but that cgroup is mounted as the root
+        Path root = tmp.newFolder("cg-v1-docker").toPath();
+        write(root.resolve("memory/memory.limit_in_bytes"), "2147483648");
+        write(root.resolve("cpu/cpu.cfs_quota_us"), "200000");
+        write(root.resolve("cpu/cpu.cfs_period_us"), "100000");
+        write(root.resolve("cpuset/cpuset.effective_cpus"), "0-7");
+        procSelfCgroup = writeProcSelfCgroup("12:memory:/docker/abc\n4:cpu,cpuacct:/docker/abc\n3:cpuset:/docker/abc");
+
+        Output out = run(root, null);
+
+        assertTrue(out.logLine, out.logLine.contains("memory 2048 MiB, CPUs 2 (cgroup v1), collector G1"));
     }
 
     @Test
@@ -370,6 +471,7 @@ public class StartScriptTest {
         env.remove("LD_PRELOAD");
         env.remove("MALLOC_ARENA_MAX");
         env.put("TBMQ_CGROUP_ROOT", cgroupRoot.toString());
+        env.put("TBMQ_PROC_SELF_CGROUP", procSelfCgroup.toString());
         env.put("TBMQ_MEMINFO", meminfo.toString());
         env.put("TBMQ_JEMALLOC", jemalloc);
         env.put("TBMQ_CONFIG_DIR", configDir.toString());
@@ -404,6 +506,12 @@ public class StartScriptTest {
         write(root.resolve("cpu.max"), cpuMax);
         write(root.resolve("cpuset.cpus.effective"), cpuset);
         return root;
+    }
+
+    private Path writeProcSelfCgroup(String content) throws IOException {
+        Path file = tmp.newFile().toPath();
+        write(file, content);
+        return file;
     }
 
     private Path writeMeminfo(long bytes) throws IOException {
