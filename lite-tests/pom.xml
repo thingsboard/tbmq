@@ -188,6 +188,7 @@
                         <tbmq.fixtures.schema-1.path>${project.basedir}/../dao-rocksdb/src/test/resources/fixtures/schema-1/db</tbmq.fixtures.schema-1.path>
                         <tbmq.lite.start-script>${project.basedir}/../msa/tbmq-lite/docker/start-tbmq-lite.sh</tbmq.lite.start-script>
                         <tbmq.lite.push-script>${project.basedir}/../msa/tbmq-lite/docker/push-multiarch.sh</tbmq.lite.push-script>
+                        <tbmq.lite.healthcheck-script>${project.basedir}/../msa/tbmq-lite/docker/healthcheck.sh</tbmq.lite.healthcheck-script>
                     </systemPropertyVariables>
                     <includes>
                         <include>**/*Test.java</include>

@@ -60,7 +60,8 @@ ENV DATA_FOLDER=/data
 # jcmd and the other tools of the bundled runtime
 ENV PATH=/usr/share/tbmq-lite/jre/bin:$PATH
 
-USER tbmq
+# numeric, so that Kubernetes runAsNonRoot can verify it (the tbmq entries stay for id and jcmd)
+USER 799:799
 WORKDIR /data
 VOLUME ["/data"]
 EXPOSE 1883 8083 8084
