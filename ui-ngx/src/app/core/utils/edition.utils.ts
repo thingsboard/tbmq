@@ -28,8 +28,9 @@ export function isNodeIdVisible(capabilities: Partial<EditionCapabilities> | nul
   return isCapabilityEnabled(capabilities, 'cluster');
 }
 
-export function editionProductName(edition: TbmqEdition | undefined): string {
-  return edition === 'lite' ? 'TBMQ Lite' : 'TBMQ';
+// appTitle is env.appTitle, passed in because the environment file needs build-time globals that Vitest does not define.
+export function editionProductName(appTitle: string, edition: TbmqEdition | undefined): string {
+  return edition === 'lite' ? `${appTitle} Lite` : appTitle;
 }
 
 interface ParsedVersion {

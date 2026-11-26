@@ -49,9 +49,10 @@ describe('edition.utils', () => {
   });
 
   it('editionProductName', () => {
-    expect(editionProductName('lite')).toBe('TBMQ Lite');
-    expect(editionProductName('cluster')).toBe('TBMQ');
-    expect(editionProductName(undefined)).toBe('TBMQ');
+    expect(editionProductName('TBMQ', 'lite')).toBe('TBMQ Lite');
+    expect(editionProductName('TBMQ', 'cluster')).toBe('TBMQ');
+    expect(editionProductName('TBMQ', undefined)).toBe('TBMQ');
+    expect(editionProductName('Custom', 'lite')).toBe('Custom Lite');
   });
 
   describe('isNewerVersion', () => {

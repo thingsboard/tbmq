@@ -46,7 +46,7 @@ export class TitleService {
     const translate = lazyTranslate || this.translate;
     // Public (login) pages keep the plain product name; the edition is known only after the config is loaded.
     const appTitle = module !== 'public' && this.configService.brokerConfig
-      ? editionProductName(this.configService.brokerConfig.edition)
+      ? editionProductName(env.appTitle, this.configService.brokerConfig.edition)
       : env.appTitle;
     if (title) {
       translate

@@ -24,6 +24,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { editionProductName, isNewerVersion, stripSnapshotSuffix } from '@core/utils/edition.utils';
+import { environment as env } from '@env/environment';
 
 @Component({
     selector: 'tb-home-version',
@@ -39,7 +40,7 @@ export class VersionCardComponent implements OnInit {
   updatesAvailable: boolean;
   currentReleaseVersion: string;
   productNamePrefix = this.configService.brokerConfig?.edition === 'lite'
-    ? `${editionProductName(this.configService.brokerConfig.edition)} `
+    ? `${editionProductName(env.appTitle, this.configService.brokerConfig.edition)} `
     : '';
   latestReleaseVersion: string;
 
