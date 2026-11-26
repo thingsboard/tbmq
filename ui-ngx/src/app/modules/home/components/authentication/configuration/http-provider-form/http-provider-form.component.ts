@@ -191,8 +191,9 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
           console.error('Failed to parse requestBody as JSON', e);
         }
       }
-      // The edition has no APPLICATION clients: a stored APPLICATION default is saved back as DEVICE once the form becomes editable.
-      this.clientTypeResetPending = !this.clientTypeConfigurable && value.defaultClientType === ClientType.APPLICATION;
+      // The client type is not configurable in this edition: a stored default it does not allow (APPLICATION, or none) is saved back
+      // as DEVICE once the form becomes editable.
+      this.clientTypeResetPending = !this.clientTypeConfigurable && !this.clientTypes.includes(value.defaultClientType);
       this.httpProviderConfigForm.reset(value, {emitEvent: false});
       this.scheduleClientTypeReset();
     } else {
