@@ -20,6 +20,7 @@ import {
   allowedClientTypes,
   editionProductName,
   filterCredentialsHomeCards,
+  isDefaultPasswordNudgeShown,
   isNewerVersion,
   isNodeIdVisible,
   stripSnapshotSuffix
@@ -100,6 +101,19 @@ describe('edition.utils', () => {
     it('keeps cards unchanged for cluster and unloaded config', () => {
       expect(filterCredentialsHomeCards(cards(), { applicationClients: true })).toEqual(cards());
       expect(filterCredentialsHomeCards(cards(), undefined)).toEqual(cards());
+    });
+  });
+
+  describe('isDefaultPasswordNudgeShown', () => {
+    it('shows the nudge in the cluster edition only while the password is unchanged', () => {
+      expect(isDefaultPasswordNudgeShown('cluster', false)).toBe(true);
+      expect(isDefaultPasswordNudgeShown('cluster', true)).toBe(false);
+      expect(isDefaultPasswordNudgeShown('cluster', undefined)).toBe(false);
+      expect(isDefaultPasswordNudgeShown(undefined, false)).toBe(true);
+    });
+
+    it('never shows it in TBMQ Lite', () => {
+      expect(isDefaultPasswordNudgeShown('lite', false)).toBe(false);
     });
   });
 });
