@@ -26,6 +26,7 @@ import {
 import { ConfigService } from '@core/http/config.service';
 import { animatedScroll } from '@core/utils';
 import { stripSnapshotSuffix } from '@core/utils/edition.utils';
+import { filterByCapability } from '@core/utils/capability.utils';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -50,7 +51,7 @@ export class GettingStartedComponent implements OnInit, AfterViewInit {
     : 'getting-started.guide.info-text';
 
   guides = gettingStartedGuides;
-  docs = gettingStartedDocs;
+  docs = filterByCapability(gettingStartedDocs, this.configService.brokerConfig?.capabilities);
   actionsDeveloper = gettingStartedActionsDeveloper;
   actionsProduct = gettingStartedActionsProduct;
   features = gettingStartedFeatures;

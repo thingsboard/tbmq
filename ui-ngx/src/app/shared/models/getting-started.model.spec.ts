@@ -15,6 +15,7 @@
 ///
 
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { filterByCapability } from '../../core/utils/capability.utils';
 
 type Model = typeof import('./getting-started.model');
 
@@ -75,5 +76,21 @@ describe('gettingStartedStepCommands', () => {
     expect(subscribe('tbmq_sub')).toContain('-u tbmq_sub -P tbmq_sub');
     expect(subscribe('tbmq_sub')).not.toContain('tbmq_app');
     expect(subscribe('tbmq_app')).toContain('-u tbmq_app -P tbmq_app');
+  });
+});
+
+describe('gettingStartedDocs', () => {
+  const titles = (links: { title: string }[]) => links.map(link => link.title);
+
+  it('lite edition drops the Integrations and Client Type cards', () => {
+    const lite = filterByCapability(model.gettingStartedDocs, { applicationClients: false, integrations: false });
+    expect(titles(lite)).not.toContain('Integrations');
+    expect(titles(lite)).not.toContain('Client Type');
+    expect(lite.length).toBe(model.gettingStartedDocs.length - 2);
+  });
+
+  it('cluster edition and unloaded config keep every card', () => {
+    expect(filterByCapability(model.gettingStartedDocs, { applicationClients: true, integrations: true })).toEqual(model.gettingStartedDocs);
+    expect(filterByCapability(model.gettingStartedDocs, undefined)).toEqual(model.gettingStartedDocs);
   });
 });

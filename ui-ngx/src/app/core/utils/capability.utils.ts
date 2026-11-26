@@ -26,6 +26,11 @@ export function isCapabilityEnabled(capabilities: Partial<EditionCapabilities> |
   return capabilities[capability] !== false;
 }
 
+export function filterByCapability<T extends { capability?: Capability }>(
+  items: T[], capabilities: Partial<EditionCapabilities> | null | undefined): T[] {
+  return items.filter(item => isCapabilityEnabled(capabilities, item.capability));
+}
+
 export function filterSectionsByCapability(sections: MenuSection[],
                                            capabilities: Partial<EditionCapabilities> | null | undefined): MenuSection[] {
   return sections

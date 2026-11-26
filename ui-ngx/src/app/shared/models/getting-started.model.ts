@@ -15,6 +15,7 @@
 ///
 
 import { HelpLinks } from '@shared/models/constants';
+import type { Capability } from '@shared/models/config.model';
 
 export const gettingStartedGuideTitle = (id: string) => gettingStartedGuides.find(el => el.id === id)?.title;
 
@@ -87,12 +88,14 @@ export const gettingStartedDocs: GettingStartedLink[] = [
   {
     img: '/assets/getting-started/integrations.svg',
     title: 'Integrations',
-    url: HelpLinks.linksMap.integrations
+    url: HelpLinks.linksMap.integrations,
+    capability: 'integrations'
   },
   {
     img: '/assets/getting-started/client_type.svg',
     title: 'Client Type',
-    url: HelpLinks.linksMap.clientType
+    url: HelpLinks.linksMap.clientType,
+    capability: 'applicationClients'
   },
   {
     img: '/assets/getting-started/monitoring.svg',
@@ -175,6 +178,8 @@ export interface GettingStartedLink {
   id?: string;
   img?: string;
   subtitle?: string;
+  // Shown only when the broker's edition has this capability.
+  capability?: Capability;
 }
 
 export const gettingStartedActionsDeveloper: GettingStartedLink[] = [
