@@ -388,6 +388,33 @@ public class AuthRulePatternsServiceSuiteTest {
     }
 
     @Test
+    public void testAuthorizationPolicyUsesClientAndCertificatePlaceholders() throws AuthenticationException {
+        PubSubAuthorizationRules rules = new PubSubAuthorizationRules(
+                List.of("devices/${clientId}/${cn}/telemetry"),
+                List.of("devices/${clientId}/${cn}/commands/.*"));
+
+        AuthRulePatterns compiled = authorizationRuleService.parseAuthorizationRule(
+                rules, "gateway.1", "device.42");
+
+        Assert.assertEquals("devices/\\Qdevice.42\\E/\\Qgateway.1\\E/telemetry",
+                compiled.getPubPatterns().get(0).pattern());
+        Assert.assertEquals("devices/\\Qdevice.42\\E/\\Qgateway.1\\E/commands/.*",
+                compiled.getSubPatterns().get(0).pattern());
+    }
+
+    @Test
+    public void testAuthorizationPolicyRejectsUnsafeClientId() {
+        PubSubAuthorizationRules rules = PubSubAuthorizationRules.newInstance(
+                List.of("devices/${clientId}/telemetry"));
+
+        AuthenticationException exception = Assert.assertThrows(AuthenticationException.class,
+                () -> authorizationRuleService.parseAuthorizationRule(rules, null, "victim/commands"));
+
+        Assert.assertEquals(DefaultAuthorizationRuleService.INVALID_CLIENT_ID_PLACEHOLDER_ERROR,
+                exception.getMessage());
+    }
+
+    @Test
     public void testSuccessfulRuleValidation1() {
         List<AuthRulePatterns> authRulePatterns = List.of(
                 AuthRulePatterns.newInstance(List.of(Pattern.compile("1/.*"))),

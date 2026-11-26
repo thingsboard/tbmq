@@ -116,4 +116,9 @@ public class DefaultMqttClientCredentialsDao extends AbstractDao<MqttClientCrede
                 .map(DaoUtil::getData)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public boolean existsByAuthorizationPolicyId(UUID authorizationPolicyId) {
+        return mqttClientCredentialsRepository.existsByAuthorizationPolicyId(authorizationPolicyId);
+    }
 }
