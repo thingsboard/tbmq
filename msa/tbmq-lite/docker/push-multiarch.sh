@@ -16,8 +16,7 @@
 #
 
 # Builds the image from the current directory for linux/amd64 and linux/arm64 and pushes it to the registry as one
-# multi-arch manifest. The version tag is always pushed; latest only for a plain release (x.y.z), never for a
-# pre-release such as 2.5.0-beta or 2.5.0-rc1.
+# multi-arch manifest, tagged with the version only (never latest).
 # DRY_RUN=1 prints the command instead of running it, so that nothing is built or pushed. Unset or empty DRY_RUN pushes
 # for real; any other value is refused, so that a mistyped DRY_RUN=true cannot turn into a push.
 usage() {
@@ -42,11 +41,7 @@ esac
 image=$1
 version=$2
 
-args=(buildx build --platform=linux/amd64,linux/arm64 --push -t "$image:$version")
-if [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  args+=(-t "$image:latest")
-fi
-args+=(.)
+args=(buildx build --platform=linux/amd64,linux/arm64 --push -t "$image:$version" .)
 
 if [ "${DRY_RUN:-}" = "1" ]; then
   echo "docker ${args[*]}"

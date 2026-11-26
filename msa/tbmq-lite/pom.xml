@@ -186,9 +186,8 @@
     <profiles>
         <profile>
             <!--
-                The inherited profile pushes the image for amd64 and arm64 and tags latest unconditionally. Here both of its
-                executions are switched off and docker/push-multiarch.sh runs instead: the version tag always, latest only
-                for a plain release version, so that a pre-release (-beta, -rc1) never moves latest.
+                The inherited profile pushes the image for amd64 and arm64 and also tags latest. Here both of its
+                executions are switched off and docker/push-multiarch.sh runs instead, which pushes the version tag only.
                 The push rebuilds the image from the same target/ boot jar, so build it first with -am and the yarn build
                 on (mvn -o -pl msa/tbmq-lite -am package -DskipTests -Dlicense.skip=true -Ddockerfile.skip=false) and run
                 LiteImageSmokeTest on that exact image before pushing.

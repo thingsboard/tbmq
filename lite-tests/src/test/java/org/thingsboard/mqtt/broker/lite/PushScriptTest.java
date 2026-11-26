@@ -70,33 +70,14 @@ public class PushScriptTest {
     }
 
     @Test
-    public void releaseAlsoTagsLatest() throws Exception {
-        Result result = run(true, REPO, "2.5.0");
-
-        assertEquals(result.stderr, 0, result.exit);
-        assertEquals(result.stdout.toString(), 1, result.stdout.size());
-        String command = result.stdout.get(0);
-        assertBuildCommand(command);
-        assertEquals(command, 2, count(command, " -t "));
-        assertTrue(command, command.contains(" -t " + REPO + ":2.5.0 "));
-        assertTrue(command, command.contains(" -t " + REPO + ":latest "));
+    public void releasePushesOnlyItsVersionTag() throws Exception {
+        assertVersionTagOnly("2.5.0");
     }
 
     @Test
-    public void patchReleaseWithMultiDigitPartsTagsLatest() throws Exception {
-        Result result = run(true, REPO, "10.21.134");
-
-        assertEquals(result.stderr, 0, result.exit);
-        assertTrue(result.stdout.get(0), result.stdout.get(0).contains(" -t " + REPO + ":latest "));
-    }
-
-    @Test
-    public void versionsThatAreNotPlainReleasesNeverTagLatest() throws Exception {
-        for (String version : new String[]{"2.5", "2.5.0.1", "v2.5.0", "2.5.0-", "2.5.0PE"}) {
-            Result result = run(true, REPO, version);
-
-            assertEquals(version + ": " + result.stderr, 0, result.exit);
-            assertFalse(version + ": " + result.stdout, result.stdout.toString().contains(":latest"));
+    public void noVersionEverTagsLatest() throws Exception {
+        for (String version : new String[]{"2.5.0", "10.21.134", "2.5", "2.5.0.1", "v2.5.0", "2.5.0PE"}) {
+            assertVersionTagOnly(version);
         }
     }
 
