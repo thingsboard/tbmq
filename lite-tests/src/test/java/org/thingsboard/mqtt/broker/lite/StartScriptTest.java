@@ -347,6 +347,18 @@ public class StartScriptTest {
     }
 
     @Test
+    public void aCollectorInUnderscoreJavaOptionsWins() throws Exception {
+        Path root = v2("1073741824", "100000 100000", "0-7");
+        extraEnv.put("_JAVA_OPTIONS", "-Dfoo=bar -XX:+UseZGC");
+
+        Output out = run(root, null);
+
+        assertTrue(out.logLine, out.logLine.contains("collector from _JAVA_OPTIONS"));
+        assertFalse(out.flags.toString(), out.flags.contains("-XX:+UseSerialGC"));
+        assertFalse(out.flags.toString(), out.flags.contains("-XX:+UseZGC"));
+    }
+
+    @Test
     public void aCollectorInJavaOptsIsNamedFirst() throws Exception {
         Path root = v2(Long.toString(4 * GIB), "400000 100000", "0-7");
         extraEnv.put("JAVA_TOOL_OPTIONS", "-XX:+UseParallelGC");
@@ -363,6 +375,7 @@ public class StartScriptTest {
         Path root = v2(Long.toString(4 * GIB), "400000 100000", "0-7");
         extraEnv.put("JDK_JAVA_OPTIONS", "-XX:+DisableExplicitGC");
         extraEnv.put("JAVA_TOOL_OPTIONS", "-XX:+UseStringDeduplication -XX:+PrintGCDetails");
+        extraEnv.put("_JAVA_OPTIONS", "-XX:+UseCompressedOops -Xlog:gc");
 
         Output out = run(root, null);
 
@@ -568,6 +581,7 @@ public class StartScriptTest {
         env.remove("JAVA_OPTS");
         env.remove("JDK_JAVA_OPTIONS");
         env.remove("JAVA_TOOL_OPTIONS");
+        env.remove("_JAVA_OPTIONS");
         env.remove("LD_PRELOAD");
         env.remove("MALLOC_ARENA_MAX");
         env.put("TBMQ_CGROUP_ROOT", cgroupRoot.toString());

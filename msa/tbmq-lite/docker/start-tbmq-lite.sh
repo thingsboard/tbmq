@@ -20,7 +20,8 @@
 # up to the mount root, taking the smallest limit. Memory from memory.max (v1 memory.limit_in_bytes), falling back to
 # MemTotal when unlimited or when the limit is not below MemTotal (the JVM ignores such a limit too); CPUs as the smaller
 # of the cpuset size and ceil(cpu quota / period), falling back to nproc.
-# A collector in JAVA_OPTS, JDK_JAVA_OPTIONS or JAVA_TOOL_OPTIONS suppresses the script's choice of collector.
+# A collector in JAVA_OPTS, JDK_JAVA_OPTIONS, JAVA_TOOL_OPTIONS or _JAVA_OPTIONS suppresses the script's choice of
+# collector.
 #
 #   start-tbmq-lite.sh                 logs one line with what it read and chose, then execs java
 #   start-tbmq-lite.sh --print-flags   prints that line, the flags (one per line), LD_PRELOAD=<value> and
@@ -212,9 +213,10 @@ if [ -n "${JAVA_OPTS:-}" ]; then
   read -r -d '' -a user_opts <<< "$JAVA_OPTS" || true
 fi
 # a collector named in any variable the JVM reads options from suppresses the script's choice: with two collectors
-# the JVM refuses to start (JAVA_OPTS is passed by this script, JDK_JAVA_OPTIONS and JAVA_TOOL_OPTIONS by the JVM)
+# the JVM refuses to start (JAVA_OPTS is passed by this script, JDK_JAVA_OPTIONS, JAVA_TOOL_OPTIONS and _JAVA_OPTIONS
+# are read by the JVM)
 collector_source=""
-for var in JAVA_OPTS JDK_JAVA_OPTIONS JAVA_TOOL_OPTIONS; do
+for var in JAVA_OPTS JDK_JAVA_OPTIONS JAVA_TOOL_OPTIONS _JAVA_OPTIONS; do
   words=()
   if [ -n "${!var:-}" ]; then
     read -r -d '' -a words <<< "${!var}" || true
