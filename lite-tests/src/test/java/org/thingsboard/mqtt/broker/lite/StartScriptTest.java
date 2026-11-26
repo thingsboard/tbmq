@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +52,7 @@ public class StartScriptTest {
     private Path meminfo;
     private Path configDir;
     private Path procSelfCgroup;
+    private final Map<String, String> extraEnv = new HashMap<>();
 
     @Before
     public void setUp() throws IOException {
@@ -198,6 +200,28 @@ public class StartScriptTest {
     }
 
     @Test
+    public void aLimitAboveHostMemoryFallsBackToHostMemory() throws Exception {
+        // the JVM ignores a limit at or above physical memory and sizes itself from the host (a 1 GiB host, 4g limit)
+        meminfo = writeMeminfo(GIB);
+        Path root = v2(Long.toString(4 * GIB), "max 100000", "0-3");
+
+        Output out = run(root, null);
+
+        assertEquals("TBMQ Lite: memory 1024 MiB, CPUs 4 (cgroup v2), collector Serial, max direct memory 102 MiB, jemalloc off",
+                out.logLine);
+        assertTrue(out.flags.contains("-XX:+UseSerialGC"));
+        assertTrue(out.flags.contains("-XX:MaxDirectMemorySize=102m"));
+    }
+
+    @Test
+    public void aLimitBelowHostMemoryIsUsed() throws Exception {
+        meminfo = writeMeminfo(4 * GIB);
+        Path root = v2(Long.toString(3 * GIB), "max 100000", "0-3");
+
+        assertTrue(run(root, null).logLine.contains("memory 3072 MiB, CPUs 4 (cgroup v2), collector G1"));
+    }
+
+    @Test
     public void v2OwnCgroupBelowTheMountRootIsRead() throws Exception {
         // --cgroupns=host: /sys/fs/cgroup is the host's root, which has no memory.max or cpu.max
         Path root = tmp.newFolder("cg-v2-host-ns").toPath();
@@ -294,6 +318,56 @@ public class StartScriptTest {
         Output out = run(root, null);
 
         assertTrue(out.logLine, out.logLine.contains("memory 2048 MiB, CPUs 2 (cgroup v1), collector G1"));
+    }
+
+    @Test
+    public void aCollectorInJdkJavaOptionsWins() throws Exception {
+        Path root = v2(Long.toString(4 * GIB), "400000 100000", "0-7");
+        extraEnv.put("JDK_JAVA_OPTIONS", "-Xss1m -XX:+UseZGC");
+
+        Output out = run(root, null);
+
+        assertTrue(out.logLine, out.logLine.contains("collector from JDK_JAVA_OPTIONS"));
+        assertFalse(out.flags.toString(), out.flags.contains("-XX:+UseG1GC"));
+        assertFalse(out.flags.toString(), out.flags.contains("-XX:+UseSerialGC"));
+        // the JVM reads JDK_JAVA_OPTIONS itself: the script does not pass it again
+        assertFalse(out.flags.toString(), out.flags.contains("-XX:+UseZGC"));
+    }
+
+    @Test
+    public void aCollectorInJavaToolOptionsWins() throws Exception {
+        Path root = v2("1073741824", "100000 100000", "0-7");
+        extraEnv.put("JAVA_TOOL_OPTIONS", "-XX:+UseParallelGC\n-Dfoo=bar");
+
+        Output out = run(root, null);
+
+        assertTrue(out.logLine, out.logLine.contains("collector from JAVA_TOOL_OPTIONS"));
+        assertFalse(out.flags.toString(), out.flags.contains("-XX:+UseSerialGC"));
+        assertFalse(out.flags.toString(), out.flags.contains("-XX:+UseParallelGC"));
+    }
+
+    @Test
+    public void aCollectorInJavaOptsIsNamedFirst() throws Exception {
+        Path root = v2(Long.toString(4 * GIB), "400000 100000", "0-7");
+        extraEnv.put("JAVA_TOOL_OPTIONS", "-XX:+UseParallelGC");
+
+        Output out = run(root, "-XX:+UseZGC");
+
+        assertTrue(out.logLine, out.logLine.contains("collector from JAVA_OPTS"));
+        assertTrue(out.flags.contains("-XX:+UseZGC"));
+        assertFalse(out.flags.toString(), out.flags.contains("-XX:+UseG1GC"));
+    }
+
+    @Test
+    public void nonCollectorOptionsInJvmVariablesKeepTheScriptsChoice() throws Exception {
+        Path root = v2(Long.toString(4 * GIB), "400000 100000", "0-7");
+        extraEnv.put("JDK_JAVA_OPTIONS", "-XX:+DisableExplicitGC");
+        extraEnv.put("JAVA_TOOL_OPTIONS", "-XX:+UseStringDeduplication -XX:+PrintGCDetails");
+
+        Output out = run(root, null);
+
+        assertTrue(out.logLine, out.logLine.contains("collector G1"));
+        assertTrue(out.flags.contains("-XX:+UseG1GC"));
     }
 
     @Test
@@ -421,8 +495,7 @@ public class StartScriptTest {
         Path root = v2(Long.toString(4 * GIB), "400000 100000", "0-7");
         Path bin = tmp.newFolder("bin").toPath();
         Path fakeJava = bin.resolve("java");
-        write(fakeJava, "#!/bin/bash\nfor a in \"$@\"; do echo \"ARG:$a\"; done\n");
-        assertTrue(fakeJava.toFile().setExecutable(true));
+        writeFakeJava(fakeJava);
 
         ProcessResult result = start(root, "-Dfoo=bar", nonexistentJemalloc(), bin.toString(), false);
 
@@ -437,6 +510,31 @@ public class StartScriptTest {
         assertEquals("-jar", args.get(size - 2));
         assertEquals("-Dfoo=bar", args.get(size - 3));
         assertTrue(args.toString(), args.contains("-XX:+UseG1GC"));
+        // what java really got in its environment: no preload, and the arena cap of the default allocator
+        assertTrue(result.stdout.toString(), result.stdout.contains("ENV:LD_PRELOAD=<unset>"));
+        assertTrue(result.stdout.toString(), result.stdout.contains("ENV:MALLOC_ARENA_MAX=2"));
+    }
+
+    @Test
+    public void withoutPrintFlagsJavaGetsTheLoadableAllocatorPreloaded() throws Exception {
+        Path root = v2(Long.toString(4 * GIB), "400000 100000", "0-7");
+        Path bin = tmp.newFolder("bin").toPath();
+        writeFakeJava(bin.resolve("java"));
+        String library = aLibraryThatPreloadsCleanly();
+
+        ProcessResult result = start(root, null, library, bin.toString(), false);
+
+        assertEquals(result.stderr, 0, result.exit);
+        assertTrue(result.stdout.toString(), result.stdout.contains("ENV:LD_PRELOAD=" + library));
+        assertTrue(result.stdout.toString(), result.stdout.contains("ENV:MALLOC_ARENA_MAX=<unset>"));
+    }
+
+    /** A java that prints its arguments and the allocator variables of its environment. */
+    private static void writeFakeJava(Path fakeJava) throws IOException {
+        write(fakeJava, "#!/bin/bash\nfor a in \"$@\"; do echo \"ARG:$a\"; done\n"
+                + "echo \"ENV:LD_PRELOAD=${LD_PRELOAD-<unset>}\"\n"
+                + "echo \"ENV:MALLOC_ARENA_MAX=${MALLOC_ARENA_MAX-<unset>}\"\n");
+        assertTrue(fakeJava.toFile().setExecutable(true));
     }
 
     private Output run(Path cgroupRoot, String javaOpts) throws Exception {
@@ -468,6 +566,8 @@ public class StartScriptTest {
         ProcessBuilder pb = new ProcessBuilder(command);
         Map<String, String> env = pb.environment();
         env.remove("JAVA_OPTS");
+        env.remove("JDK_JAVA_OPTIONS");
+        env.remove("JAVA_TOOL_OPTIONS");
         env.remove("LD_PRELOAD");
         env.remove("MALLOC_ARENA_MAX");
         env.put("TBMQ_CGROUP_ROOT", cgroupRoot.toString());
@@ -478,6 +578,7 @@ public class StartScriptTest {
         if (javaOpts != null) {
             env.put("JAVA_OPTS", javaOpts);
         }
+        env.putAll(extraEnv);
         if (extraPath != null) {
             env.put("PATH", extraPath + File.pathSeparator + env.get("PATH"));
         }

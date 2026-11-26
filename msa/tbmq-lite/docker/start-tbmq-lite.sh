@@ -18,7 +18,9 @@
 # Starts TBMQ Lite with JVM flags chosen from the container's limits, read the way the JVM reads them: in the process's
 # own cgroup (from /proc/self/cgroup, or the mount root when that path is not visible under the mount) and every parent
 # up to the mount root, taking the smallest limit. Memory from memory.max (v1 memory.limit_in_bytes), falling back to
-# MemTotal when unlimited; CPUs as the smaller of the cpuset size and ceil(cpu quota / period), falling back to nproc.
+# MemTotal when unlimited or when the limit is not below MemTotal (the JVM ignores such a limit too); CPUs as the smaller
+# of the cpuset size and ceil(cpu quota / period), falling back to nproc.
+# A collector in JAVA_OPTS, JDK_JAVA_OPTIONS or JAVA_TOOL_OPTIONS suppresses the script's choice of collector.
 #
 #   start-tbmq-lite.sh                 logs one line with what it read and chose, then execs java
 #   start-tbmq-lite.sh --print-flags   prints that line, the flags (one per line), LD_PRELOAD=<value> and
@@ -179,10 +181,11 @@ else
   cpuset=$(first_line "$(cgroup_dir "$CGROUP_ROOT/cpuset" "$(own_cgroup_path cpuset)")/cpuset.effective_cpus")
 fi
 
-if [ -n "$mem_limit" ]; then
+# memory: the limit, unless there is none or it is not below the host's memory
+host_mib=$(memtotal_mib)
+memory_mib=$host_mib
+if [ -n "$mem_limit" ] && { [ "$host_mib" -le 0 ] || [ $((mem_limit / MIB)) -lt "$host_mib" ]; }; then
   memory_mib=$((mem_limit / MIB))
-else
-  memory_mib=$(memtotal_mib)
 fi
 
 # CPUs: the cpuset (nproc when unknown), capped by the quota when there is one
@@ -202,21 +205,29 @@ if [ "$direct_mib" -lt "$MIN_DIRECT_MIB" ]; then
   direct_mib=$MIN_DIRECT_MIB
 fi
 
-# user flags, split into words on any whitespace including newlines (no globbing); a collector named in them
-# suppresses the script's choice. read -d '' returns non-zero at the end of input, which is expected here.
+# user flags, split into words on any whitespace including newlines (no globbing). read -d '' returns non-zero at the
+# end of input, which is expected here.
 user_opts=()
 if [ -n "${JAVA_OPTS:-}" ]; then
   read -r -d '' -a user_opts <<< "$JAVA_OPTS" || true
 fi
-user_collector=false
-for word in ${user_opts[@]+"${user_opts[@]}"}; do
-  if [[ $word == -XX:+Use*GC ]]; then
-    user_collector=true
+# a collector named in any variable the JVM reads options from suppresses the script's choice: with two collectors
+# the JVM refuses to start (JAVA_OPTS is passed by this script, JDK_JAVA_OPTIONS and JAVA_TOOL_OPTIONS by the JVM)
+collector_source=""
+for var in JAVA_OPTS JDK_JAVA_OPTIONS JAVA_TOOL_OPTIONS; do
+  words=()
+  if [ -n "${!var:-}" ]; then
+    read -r -d '' -a words <<< "${!var}" || true
   fi
+  for word in ${words[@]+"${words[@]}"}; do
+    if [ -z "$collector_source" ] && [[ $word == -XX:+Use*GC ]]; then
+      collector_source=$var
+    fi
+  done
 done
 collector_flag=""
-collector_name="from JAVA_OPTS"
-if [ "$user_collector" = false ]; then
+collector_name="from $collector_source"
+if [ -z "$collector_source" ]; then
   if [ "$cpus" -lt 2 ] || [ "$memory_mib" -lt "$SERIAL_BELOW_MIB" ]; then
     collector_flag=-XX:+UseSerialGC
     collector_name=Serial
