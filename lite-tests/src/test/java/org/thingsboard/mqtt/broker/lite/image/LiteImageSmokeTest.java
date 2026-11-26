@@ -105,6 +105,11 @@ public class LiteImageSmokeTest {
                 healthcheck.getStdout(), healthcheck.getStderr()).isZero();
         ImageTestSupport.awaitDockerHealthy(lite, Duration.ofSeconds(90));
 
+        // the JVM runs as uid 799 and really has jemalloc loaded, not only the start script's word for it
+        assertThat(lite.execInContainer("id", "-u").getStdout().trim()).isEqualTo("799");
+        var maps = lite.execInContainer("grep", "-c", "libjemalloc", "/proc/1/maps");
+        assertThat(maps.getExitCode()).as("libjemalloc in the JVM's memory maps, stderr: %s", maps.getStderr()).isZero();
+
         // the runtime keeps the remote JMX agent, so the usual -Dcom.sun.management.jmxremote options in JAVA_OPTS work
         var modules = lite.execInContainer("java", "--list-modules");
         assertThat(modules.getStdout()).contains("jdk.management.agent@").contains("jdk.jcmd@").contains("jdk.attach@");

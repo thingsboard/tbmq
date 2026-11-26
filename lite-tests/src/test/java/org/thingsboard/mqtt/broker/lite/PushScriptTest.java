@@ -100,7 +100,9 @@ public class PushScriptTest {
         Path bin = tmp.newFolder("bin").toPath();
         Path args = tmp.getRoot().toPath().resolve("docker-args");
         Path fakeDocker = bin.resolve("docker");
-        Files.write(fakeDocker, ("#!/bin/sh\nprintf '%s\\n' \"$@\" > '" + args + "'\n").getBytes(StandardCharsets.UTF_8));
+        // appends every call, with an end marker, so that an extra docker call before the last one is seen too
+        Files.write(fakeDocker, ("#!/bin/sh\nprintf '%s\\n' \"$@\" '--end-of-call--' >> '" + args + "'\n")
+                .getBytes(StandardCharsets.UTF_8));
         assertTrue(fakeDocker.toFile().setExecutable(true));
 
         assertFakeDockerWins(bin, fakeDocker);
@@ -108,7 +110,9 @@ public class PushScriptTest {
         Result result = runWithPath(false, bin.toString(), REPO, "2.5.0-beta");
 
         assertEquals(result.stderr, 0, result.exit);
-        List<String> lines = Files.readAllLines(args, StandardCharsets.UTF_8);
+        List<String> calls = Files.readAllLines(args, StandardCharsets.UTF_8);
+        assertEquals("exactly one docker call: " + calls, 1, count(String.join("\n", calls), "--end-of-call--"));
+        List<String> lines = calls.subList(0, calls.size() - 1);
         assertEquals("buildx", lines.get(0));
         assertEquals("build", lines.get(1));
         assertTrue(lines.toString(), lines.contains("--platform=linux/amd64,linux/arm64"));
