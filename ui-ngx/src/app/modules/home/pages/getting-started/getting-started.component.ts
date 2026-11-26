@@ -25,6 +25,8 @@ import {
 } from '@shared/models/getting-started.model';
 import { ConfigService } from '@core/http/config.service';
 import { animatedScroll } from '@core/utils';
+import { stripSnapshotSuffix } from '@core/utils/edition.utils';
+import { filterByCapability } from '@core/utils/capability.utils';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -44,8 +46,12 @@ export class GettingStartedComponent implements OnInit, AfterViewInit {
 
   currentReleaseVersion: string;
 
+  infoTextKey = this.configService.brokerConfig?.edition === 'lite'
+    ? 'getting-started.info-text-lite'
+    : 'getting-started.guide.info-text';
+
   guides = gettingStartedGuides;
-  docs = gettingStartedDocs;
+  docs = filterByCapability(gettingStartedDocs, this.configService.brokerConfig?.capabilities);
   actionsDeveloper = gettingStartedActionsDeveloper;
   actionsProduct = gettingStartedActionsProduct;
   features = gettingStartedFeatures;
@@ -59,7 +65,7 @@ export class GettingStartedComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     this.configService.getSystemVersion().subscribe(currentRelease => {
       if (currentRelease) {
-        this.currentReleaseVersion = currentRelease.version.split('-')[0];
+        this.currentReleaseVersion = stripSnapshotSuffix(currentRelease.version);
         this.cd.detectChanges();
       }
     });

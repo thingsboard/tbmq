@@ -49,6 +49,8 @@ import { MqttCredentialsSslComponent } from '../client-credentials-templates/ssl
 import { MqttCredentialsScramComponent } from '../client-credentials-templates/scram/scram.component';
 import { MatDivider } from '@angular/material/divider';
 import { MatTooltip } from '@angular/material/tooltip';
+import { ConfigService } from '@core/http/config.service';
+import { allowedClientTypes } from '@core/utils/edition.utils';
 
 @Component({
     selector: 'tb-client-credentials-wizard',
@@ -69,7 +71,8 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
   CredentialsTypes = CredentialsTypes;
   credentialsTypeTranslationMap = credentialsTypeTranslationMap;
   clientTypeTranslationMap = clientTypeTranslationMap;
-  clientTypes = Object.values(ClientType);
+  clientTypes = allowedClientTypes(this.configService.brokerConfig?.capabilities);
+  clientTypeSelectable = this.clientTypes.length > 1;
   clientCredentialsWizardFormGroup: UntypedFormGroup;
   authenticationFormGroup: UntypedFormGroup;
 
@@ -79,6 +82,7 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
               private clientCredentialsService: ClientCredentialsService,
               private breakpointObserver: BreakpointObserver,
               private fb: FormBuilder,
+              private configService: ConfigService,
               @Inject(MAT_DIALOG_DATA) public data: AddEntityDialogData<BaseData>,
   ) {
     super(store, router, dialogRef);
@@ -119,6 +123,10 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
           [key]: value
         });
       }
+    }
+
+    if (!this.clientTypes.includes(this.clientCredentialsWizardFormGroup.get('clientType').value)) {
+      this.clientCredentialsWizardFormGroup.patchValue({clientType: ClientType.DEVICE});
     }
 
     this.clientCredentialsWizardFormGroup.get('credentialsType').valueChanges.subscribe(

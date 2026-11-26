@@ -41,6 +41,8 @@ import { MqttCredentialsBasicComponent } from '@home/components/client-credentia
 import { MqttCredentialsSslComponent } from '@home/components/client-credentials-templates/ssl/ssl.component';
 import { MqttCredentialsScramComponent } from '@home/components/client-credentials-templates/scram/scram.component';
 import { MatTooltip } from '@angular/material/tooltip';
+import { ConfigService } from '@core/http/config.service';
+import { allowedClientTypes } from '@core/utils/edition.utils';
 
 @Component({
     selector: 'tb-client-credentials',
@@ -53,7 +55,8 @@ export class ClientCredentialsComponent extends EntityComponent<ClientCredential
   credentialsType = CredentialsType;
   credentialsTypes = CredentialsTypes;
   credentialsTypeTranslationMap = credentialsTypeTranslationMap;
-  clientTypes = Object.values(ClientType);
+  clientTypes = allowedClientTypes(this.configService.brokerConfig?.capabilities);
+  clientTypeSelectable = this.clientTypes.length > 1;
 
   ClientType = ClientType;
   clientTypeTranslationMap = clientTypeTranslationMap;
@@ -62,7 +65,8 @@ export class ClientCredentialsComponent extends EntityComponent<ClientCredential
               @Inject('entity') protected entityValue: ClientCredentials,
               @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<ClientCredentials>,
               public fb: UntypedFormBuilder,
-              protected cd: ChangeDetectorRef) {
+              protected cd: ChangeDetectorRef,
+              private configService: ConfigService) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
   }
 
@@ -117,8 +121,13 @@ export class ClientCredentialsComponent extends EntityComponent<ClientCredential
     this.entityForm.patchValue({name: entity.name});
     this.entityForm.patchValue({credentialsType: entity.credentialsType});
     this.entityForm.patchValue({credentialsValue: entity.credentialsValue});
-    this.entityForm.patchValue({clientType: entity.clientType});
+    // A stored value the edition does not allow (e.g. APPLICATION in Lite) is saved back as DEVICE, as the backend refuses it.
+    this.entityForm.patchValue({clientType: this.allowedClientType(entity.clientType)});
     this.entityForm.patchValue({additionalInfo: {description: entity.additionalInfo ? entity.additionalInfo.description : ''}});
+  }
+
+  private allowedClientType(clientType: ClientType): ClientType {
+    return !clientType || this.clientTypes.includes(clientType) ? clientType : ClientType.DEVICE;
   }
 
   showConnectivityDialog() {

@@ -33,6 +33,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { Router, RouterOutlet } from '@angular/router';
 import { svgIcons, svgIconsUrl } from '@shared/models/icon.models';
 import { AuthState } from '@core/auth/auth.models';
+import { ConfigService } from '@core/http/config.service';
+import { isDefaultPasswordNudgeShown } from '@core/utils/edition.utils';
 
 @Component({
     selector: 'tb-root',
@@ -50,7 +52,8 @@ export class AppComponent {
               private authService: AuthService,
               private dialog: MatDialog,
               private zone: NgZone,
-              private router: Router) {
+              private router: Router,
+              private configService: ConfigService) {
 
     console.log(`TBMQ Version: ${env.tbmqVersion}`);
 
@@ -137,6 +140,6 @@ export class AppComponent {
   }
 
   private userHasDefaultPassword(authState: AuthState): boolean {
-    return authState?.userDetails?.additionalInfo?.isPasswordChanged === false;
+    return isDefaultPasswordNudgeShown(this.configService.brokerConfig?.edition, authState?.userDetails?.additionalInfo?.isPasswordChanged);
   }
 }

@@ -27,6 +27,8 @@ import {
 } from '@angular/forms';
 import { baseUrl, isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
+import { ConfigService } from '@core/http/config.service';
+import { allowedClientTypes } from '@core/utils/edition.utils';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -120,21 +122,27 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
   readonly MemoryBufferSizeInKbLimit = 25000;
   readonly ClientType = ClientType;
   readonly clientTypeTranslationMap = clientTypeTranslationMap;
-  readonly clientTypes = Object.values(ClientType);
+  readonly clientTypes = allowedClientTypes(this.configService.brokerConfig?.capabilities);
+  readonly clientTypeConfigurable = this.clientTypes.length > 1;
   readonly authRulePatternsType = AuthRulePatternsType;
   readonly separatorKeysCodes = [ENTER, TAB];
 
   pubRulesSet = new Set<string>();
   subRulesSet = new Set<string>();
 
+  // TBMQ Lite connects every client as a device, so its example has no clientType.
   readonly expectedResponse = {
     result: "success",
-    clientType: "application",
+    ...(this.clientTypeConfigurable ? {clientType: "application"} : {}),
     authRules: {
       pub: ["telemetry/.*", "alerts/.*"],
       sub: ["commands/.*"]
     }
   };
+  readonly clientTypeHintKey = this.clientTypeConfigurable
+    ? 'authentication.expected-response-client-type' : 'authentication.expected-response-client-type-lite';
+  readonly emptyBodyDefaultsKey = this.clientTypeConfigurable
+    ? 'authentication.expected-response-empty-body-defaults' : 'authentication.expected-response-empty-body-defaults-lite';
 
   readonly httpProviderConfigForm = this.fb.group({
     restEndpointUrl: [baseUrl(), [Validators.required, notOnlyWhitespaceValidator]],
@@ -142,7 +150,7 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
     headers: [{'Content-Type': 'application/json'}, Validators.required],
     requestBody: [null, []],
     credentials: [{ type: IntegrationCredentialType.Anonymous }],
-    defaultClientType: [null, [Validators.required]],
+    defaultClientType: [this.clientTypeConfigurable ? null : ClientType.DEVICE, [Validators.required]],
     authRules: this.fb.group({
       pubAuthRulePatterns: [null, []],
       subAuthRulePatterns: [null, []]
@@ -157,7 +165,8 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
 
   constructor(protected fb: UntypedFormBuilder,
               protected store: Store<AppState>,
-              protected translate: TranslateService) {
+              protected translate: TranslateService,
+              private configService: ConfigService) {
     super();
   }
 
@@ -184,7 +193,11 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
           console.error('Failed to parse requestBody as JSON', e);
         }
       }
+      // The client type is not configurable in this edition: a stored default it does not allow (APPLICATION, or none) is saved back
+      // as DEVICE once the form becomes editable.
+      this.clientTypeResetPending = !this.clientTypeConfigurable && !this.clientTypes.includes(value.defaultClientType);
       this.httpProviderConfigForm.reset(value, {emitEvent: false});
+      this.scheduleClientTypeReset();
     } else {
       this.propagateChangePending = true;
     }
@@ -208,6 +221,7 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
       this.httpProviderConfigForm.disable({emitEvent: false});
     } else {
       this.httpProviderConfigForm.enable({emitEvent: false});
+      this.scheduleClientTypeReset();
     }
   }
 
@@ -215,6 +229,11 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
     return this.httpProviderConfigForm.valid ? null : {
       basicProviderConfigForm: {valid: false}
     };
+  }
+
+  protected resetClientType() {
+    this.httpProviderConfigForm.patchValue({defaultClientType: ClientType.DEVICE}, {emitEvent: false});
+    this.updateModels(this.httpProviderConfigForm.getRawValue());
   }
 
   private updateModels(value: HttpMqttAuthProviderConfiguration) {

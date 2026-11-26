@@ -24,7 +24,10 @@
     <header class="tb-nav-header">
       <mat-toolbar color="primary" class="tb-nav-header-toolbar">
         <div class="flex flex-auto">
-          <tb-logo class="tb-logo-title"></tb-logo>
+          <tb-logo class="tb-logo-title" [class.tb-logo-with-edition]="isLite"></tb-logo>
+          @if (isLite) {
+            <span class="tb-edition-chip">Lite</span>
+          }
         </div>
       </mat-toolbar>
     </header>

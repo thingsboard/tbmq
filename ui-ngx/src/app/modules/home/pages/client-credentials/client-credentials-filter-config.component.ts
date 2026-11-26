@@ -38,7 +38,7 @@ import { deepClone, isNotEmptyStr } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
-import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
+import { clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 import {
   ClientCredentialsFilterConfig,
   clientCredentialsFilterConfigEquals,
@@ -53,6 +53,8 @@ import { MatChipListbox, MatChipOption } from '@angular/material/chips';
 import { MatFormField, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { takeUntil } from 'rxjs/operators';
+import { ConfigService } from '@core/http/config.service';
+import { allowedClientTypes } from '@core/utils/edition.utils';
 
 export const CLIENT_CREDENTIALS_FILTER_CONFIG_DATA = new InjectionToken<any>('ClientCredentialsFilterConfigData');
 
@@ -86,7 +88,8 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   disabled = model<boolean>();
   readonly buttonMode = input(true);
 
-  clientTypes = Object.values(ClientType);
+  clientTypes = allowedClientTypes(this.configService.brokerConfig?.capabilities);
+  clientTypeFilterVisible = this.clientTypes.length > 1;
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
   clientCredentialsTypes = CredentialsTypes;
@@ -111,7 +114,8 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
               private translate: TranslateService,
               private overlay: Overlay,
               private nativeElement: ElementRef,
-              private viewContainerRef: ViewContainerRef) {
+              private viewContainerRef: ViewContainerRef,
+              private configService: ConfigService) {
   }
 
   ngOnInit(): void {

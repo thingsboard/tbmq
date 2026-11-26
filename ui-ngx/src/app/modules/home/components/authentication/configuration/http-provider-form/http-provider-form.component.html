@@ -79,24 +79,34 @@
       <p translate>authentication.body-response</p>
       <div class="tb-hint pb-0" [innerHtml]="'authentication.expected-response' | translate"></div>
       <section class="flex">
-        <div class="tb-hint flex-1" [innerHtml]="'authentication.expected-response-json' | translate"></div>
+        <div class="tb-hint flex-1"><code class="whitespace-pre">{{ expectedResponse | json }}</code></div>
         <tb-copy-button [style]="{color: 'rgba(0,0,0,0.54)'}" [copyText]="expectedResponse | json"/>
       </section>
-      <div class="tb-hint pb-0" [innerHtml]="'authentication.expected-response-interpretation' | translate"></div>
+      <div class="tb-hint pb-0">
+        {{ 'authentication.expected-response-interpretation' | translate }}
+        <ul>
+          <li [innerHtml]="'authentication.expected-response-result' | translate"></li>
+          <li [innerHtml]="clientTypeHintKey | translate"></li>
+          <li [innerHtml]="'authentication.expected-response-auth-rules' | translate"></li>
+          <li [innerHtml]="'authentication.expected-response-status-code' | translate: {defaults: (emptyBodyDefaultsKey | translate)}"></li>
+        </ul>
+      </div>
     </section>
-    <section class="security-setting mat-padding">
-      <p translate>authentication.client-type-default</p>
-      <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
-        <mat-select required formControlName="defaultClientType">
-          @for (clientType of clientTypes; track clientType) {
-            <mat-option [value]="clientType">
-              {{ clientTypeTranslationMap.get(clientType) | translate }}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <div class="tb-hint pb-0 pt-2" [innerHtml]="'authentication.client-type-default-hint' | translate : {type: clientTypeTranslationMap.get(httpProviderConfigForm?.get('defaultClientType')?.value) | translate  }"></div>
-    </section>
+    @if (clientTypeConfigurable) {
+      <section class="security-setting mat-padding">
+        <p translate>authentication.client-type-default</p>
+        <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+          <mat-select required formControlName="defaultClientType">
+            @for (clientType of clientTypes; track clientType) {
+              <mat-option [value]="clientType">
+                {{ clientTypeTranslationMap.get(clientType) | translate }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <div class="tb-hint pb-0 pt-2" [innerHtml]="'authentication.client-type-default-hint' | translate : {type: clientTypeTranslationMap.get(httpProviderConfigForm?.get('defaultClientType')?.value) | translate  }"></div>
+      </section>
+    }
     <section class="security-setting mat-padding">
       <div class="flex flex-1 flex-col" formGroupName="authRules">
         <p translate>authentication.authorization-default</p>

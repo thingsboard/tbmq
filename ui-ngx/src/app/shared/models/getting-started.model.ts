@@ -15,6 +15,7 @@
 ///
 
 import { HelpLinks } from '@shared/models/constants';
+import type { Capability } from '@shared/models/config.model';
 
 export const gettingStartedGuideTitle = (id: string) => gettingStartedGuides.find(el => el.id === id)?.title;
 
@@ -87,12 +88,14 @@ export const gettingStartedDocs: GettingStartedLink[] = [
   {
     img: '/assets/getting-started/integrations.svg',
     title: 'Integrations',
-    url: HelpLinks.linksMap.integrations
+    url: HelpLinks.linksMap.integrations,
+    capability: 'integrations'
   },
   {
     img: '/assets/getting-started/client_type.svg',
     title: 'Client Type',
-    url: HelpLinks.linksMap.clientType
+    url: HelpLinks.linksMap.clientType,
+    capability: 'applicationClients'
   },
   {
     img: '/assets/getting-started/monitoring.svg',
@@ -175,6 +178,8 @@ export interface GettingStartedLink {
   id?: string;
   img?: string;
   subtitle?: string;
+  // Shown only when the broker's edition has this capability.
+  capability?: Capability;
 }
 
 export const gettingStartedActionsDeveloper: GettingStartedLink[] = [
@@ -226,6 +231,7 @@ export enum GettingStartedStepId {
 
 export enum GettingStartedButtonAction {
   ADD_APP_CREDENTIALS = 'add-app-credentials',
+  ADD_SUBSCRIBER_CREDENTIALS = 'add-subscriber-credentials',
   ADD_DEVICE_CREDENTIALS = 'add-device-credentials',
   OPEN_SESSIONS = 'open-sessions'
 }
@@ -250,9 +256,9 @@ export interface GettingStartedStep {
 }
 
 export const gettingStartedStepCommands = {
-  [GettingStartedStepId.SUBSCRIBE]: (randomClientId: string, mqttHost: string, mqttPort: string) => `
+  [GettingStartedStepId.SUBSCRIBE]: (randomClientId: string, mqttHost: string, mqttPort: string, username: string) => `
     \`\`\`bash
-    mosquitto_sub -d -q 1 -h ${mqttHost} -p ${mqttPort} -t tbmq/demo/+ -i ${randomClientId} -u tbmq_app -P tbmq_app -c -v{:copy-code}
+    mosquitto_sub -d -q 1 -h ${mqttHost} -p ${mqttPort} -t tbmq/demo/+ -i ${randomClientId} -u ${username} -P ${username} -c -v{:copy-code}
     \`\`\`
   `,
   [GettingStartedStepId.PUBLISH]: (mqttHost: string, mqttPort: string) => `
@@ -317,10 +323,42 @@ export const gettingStartedStepsConfig: GettingStartedStep[] = [
   }
 ];
 
-export function getGettingStartedSteps(basicAuthEnabled: boolean): GettingStartedStep[] {
-  if (basicAuthEnabled) {
-    return gettingStartedStepsConfig.filter(step => step.id !== GettingStartedStepId.BASIC_AUTH);
+const subscriberStepLite: GettingStartedStep = {
+  id: GettingStartedStepId.CLIENT_APP,
+  titleKey: 'getting-started.step.step-2-lite.title',
+  textKey: 'getting-started.step.step-2-lite.text',
+  button: {
+    action: GettingStartedButtonAction.ADD_SUBSCRIBER_CREDENTIALS,
+    icon: 'desktop_mac',
+    labelKey: 'getting-started.step.step-2-lite.title'
   }
-  return gettingStartedStepsConfig;
-}
+};
 
+const subscribeStepLite: GettingStartedStep = {
+  id: GettingStartedStepId.SUBSCRIBE,
+  titleKey: 'getting-started.step.step-4.title',
+  textKey: 'getting-started.step.step-4-lite.text',
+  command: {
+    template: GettingStartedStepId.SUBSCRIBE
+  }
+};
+
+export function getGettingStartedSteps(basicAuthEnabled: boolean, applicationClients: boolean): GettingStartedStep[] {
+  let steps = gettingStartedStepsConfig;
+  if (!applicationClients) {
+    steps = steps.map(step => {
+      switch (step.id) {
+        case GettingStartedStepId.CLIENT_APP:
+          return subscriberStepLite;
+        case GettingStartedStepId.SUBSCRIBE:
+          return subscribeStepLite;
+        default:
+          return step;
+      }
+    });
+  }
+  if (basicAuthEnabled) {
+    return steps.filter(step => step.id !== GettingStartedStepId.BASIC_AUTH);
+  }
+  return steps;
+}

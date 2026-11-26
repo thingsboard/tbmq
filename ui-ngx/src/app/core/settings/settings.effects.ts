@@ -15,17 +15,19 @@
 ///
 
 import { Inject, Injectable, DOCUMENT } from '@angular/core';
+import { Router, ActivationEnd } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { TranslateService } from '@ngx-translate/core';
 
 import { SettingsActions, SettingsActionTypes, } from './settings.actions';
-import { distinctUntilChanged, map, tap, withLatestFrom } from 'rxjs';
+import { distinctUntilChanged, filter, map, merge, tap, withLatestFrom } from 'rxjs';
 import { select, Store } from '@ngrx/store';
 import { selectSettingsState } from './settings.selectors';
 import { updateUserLang } from '@core/settings/settings.utils';
 
 import { AppState } from '@core/core.state';
 import { LocalStorageService } from '@core/local-storage/local-storage.service';
+import { TitleService } from '@core/services/title.service';
 
 export const SETTINGS_KEY = 'SETTINGS';
 
@@ -35,6 +37,8 @@ export class SettingsEffects {
       private actions$: Actions<SettingsActions>,
       private store: Store<AppState>,
       private localStorageService: LocalStorageService,
+      private router: Router,
+      private titleService: TitleService,
       private translate: TranslateService,
       @Inject(DOCUMENT) private document: Document,
   ) {
@@ -50,6 +54,18 @@ export class SettingsEffects {
     tap(setting => {
       this.localStorageService.setItem(SETTINGS_KEY, setting);
       updateUserLang(this.translate, this.document, setting.userLang);
+    })
+  ), {dispatch: false});
+
+  setTitle = createEffect(() => merge(
+    this.actions$.pipe(ofType(SettingsActionTypes.CHANGE_LANGUAGE)),
+    this.router.events.pipe(filter(event => event instanceof ActivationEnd))
+  ).pipe(
+    tap(() => {
+      this.titleService.setTitle(
+        this.router.routerState.snapshot.root,
+        this.translate
+      );
     })
   ), {dispatch: false});
 }

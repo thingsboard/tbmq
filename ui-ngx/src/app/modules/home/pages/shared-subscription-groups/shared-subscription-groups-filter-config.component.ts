@@ -82,7 +82,6 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
   readonly propagatedFilter = input(true, {transform: booleanAttribute});
 
   ClientType = ClientType;
-  clientTypes = [ClientType.APPLICATION, ClientType.DEVICE];
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
   cleanStartList = [true, false];

@@ -22,6 +22,8 @@ import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { AuthRulePatternsType, AuthRules, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
 import { ClientType } from '@shared/models/client.model';
+import { ConfigService } from '@core/http/config.service';
+import { allowedClientTypes } from '@core/utils/edition.utils';
 import { randomStringFromRegex, getOS } from '@core/utils';
 import { ConnectivitySettings } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
@@ -109,7 +111,8 @@ export class CheckConnectivityDialogComponent extends
               protected router: Router,
               @Inject(MAT_DIALOG_DATA) private data: CheckConnectivityDialogData,
               public dialogRef: MatDialogRef<CheckConnectivityDialogComponent>,
-              private settingsService: SettingsService) {
+              private settingsService: SettingsService,
+              private configService: ConfigService) {
     super(store, router, dialogRef);
 
     if (this.data.afterAdd) {
@@ -244,7 +247,9 @@ export class CheckConnectivityDialogComponent extends
   }
 
   private setConfig(credentials: ClientCredentials): MqttCommandConfig {
-    const clientType = credentials.clientType;
+    const clientType = allowedClientTypes(this.configService.brokerConfig?.capabilities).includes(credentials.clientType)
+      ? credentials.clientType
+      : ClientType.DEVICE;
     const credentialsValue = JSON.parse(credentials.credentialsValue);
     const clientId = this.setClientId(credentialsValue, clientType);
     const { subTopic, pubTopic } = this.setTopics(

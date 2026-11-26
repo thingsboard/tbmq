@@ -24,16 +24,18 @@ import org.springframework.web.context.WebApplicationContext;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.controller.AbstractControllerTest;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.dto.AdminDto;
 import org.thingsboard.mqtt.broker.service.security.auth.rest.LoginRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
 /**
  * A fresh Lite install with {@code TBMQ_ADMIN_PASSWORD} set: the seeded sysadmin gets that password, is not marked, and
- * does not accept the default one. The class has its own context and its own empty store ({@code @DirtiesContext} of
+ * does not accept the default one. An admin it adds without a password gets the default one and is marked. The class has its own context and its own empty store ({@code @DirtiesContext} of
  * the base class, a store directory per class).
  */
 @TestPropertySource(properties = {
@@ -79,6 +81,25 @@ public class AdminPasswordVariableLiteTest extends AbstractControllerTest {
         User sysadmin = userService.findUserByEmail(SYS_ADMIN_EMAIL);
         assertThat(userService.isPasswordChangeRequired(sysadmin.getId())).isFalse();
         doPost("/api/auth/login", new LoginRequest(SYS_ADMIN_EMAIL, "sysadmin")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void anAddedAdminOnTheDefaultPasswordMustChangeIt() throws Exception {
+        login(SYS_ADMIN_EMAIL, ADMIN_PASSWORD);
+        User added = readResponse(doPost("/api/admin", AdminDto.fromEmail("added-default@lite.test"))
+                .andExpect(status().isOk()), User.class);
+        AdminDto withPassword = AdminDto.fromEmail("added-own@lite.test");
+        withPassword.setPassword("0wn-pass-word");
+        User addedWithPassword = readResponse(doPost("/api/admin", withPassword).andExpect(status().isOk()), User.class);
+        logout();
+
+        assertThat(userService.isPasswordChangeRequired(added.getId())).isTrue();
+        doPost("/api/auth/login", new LoginRequest("added-default@lite.test", "sysadmin"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.errorCode").value(15));
+
+        assertThat(userService.isPasswordChangeRequired(addedWithPassword.getId())).isFalse();
+        login("added-own@lite.test", "0wn-pass-word");
     }
 
 }

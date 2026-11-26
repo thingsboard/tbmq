@@ -29,7 +29,7 @@
           <span class="tb-title-link">{{ 'version.current' | translate }}</span>
         </section>
         <section class="flex w-full flex-row items-end justify-between">
-          <span>{{ currentReleaseVersion }}</span>
+          <span>{{ productNamePrefix }}{{ currentReleaseVersion }}</span>
           <span class="tb-title-no-updates" translate>version.no-updates</span>
         </section>
       </div>
@@ -39,7 +39,7 @@
         <section class="tb-title-link-container" (click)="gotoGithub(currentReleaseVersion)">
           <span class="tb-title-link">{{ 'version.current' | translate }}</span>
         </section>
-        <span>{{ currentReleaseVersion }}</span>
+        <span>{{ productNamePrefix }}{{ currentReleaseVersion }}</span>
       </div>
       <div class="version-container">
         <section class="tb-title-link-container" (click)="gotoGithub(latestReleaseVersion)">
