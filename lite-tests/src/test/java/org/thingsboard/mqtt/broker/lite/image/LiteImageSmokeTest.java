@@ -30,6 +30,7 @@ import org.testcontainers.containers.GenericContainer;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -93,8 +94,20 @@ public class LiteImageSmokeTest {
 
         // the start script and the broker report what they chose and which edition runs
         String log = lite.getLogs();
-        assertThat(log).contains("TBMQ Lite: memory ").contains("TBMQ edition: lite");
+        // the start script read the container's real cgroup files: the 2 GiB and 2 CPUs set on the container
+        assertThat(log).containsPattern("TBMQ Lite: memory 2048 MiB, CPUs 2 \\(cgroup v[12]\\), collector G1, "
+                + "max direct memory 204 MiB, jemalloc on").contains("TBMQ edition: lite");
         assertNoNativeLibraryInTmp(lite);
+
+        // the image's own HEALTHCHECK, not only the readiness probe: the script passes and Docker reports healthy
+        var healthcheck = lite.execInContainer("/usr/share/tbmq-lite/healthcheck.sh");
+        assertThat(healthcheck.getExitCode()).as("healthcheck.sh exit code, stdout: %s, stderr: %s",
+                healthcheck.getStdout(), healthcheck.getStderr()).isZero();
+        ImageTestSupport.awaitDockerHealthy(lite, Duration.ofSeconds(90));
+
+        // the runtime keeps the remote JMX agent, so the usual -Dcom.sun.management.jmxremote options in JAVA_OPTS work
+        var modules = lite.execInContainer("java", "--list-modules");
+        assertThat(modules.getStdout()).contains("jdk.management.agent@").contains("jdk.jcmd@").contains("jdk.attach@");
 
         // health: open, with component details (the image must not fall back to show-details "never")
         String base = ImageTestSupport.baseUrl(lite);

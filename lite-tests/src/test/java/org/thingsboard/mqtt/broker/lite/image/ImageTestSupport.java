@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Volume;
 import org.testcontainers.DockerClientFactory;
@@ -102,6 +103,28 @@ final class ImageTestSupport {
         } catch (RuntimeException ignored) {
             // the volume was never created or is already gone
         }
+    }
+
+    /**
+     * Waits for Docker's own health status of the container (the image's HEALTHCHECK) to become healthy; fails at once
+     * on unhealthy, or when it is still starting after the timeout.
+     */
+    static void awaitDockerHealthy(GenericContainer<?> container, Duration timeout) throws InterruptedException {
+        long deadline = System.nanoTime() + timeout.toNanos();
+        String status = null;
+        while (System.nanoTime() < deadline) {
+            InspectContainerResponse.ContainerState state = DockerClientFactory.lazyClient()
+                    .inspectContainerCmd(container.getContainerId()).exec().getState();
+            status = state.getHealth() == null ? null : state.getHealth().getStatus();
+            if ("healthy".equals(status)) {
+                return;
+            }
+            if ("unhealthy".equals(status)) {
+                throw new AssertionError("Docker reports the container unhealthy: " + state.getHealth().getLog());
+            }
+            Thread.sleep(1000);
+        }
+        throw new AssertionError("Docker health status is still " + status + " after " + timeout);
     }
 
     static String baseUrl(GenericContainer<?> container) {
