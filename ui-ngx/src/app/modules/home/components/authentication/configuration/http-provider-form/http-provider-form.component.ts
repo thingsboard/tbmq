@@ -139,8 +139,10 @@ export class HttpProviderFormComponent extends MqttAuthenticationProviderForm im
       sub: ["commands/.*"]
     }
   };
-  readonly expectedResponseJsonKey = this.clientTypeConfigurable ? 'authentication.expected-response-json' : 'authentication.expected-response-json-lite';
-  readonly expectedResponseInterpretationKey = this.clientTypeConfigurable ? 'authentication.expected-response-interpretation' : 'authentication.expected-response-interpretation-lite';
+  readonly clientTypeHintKey = this.clientTypeConfigurable
+    ? 'authentication.expected-response-client-type' : 'authentication.expected-response-client-type-lite';
+  readonly emptyBodyDefaultsKey = this.clientTypeConfigurable
+    ? 'authentication.expected-response-empty-body-defaults' : 'authentication.expected-response-empty-body-defaults-lite';
 
   readonly httpProviderConfigForm = this.fb.group({
     restEndpointUrl: [baseUrl(), [Validators.required, notOnlyWhitespaceValidator]],

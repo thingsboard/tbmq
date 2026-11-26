@@ -79,10 +79,18 @@
       <p translate>authentication.body-response</p>
       <div class="tb-hint pb-0" [innerHtml]="'authentication.expected-response' | translate"></div>
       <section class="flex">
-        <div class="tb-hint flex-1" [innerHtml]="expectedResponseJsonKey | translate"></div>
+        <div class="tb-hint flex-1"><code class="whitespace-pre">{{ expectedResponse | json }}</code></div>
         <tb-copy-button [style]="{color: 'rgba(0,0,0,0.54)'}" [copyText]="expectedResponse | json"/>
       </section>
-      <div class="tb-hint pb-0" [innerHtml]="expectedResponseInterpretationKey | translate"></div>
+      <div class="tb-hint pb-0">
+        {{ 'authentication.expected-response-interpretation' | translate }}
+        <ul>
+          <li [innerHtml]="'authentication.expected-response-result' | translate"></li>
+          <li [innerHtml]="clientTypeHintKey | translate"></li>
+          <li [innerHtml]="'authentication.expected-response-auth-rules' | translate"></li>
+          <li [innerHtml]="'authentication.expected-response-status-code' | translate: {defaults: (emptyBodyDefaultsKey | translate)}"></li>
+        </ul>
+      </div>
     </section>
     @if (clientTypeConfigurable) {
       <section class="security-setting mat-padding">
