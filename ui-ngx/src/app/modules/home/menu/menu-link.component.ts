@@ -14,21 +14,24 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { booleanAttribute, ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MenuSection } from '@core/services/menu.models';
 import { MatAnchor } from '@angular/material/button';
-import { RouterLinkActive, RouterLink } from '@angular/router';
-
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TbIconComponent } from '@shared/components/icon.component';
 import { TranslateModule } from '@ngx-translate/core';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-menu-link',
     templateUrl: './menu-link.component.html',
-    styleUrls: ['./menu-link.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatAnchor, RouterLinkActive, RouterLink, TbIconComponent, TranslateModule]
+    imports: [MatAnchor, RouterLinkActive, RouterLink, TbIconComponent, TranslateModule, MatTooltip]
 })
 export class MenuLinkComponent {
+
   readonly section = input<MenuSection>();
+
+  readonly collapsed = input(false, { transform: booleanAttribute });
+
 }
