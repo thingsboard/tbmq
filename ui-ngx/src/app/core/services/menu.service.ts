@@ -83,6 +83,13 @@ export class MenuService {
         icon: 'mdi:filter-outline'
       },
       {
+        id: MenuId.topic_tree,
+        name: 'topic-tree.topic-tree',
+        type: 'link',
+        path: '/topic-tree',
+        icon: 'mdi:file-tree'
+      },
+      {
         id: MenuId.integrations,
         name: 'integration.integrations',
         type: 'link',

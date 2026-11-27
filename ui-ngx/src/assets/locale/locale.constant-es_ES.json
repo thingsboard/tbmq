@@ -9,6 +9,7 @@
         "account": "Cuenta"
     },
     "action": {
+        "search": "Buscar",
         "save": "Guardar",
         "skip": "Omitir",
         "cancel": "Cancelar",
@@ -1383,6 +1384,84 @@
         "topic-filter": "Topic Filter",
         "topic-filter-duplicate": "Topic filter debe ser único",
         "topic-filter-required": "Topic filter es obligatorio."
+    },
+    "topic-tree": {
+        "topic-tree": "Árbol de topics",
+        "topic-details": "Detalles del topic",
+        "filter": "Filtrar topics",
+        "open-in-shared": "Abrir en Shared subscriptions",
+        "open-in-integrations": "Abrir en Integraciones",
+        "copy-topic": "Copiar topic",
+        "topic-copied": "El topic se ha copiado al portapapeles",
+        "columns": "Columnas",
+        "reset-columns": "Restablecer valores predeterminados",
+        "show-more": "Mostrar {{count}} más",
+        "root": "Todos los topics",
+        "no-topics": "Aún no hay suscripciones",
+        "no-data": "Nada que mostrar",
+        "wildcard": "Comodín",
+        "filter-panel": {
+            "title": "Filtro",
+            "topic": "Topic",
+            "prefix": "Prefijo",
+            "matches-topic": "Recibe el topic",
+            "matches-topic-hint": "Muestra los filtros de suscripción que recibirían un mensaje publicado en este topic",
+            "matches-topic-placeholder": "p. ej. sensors/room1/temperature",
+            "matches-topic-invalid": "Introduce un nombre de topic sin + ni #",
+            "has": "Tiene",
+            "wildcards": "Comodines",
+            "wildcards-only": "Solo filtros con comodín (+ y #)"
+        },
+        "topic-gone": "Este topic ya no tiene suscripciones ni mensajes retenidos. Se eliminó después de cargar el árbol.",
+        "topic-not-found": "No se encontró el topic {{path}}",
+        "refresh-tree": "Actualizar árbol",
+        "subtopics-count": "{ count, plural, =0 {Sin subtopics} =1 {1 subtopic} other {# subtopics} }",
+        "row": {
+            "subscriptions": "{{exact}} en este topic, {{nested}} en subtopics",
+            "clients": "Ningún cliente suscrito",
+            "connected": "{{count}} conectados",
+            "disconnected": "{{count}} desconectados",
+            "shared": "{ count, plural, =0 {Sin suscripciones compartidas} =1 {1 suscripción compartida} other {# suscripciones compartidas} }",
+            "integrations": "Integraciones suscritas a este topic o a sus subtopics",
+            "retained": "Mensajes conservados para nuevos suscriptores"
+        },
+        "column": {
+            "topic": "Topic",
+            "subscriptions": "Suscripciones",
+            "clients": "Clientes",
+            "retained": "Retenidos",
+            "online": "En línea / sin conexión",
+            "shared": "Grupos compartidos",
+            "integrations": "Integraciones"
+        },
+        "tab": {
+            "subscriptions": "Suscripciones",
+            "clients": "Clientes",
+            "shared": "Compartidas",
+            "integrations": "Integraciones",
+            "retained": "Retenidos"
+        },
+        "entity": {
+            "client-id": "ID de cliente",
+            "topic-filter": "Topic Filter",
+            "topic": "Topic",
+            "qos": "QoS",
+            "status": "Estado",
+            "client-type": "Tipo de cliente",
+            "subscriptions": "Suscripciones",
+            "group": "Grupo",
+            "payload": "Payload",
+            "type": "Tipo",
+            "type-client": "Cliente",
+            "type-shared": "Compartida",
+            "type-integration": "Integración",
+            "name": "Nombre",
+            "id": "ID",
+            "integration-not-found": "Integración no encontrada",
+            "open-session": "Abrir sesión",
+            "open-group": "Mostrar en suscripciones compartidas",
+            "open-integration": "Abrir integración"
+        }
     },
     "unauthorized-client": {
         "details": "Detalles del cliente no autorizado",

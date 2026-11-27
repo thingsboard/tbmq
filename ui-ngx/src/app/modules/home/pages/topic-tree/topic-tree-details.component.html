@@ -1,0 +1,95 @@
+<!--
+
+    Copyright © 2016-2026 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<tb-details-panel class="flex flex-1"
+                  [headerTitle]="node.path ?? ('topic-tree.root' | translate)"
+                  [headerSubtitle]="'topic-tree.topic-details' | translate"
+                  [isReadOnly]="true"
+                  (closeDetails)="closed.emit()">
+  <div class="details-buttons">
+    <div [tb-help]="'topicTree'"></div>
+  </div>
+  <mat-tab-group class="tb-absolute-fill flex flex-1" mat-stretch-tabs="false" animationDuration="0ms"
+                 [selectedIndex]="tabIndex" (selectedIndexChange)="selectTab($event)">
+    @for (t of tabs; track t) {
+      <mat-tab [label]="(t === 'details' ? 'details.details' : 'topic-tree.tab.' + t) | translate">
+        <ng-template matTabContent>
+          @if (t === 'details') {
+            <ng-container [ngTemplateOutlet]="details"></ng-container>
+          } @else {
+            <tb-entities-table class="tb-topic-tree-tab-table" [entitiesTableConfig]="tableConfig(t)"></tb-entities-table>
+          }
+        </ng-template>
+      </mat-tab>
+    }
+  </mat-tab-group>
+</tb-details-panel>
+
+<ng-template #details>
+  <div tb-toast toastTarget="topicTreeDetails">
+    @if (node.path !== null) {
+      <div class="tb-details-buttons">
+        <button mat-raised-button type="button" [cdkCopyToClipboard]="node.path" (cdkCopyToClipboardCopied)="onTopicCopied()">
+          <mat-icon svgIcon="mdi:clipboard-arrow-left"></mat-icon>
+          <span>{{ 'topic-tree.copy-topic' | translate }}</span>
+        </button>
+      </div>
+    }
+    <div class="tb-topic-tree-overview flex flex-col gap-4">
+      @if (missing) {
+        <div class="missing flex flex-row flex-wrap items-center gap-3">
+          <span class="flex-1">{{ 'topic-tree.topic-gone' | translate }}</span>
+          <button mat-stroked-button color="primary" type="button" (click)="refreshTree.emit()">{{ 'topic-tree.refresh-tree' | translate }}</button>
+        </div>
+      }
+      <div class="nav-list">
+        @for (row of rows; track row.tab) {
+          <button type="button" class="nav-row" [class.zero]="!row.count" (click)="openTab(row.tab)">
+            <span class="nav-icon"><tb-icon>{{ row.icon }}</tb-icon></span>
+            <span class="nav-text">
+              <span class="nav-name">{{ row.label | translate }}</span>
+              <span class="nav-sub">
+                @if (row.tab === 'clients' && full?.clientsTotal) {
+                  <span class="split" [style.background]="disconnectedColor.content">
+                    <span [style.width.%]="full.clientsOnline * 100 / full.clientsTotal" [style.background]="connectedColor.content"></span>
+                  </span>
+                  @if (full.clientsOnline) {
+                    <span [style.color]="connectedColor.content">{{ 'topic-tree.row.connected' | translate: { count: full.clientsOnline } }}</span>
+                  }
+                  @if (full.clientsOnline && full.clientsOffline) {
+                    <span>·</span>
+                  }
+                  @if (full.clientsOffline) {
+                    <span [style.color]="disconnectedColor.content">{{ 'topic-tree.row.disconnected' | translate: { count: full.clientsOffline } }}</span>
+                  }
+                } @else {
+                  {{ row.sub }}
+                }
+              </span>
+            </span>
+            <span class="nav-count">{{ row.count === null ? '–' : (row.count | number) }}</span>
+            <tb-icon class="nav-chevron">chevron_right</tb-icon>
+          </button>
+        }
+      </div>
+      <span class="caption">
+        {{ 'topic-tree.subtopics-count' | translate: { count: node.childrenCount } }}
+        @if (node.wildcard) { · {{ 'topic-tree.wildcard' | translate }} }
+      </span>
+    </div>
+  </div>
+</ng-template>
