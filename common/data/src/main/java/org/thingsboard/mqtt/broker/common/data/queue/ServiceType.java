@@ -18,6 +18,9 @@ package org.thingsboard.mqtt.broker.common.data.queue;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Arrays;
+import java.util.Optional;
+
 @RequiredArgsConstructor
 @Getter
 public enum ServiceType {
@@ -29,6 +32,10 @@ public enum ServiceType {
 
     public static ServiceType of(String serviceType) {
         return ServiceType.valueOf(serviceType.replace("-", "_").toUpperCase());
+    }
+
+    public static Optional<ServiceType> findByName(String name) {
+        return Arrays.stream(values()).filter(type -> type.name().equals(name)).findFirst();
     }
 
 }

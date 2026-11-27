@@ -50,10 +50,13 @@ import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesLatestDao;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.time.ZoneOffset.UTC;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DESC_ORDER;
@@ -161,6 +164,12 @@ public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao impleme
         return service.submit(() ->
                 DaoUtil.convertDataList(Lists.newArrayList(
                         searchTsKvLatestRepository.findAllByEntityId(entityId))));
+    }
+
+    @Override
+    public ListenableFuture<Map<String, List<TsKvEntry>>> findLatestByEntityIds(Collection<String> entityIds, Collection<String> keys) {
+        return service.submit(() -> searchTsKvLatestRepository.findAllByEntityIds(entityIds, keys).stream()
+                .collect(Collectors.groupingBy(TsKvLatestEntity::getEntityId, Collectors.mapping(TsKvLatestEntity::toData, Collectors.toList()))));
     }
 
     @Override

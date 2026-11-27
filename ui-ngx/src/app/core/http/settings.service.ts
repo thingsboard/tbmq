@@ -18,6 +18,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 import { mergeMap, Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { defaultHttpOptionsFromConfig, RequestConfig } from '../http/http-utils';
 import {
   AdminSettings,
@@ -27,7 +28,10 @@ import {
   DEFAULT_HOST,
   SecuritySettings,
   WebSocketSettings,
-  webSocketSettingsKey
+  webSocketSettingsKey,
+  defaultResourceUsageAlertSettings,
+  resourceUsageAlertSettingsKey,
+  ResourceUsageThresholds
 } from '@shared/models/settings.models';
 import { ConfigService } from '@core/http/config.service';
 import { BrokerConfig, settingsConfigPortMap } from '@shared/models/config.model';
@@ -57,6 +61,18 @@ export class SettingsService {
 
   public saveSecuritySettings(securitySettings: SecuritySettings, config?: RequestConfig): Observable<SecuritySettings> {
     return this.http.post<SecuritySettings>('/api/admin/securitySettings', securitySettings, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getResourceUsageAlertSettings(): Observable<AdminSettings<ResourceUsageThresholds>> {
+    return this.getAdminSettings<ResourceUsageThresholds>(resourceUsageAlertSettingsKey);
+  }
+
+  // Thresholds only colour usage values, so a failed lookup falls back to the defaults instead of breaking the page.
+  public getResourceUsageThresholds(): Observable<ResourceUsageThresholds> {
+    return this.getResourceUsageAlertSettings().pipe(
+      map(({jsonValue}) => ({highUsage: jsonValue.highUsage, criticalUsage: jsonValue.criticalUsage})),
+      catchError(() => of(defaultResourceUsageAlertSettings))
+    );
   }
 
   public getWebSocketSettings(): Observable<any> {

@@ -17,6 +17,7 @@
 import type { EChartsOption, LineSeriesOption, TopLevelFormatterParams } from 'echarts/types/dist/shared';
 import moment from 'moment';
 import { formatLargeNumber } from '@core/utils';
+import { compactNumber } from '@shared/models/live-stats.model';
 
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
@@ -336,7 +337,7 @@ export function buildEChartsOption(params: BuildOptionParams): EChartsOption {
         hideOverlap: true,
         formatter: (value: number) => {
           if (Number.isInteger(value)) {
-            return new Intl.NumberFormat('en', { notation: 'compact' }).format(value);
+            return compactNumber(value);
           }
           return String(value);
         },

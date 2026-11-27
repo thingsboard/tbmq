@@ -101,6 +101,18 @@ const routes: Routes = [
           entitiesTableConfig: ResourceUsageTableConfigResolver
         }
       },
+      {
+        path: 'cluster',
+        loadComponent: () => import('@home/pages/monitoring/cluster/cluster.component').then(m => m.ClusterComponent),
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          title: 'monitoring.cluster.cluster',
+          breadcrumb: {
+            label: 'monitoring.cluster.cluster',
+            icon: 'mdi:lan'
+          }
+        }
+      },
     ]
   }
 ];

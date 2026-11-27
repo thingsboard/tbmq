@@ -210,9 +210,15 @@
                           [matTooltip]="cellTooltip(entity, column, row)"
                           matTooltipPosition="above"
                           [style]="cellStyle(entity, column, row)">
-                  <div [class]="{ 'flex': column?.actionCell?.type, 'items-center': column?.actionCell?.type }">
-                    <span [innerHTML]="cellContent(entity, column, row)"></span>
-                    @if (column.actionCell) {
+                  <div [class]="{ 'flex': !!column.actionCell, 'items-center': !!column.actionCell }">
+                    @if (column.actionCell?.type === cellActionType.LINK && column.actionCell.link(entity); as link) {
+                      <a class="min-w-0 truncate" [routerLink]="link.commands" [queryParams]="link.queryParams"
+                         [matTooltip]="column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name"
+                         matTooltipPosition="above" (click)="$event.stopPropagation()" [innerHTML]="cellContent(entity, column, row)"></a>
+                    } @else {
+                      <span [class]="{ 'min-w-0': !!column.actionCell, 'truncate': !!column.actionCell }" [innerHTML]="cellContent(entity, column, row)"></span>
+                    }
+                    @if (column.actionCell && column.actionCell.type !== cellActionType.LINK) {
                       @switch (column.actionCell.type) {
                         @case (cellActionType.COPY_BUTTON) {
                           <tb-copy-button
@@ -229,12 +235,12 @@
                           </tb-copy-button>
                         }
                         @default {
-                          <button mat-icon-button [disabled]="isLoading$ | async"
+                          <button mat-icon-button class="tb-mat-32" [disabled]="isLoading$ | async"
                             [class.!hidden]="!column.actionCell.isEnabled(entity)"
                             matTooltip="{{ column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name }}"
                             matTooltipPosition="above"
                             (click)="column.actionCell.onAction($event, entity)">
-                            <tb-icon [style]="column.actionCell.style">{{column.actionCell}}</tb-icon>
+                            <tb-icon [style]="column.actionCell.style">{{ column.actionCell.iconFunction ? column.actionCell.iconFunction(entity) : column.actionCell.icon }}</tb-icon>
                           </button>
                         }
                       }

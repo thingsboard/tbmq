@@ -16,6 +16,7 @@
 
 import {
   CellActionDescriptor,
+  cellLink,
   checkBoxCell,
   cellWithIcon,
   cellStatus,
@@ -110,7 +111,9 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         }),
       new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '100px',
         (entity) => entity.subscriptionsCount.toString()),
-      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '100px'),
+      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '150px', undefined, undefined, true,
+        undefined, undefined, false, cellLink(this.translate.instant('monitoring.cluster.show-on-cluster-map'),
+          entity => entity.nodeId ? {commands: ['/monitoring/cluster'], queryParams: {nodeId: entity.nodeId}} : null)),
       new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe, '150px'),
       new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
         entity => checkBoxCell(entity?.cleanStart))
@@ -135,6 +138,12 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       if (routerQueryParams?.clientId) {
         this.sessionFilterConfig.clientId = routerQueryParams?.clientId;
         delete queryParams.clientId;
+      }
+      if (routerQueryParams?.nodeIdList) {
+        // A single node id arrives from the router as a plain string.
+        this.sessionFilterConfig.nodeIdList = [].concat(routerQueryParams.nodeIdList);
+        delete queryParams.nodeIdList;
+        replaceUrl = true;
       }
       if (routerQueryParams?.openSession) {
         openSession = coerceBooleanProperty(queryParams.openSession);

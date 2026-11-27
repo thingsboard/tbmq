@@ -17,11 +17,12 @@ package org.thingsboard.mqtt.broker.service.entity.app;
 
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
 
 public interface TbAppService {
 
     void deleteKafkaConsumerGroup(String groupId, User currentUser) throws Exception;
 
-    void deleteServiceInfo(String serviceId, User currentUser) throws ThingsboardException;
+    void deleteServiceInfo(String serviceId, ServiceType serviceType, User currentUser) throws ThingsboardException;
 
 }
