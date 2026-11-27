@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
+import org.thingsboard.mqtt.broker.service.trace.ClientTraceRegistry;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -49,6 +50,7 @@ public class InternodeNotificationsConsumerImpl implements InternodeNotification
     private final ClientSessionStatsCleanupProcessor clientSessionStatsCleanupProcessor;
     private final AuthorizationRoutingService authorizationRoutingService;
     private final IntegrationLifecycleEventTypeCache integrationLifecycleEventTypeCache;
+    private final ClientTraceRegistry clientTraceRegistry;
 
     private volatile boolean stopped = false;
 
@@ -111,6 +113,10 @@ public class InternodeNotificationsConsumerImpl implements InternodeNotification
         if (notificationProto.hasIntegrationLifecycleConfigProto()) {
             log.trace("[{}] Forwarding message to local integration lifecycle event type cache {}", serviceId, notificationProto.getIntegrationLifecycleConfigProto());
             integrationLifecycleEventTypeCache.processIntegrationLifecycleConfig(notificationProto.getIntegrationLifecycleConfigProto());
+            return;
+        }
+        if (notificationProto.hasClientTraceConfigProto()) {
+            clientTraceRegistry.apply(notificationProto.getClientTraceConfigProto());
         }
     }
 

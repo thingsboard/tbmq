@@ -41,6 +41,7 @@ import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
 import org.thingsboard.mqtt.broker.service.integration.IntegrationLifecycleEventTypeCache;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
+import org.thingsboard.mqtt.broker.service.trace.ClientTraceRegistry;
 
 import java.util.List;
 
@@ -80,6 +81,9 @@ public class InternodeNotificationsServiceImplTest {
     private IntegrationLifecycleEventTypeCache integrationLifecycleEventTypeCache;
 
     @Mock
+    private ClientTraceRegistry clientTraceRegistry;
+
+    @Mock
     private TbQueueProducer<TbProtoQueueMsg<InternodeNotificationProto>> producer;
 
     private InternodeNotificationsServiceImpl service;
@@ -96,7 +100,8 @@ public class InternodeNotificationsServiceImplTest {
                 mqttClientAuthProviderManager,
                 clientSessionStatsCleanupProcessor,
                 authorizationRoutingService,
-                integrationLifecycleEventTypeCache
+                integrationLifecycleEventTypeCache,
+                clientTraceRegistry
         );
         service.init();
     }
@@ -375,4 +380,3 @@ public class InternodeNotificationsServiceImplTest {
         verify(producer).stop();
     }
 }
-
